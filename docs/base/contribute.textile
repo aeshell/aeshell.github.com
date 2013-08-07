@@ -1,0 +1,31 @@
+---
+layout: docs
+title: Get Involved
+index: 2
+---
+
+h1. Get Involved
+
+<p/>
+There are many ways of getting involved with Æsh and contribute to the project. We are glad for any involvement either it is finding a bug and report it, contact us on irc or contribute code on any of our modules.
+<br/>
+
+h2. Source Repository
+
+<p/>
+All the Æsh source code is managed using git and is hosted at github.com under the <a href="https://github.com/aeshell/">Æsh organization</a>.
+Just fork the project, code, commit and send a pull request.
+<br/>
+
+h2. Issue Tracker
+
+<p/>
+Æsh use the issue-tracking system at jboss.org
+* <a href="https://issues.jboss.org/browse/AESH">Æsh issue tracker</a>
+<br/>
+
+h2. Chat
+
+<p/>
+Please join us in the #aesh channel on irc.freenode.net to talk about Æsh.
+

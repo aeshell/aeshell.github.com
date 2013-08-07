@@ -1,0 +1,40 @@
+---
+layout: docs
+title: Utils
+index: 7
+---
+
+h1. Æsh Utils
+
+<p/>
+Æsh provide several utility methods to make it easier for the developer to create commands, completions and extensions.
+<br/>
+
+h2. Parser
+
+<p/>
+When working with command-based programs there is always a lot of text parsing, sorting, ordering, etc...
+<a href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/util/Parser.java">Parser</a> provide a method <kbd>formatDisplayList</kbd> to format lists in the same way it is sorted in Bash. Æsh use this method internally to sort completions and filenames/directories when redirecting. Several extensions also use it for displaying filenames/directories.
+
+Another useful method is <kbd>findWordClosestToCursor</kbd>. This method will return the word closest to the cursor (from the left) and also merge words that are diveded by escaped spaces. Eg: the word foo\ bar and cursor is on the position after 'r', the method will return "foo\ bar". If the word didnt have escaped space, but "normal" space like: "foo bar" the same method would return "bar.
+<br/>
+
+h2. FileUtils
+
+<p/>
+<a href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/util/FileUtils.java">FileUtils</a> have one very useful method: <kbd>listMatchingDirectories</kbd>. Based on a text given as input in addition to the current working directory it will try to find every file/folder that match the given input. If no input is given it will list the current working directory.An example: given the input text: <kbd>/var/log/s</kbd> the method will add every file and folder starting with 'e' in the <kbd>/var/log</kbd> directory to the Completion object given as parameter to the method. Note that this can be used oustide a complete operation too. Just fetch the possible files/directories with: <kbd>CompletionOperation.getCompletionCandidates()</kbd>.
+<br/>
+
+h2. ANSI
+
+<p/>
+Since Æsh is targeting ANSI terminals it also provide a API to easily generate ANSI codes to help the developer communicate with the terminal. In Æsh this class is called <a href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/util/ANSI.java">ANSI</a> and provide many methods like:
+* changing text color
+* changing background color
+* reseting
+* bold text 
+* invert background
+* normal backround
+* switch between main and alternate buffer screen
+
+- and there is more to come...
