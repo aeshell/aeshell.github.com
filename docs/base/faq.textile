@@ -1,0 +1,25 @@
+---
+layout: docs
+title: FAQ
+index: 42
+---
+
+h1. FAQ
+
+<br/>
+
+h3. How is Æsh different from Jline1/2?
+
+The Æsh started out of some of the shortcomings of Jline and its API is somewhat similar for getting output from console. Completion/Settings/etc is howevery different but changing from Jline to Æsh should not require much work.
+
+h3. I found an issue, where can I report it?
+
+Create an issue on our jira project page: https://issues.jboss.org/browse/AESH
+
+h3. How can I contribute to Æsh?
+
+More generally, see "this":/docs/contribute.html
+
+h3. What about JReadline?
+
+Even though we liked the JReadline name, we thought that the project outlived that name since it evolved into something more than just a readline library.

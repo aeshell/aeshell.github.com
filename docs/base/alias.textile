@@ -1,0 +1,27 @@
+---
+layout: docs
+title: Aliases
+index: 9
+---
+
+h1. Aliases
+
+<p/>
+Æsh provide alias functionality similar to Bash alias. 
+
+For those that do not know what aliases is, it allows a string to be substituted for a word when it is used as the first word of a simple command. Æsh maintains  a  list  of aliases  that  may  be set and unset with the <kbd>alias</kbd> and <kbd>unalias</kbd> commands.
+
+Æsh always read a complete line of input before executing. Aliases are expanded when a command is read.
+<br/>
+
+h2. Set/Unset Aliases
+
+<p/>
+Aliases are created with the <kbd>alias</kbd> command either in the shell or specified in a file thats read when æsh starts. This file can be set in the <kbd>Settings</kbd> class. The format to define aliases is: <kbd>alias aliasname='command -params'</kbd>. This is identical in a shell and file.
+
+To remove an existing alias specify the name of the alias after the <kbd>unalias</kbd> command. eg: <kbd>unalias aliasname</kbd>.
+
+h2. Alias persistence
+
+<p/>
+By default aliases are enabled and must be turned off via the <kbd>Settings</kbd> object. It will also try to read aliases from a the specified file and write to the file during shutdown. This can also be disabled if wanted.
