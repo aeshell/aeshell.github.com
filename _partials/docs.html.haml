@@ -1,7 +1,7 @@
 %h2 Docs
 %p Index
 %ul.icons-ul
-  - site.pages.select{|p|p.output_path =~ /^\/docs\//}.each do |page|
+  - site.docs.each do |page|
     %li
       %i.icon-li.icon-chevron-sign-right
       %a{:href => "#{page.output_path}"}
