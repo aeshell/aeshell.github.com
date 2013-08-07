@@ -1,22 +1,11 @@
 %h2 Docs
-%p Generally this left-colum should be used for sub-navigation purposes
+%p Index
 %ul.icons-ul
-  %li
-    %i.icon-li.icon-chevron-sign-right
-    %a{:href => ""}
-      Link 1
-  %li
-    %i.icon-li.icon-chevron-sign-right
-    %a{:href => ""}
-      Link 2
-  %li
-    %i.icon-li.icon-chevron-sign-right
-    %a{:href => ""}
-      Link 3
-  %li
-    %i.icon-li.icon-chevron-sign-right
-    %a{:href => ""}
-      Link 4
+  - site.pages.select{|p|p.output_path =~ /^\/docs\//}.each do |page|
+    %li
+      %i.icon-li.icon-chevron-sign-right
+      %a{:href => "#{page.output_path}"}
+        =page.title
 
 %br
 .div
