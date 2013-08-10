@@ -1,0 +1,82 @@
+---
+layout: docs
+title: Getting started
+index: 1
+---
+
+%h1 Getting started
+
+%br
+  
+Since Æsh is created to be extended and used by other applications it do not do much on its own. However, it is very easy to get started with a simple application. Here is a very short code that will start Æsh:
+
+%div
+  %pre
+    %code
+      = preserve do
+        :escaped
+          import org.jboss.aesh.console.*;
+          public class Example {
+            
+            final ConsoleCallback consoleCallback = new ConsoleCallback() {
+              @Override
+              public int readConsoleOutput(ConsoleOutput output) throws IOException{
+                  exampleConsole.pushToStdOut("======>\"" + output.getBuffer() + "\n");
+                  if (output.getBuffer().equals("quit") || output.getBuffer().equals("exit")) {
+                      exampleConsole.stop();
+                  }
+              }
+           };
+           console.start();
+        }
+
+
+%h3 Obtain Æsh
+
+%p
+The easiest way to get Æsh is with "Maven":http://www.apache.org/maven. Add a dependecy like:
+%div
+  %pre
+    %code
+      = preserve do
+        :escaped
+          <dependency>
+              <groupId>org.jboss.aesh</groupId>
+              <artifactId>aesh</artifactId>
+              <version>${version.aesh}</version>
+          </dependency>
+
+
+%p Using "Gradle":http://www.gradle.org/:
+
+%div
+  %pre
+    %code
+      = preserve do
+        :escaped
+          dependencies {
+              compile group: 'org.jboss.aesh', name: 'aesh', version: '0.+'
+          }
+
+
+%h3 Interact with Æsh
+
+%p
+It is very easy to get up and running using Æsh as shown in the example above. When Console.read(..) is called it will not return until the user has pressed 'Enter' or the input stream is closed. Everything the user types is returned in a <br/>
+%a(href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/ConsoleOutput.java") ConsoleOutput object:
+* buffer: user input
+* stdOut: if any redirect has been used prior, the std output is stored here
+* stdErr: if any redirect has been used prior, the std error is stored here
+* redirectOrPipe: if either piping or redirecting is used, this is set to true.
+%br
+
+%h3 Piping and Redirecting
+
+%p
+Æsh supports piping and redirecting similar to who it works in various Unix shells. Read more <a href="/docs/base/redirection.html">here</a>.
+%br
+
+%h3 Settings
+
+%p
+In addition to the settings a user can define in the <a href="/docs/base/editingmode">init file</a> the developer can also define a lot of settings in Æsh. Read more about settings <a href="/docs/base/settings">here</a>.
