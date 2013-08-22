@@ -6,34 +6,55 @@ title: Downloads
 
 / Main hero unit for a primary marketing message or call to action
 .row-fluid
-  %h1 Æsh Downloads
-  All the Æsh versions are located on maven. If you prefer a direct download just choose the version and download.
-  %p
+%h1 Æsh Downloads
+All the Æsh versions are located on maven central. If you are using maven the easiest would be to add this to your pom.xml:
+%div
+  %pre
+    %code
+      = preserve do
+        :escaped
+          <dependency>
+            <groupId>org.jboss.aesh</groupId>
+            <artifactId>aesh</artifactId>
+            <version>${version.aesh}</version>
+          </dependency>
+For aesh-extensions:
+%div
+  %pre
+    %code
+      = preserve do
+        :escaped
+          <dependency>
+            <groupId>org.jboss.aesh</groupId>
+            <artifactId>aesh-extensions</artifactId>
+            <version>${version.aesh}</version>
+          </dependency>
+
+%p
+
+%h3 Direct downloads
+.span4
   %table.table.table-bordered.table-striped
     %thead
       %tr
         %th Version
         %th Direct Download
-        %th User Guide
-        %th Javadocs
     %tbody
       %tr
-        %td 0.38
+        %td 0.41
         %td
-          %a url...
+          %a(href="http://dl.bintray.com/stalep/maven/aesh-0.41.jar") aesh-0.41.jar
+      %tr
+        %td 0.40
         %td
-          %a html
+          %a(href="http://dl.bintray.com/stalep/maven/aesh-0.40.jar") aesh-0.40.jar
+      %tr
+        %td 0.33.8
         %td
-          %a html
+          %a(href="http://dl.bintray.com/stalep/maven/aesh-0.33.8.jar") aesh-0.33.8.jar
       %tr
         %td 0.33.7
         %td
-          %a url...
-        %td
-          %a html
-        %td
-          %a html
+          %a(href="http://dl.bintray.com/stalep/maven/aesh-0.33.7.jar") aesh-0.33.7.jar
 
-  %hr
 
-/ Example Content
