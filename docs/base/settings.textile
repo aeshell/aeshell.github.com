@@ -4,16 +4,16 @@ title: Settings
 index: 6
 ---
 
+</br>
+
 h1. Settings
 
 <p/>
-In addition to the settings a user can define in the <a href="/docs/base/editingmode">init file</a> the developer can also define a lot of settings in Æsh.
-<br/>
+The <a href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/settings/Settings.java">Settings</a> object store all the different tunable properties thats possible to set in the AeshConsole and Console. A Settings instance is created with a <a href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/settings/SettingsBuilder.java">SettingsBuilder</a> object where you can choose to specify as much as you want. No valuable are required as all have default values. 
+Since Æsh is also a Readline library it is possible to specify different options in the <kbd>.inputrc</kbd> file.
+</br>
 
-h3. The Settings object
-
-<p/>
-By changing properties in the <a href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/settings/Settings.java">System</a> object it is possibe to change almost every variable that is used during initialization of Æsh. Some examples:
+h3. Settings properties
 
 <dl compact>
 <dt><kbd>name</kbd>
@@ -52,12 +52,24 @@ By changing properties in the <a href="https://github.com/aeshell/aesh/blob/mast
 <dd>Specify if completion functionality should be turned off. By default this is set to false;
 <dt><kbd>readAhead</kbd>
 <dd>Specify if Æsh should read all the bytes on the buffer if its available. Set to true by default. Do not set this to false if unsure.
+<dt><kbd>isAliasEnabled</kbd>
+<dd>Specify if Æsh should enable alias/unalias functionality. Set to true by default.
+<dt><kbd>aliasFile</kbd>
+<dd>Specify the location of a alias/unalias file. Default set to <kbd>~/.aesh_aliases</kbd>
+<dt><kbd>persistAlias</kbd>
+<dd>Specify if Æsh should persist changes to aliases during shutdown.
+<dt><kbd>quitHandler</kbd>
+<dd>Specify a specific <a href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/settings/QuitHandler.java">QuitHandler</a> that will be called during shutdown.
+<dt><kbd>interruptHook</kbd>
+<dd>Specify a specific <a href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/helper/InterruptHook.java">InterruptHook</a> that will be called when the user initiates Ctrl-C
+<dt><kbd>operatorParserEnabled</kbd>
+<dd>Specify if Æsh should parse pipelines and redirections. Set to true by default.
 </dl>
 
 h3. Define settings runtime
 
 <p/>
-Many properties may be set as JVM properties instead of hard coded in the Settings object. Here they are:
+Many properties may be set as JVM properties instead of hard coded in the Settings object. Specifying them as JVM properties will override the values set in the Settings object. Here they are:
 
 <dl compact>
 <dt><kbd>aesh.terminal</kbd>
