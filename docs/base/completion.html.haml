@@ -74,9 +74,11 @@ A simple Example:
 
               final ConsoleCallback consoleCallback = new ConsoleCallback() {
                 @Override
-                public int readConsoleOutput(ConsoleOutput output) throws IOException {
-                  console.out().println("======>\"" + output.getBuffer());
-                  if (output.getBuffer().equalsIgnoreCase("quit") || output.getBuffer().equalsIgnoreCase("exit") || output.getBuffer().equalsIgnoreCase("reset")) {
+                public int readConsoleOutput(ConsoleOperation operation) throws IOException {
+                  console.out().println("======>\"" + operation.getBuffer());
+                  if (operation.getBuffer().equalsIgnoreCase("quit") || 
+                      operation.getBuffer().equalsIgnoreCase("exit") || 
+                      operation.getBuffer().equalsIgnoreCase("reset")) {
                     console.stop();
                   }
                 }

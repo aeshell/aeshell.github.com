@@ -8,7 +8,7 @@ index: 1
 
 %br
   
-Since Æsh is created to be extended and used by other applications it doesn't do much on its own. However, it is very easy to get started with a simple application. From version 0.40 we created a new API as well with the goal to provide an even easier API than what we already had. With the use of the rewritten command line parser we created a new high level API that would make it even easier to create a comman line program. Let us show you an example:
+Since Æsh is created to be extended and used by other applications it doesn't do much on its own. However, it is very easy to get started with a simple application (- we also provide two small example applications in the jar called AeshExample and Example (read about them at the bottom of this page)). From version 0.40 we created a new API as well with the goal to provide an even easier API than what we already had. With the use of the rewritten command line parser we created a new high level API that would make it even easier to create a comman line program. Let us show you an example:
 %div
   %pre
     %code
@@ -30,7 +30,7 @@ Since Æsh is created to be extended and used by other applications it doesn't d
               @CommandDefinition(name="exit", description = "exit the program")
               public static class ExitCommand implements Command {
                   @Override
-                  public CommandResult execute(AeshConsole console) throws IOException {
+                  public CommandResult execute(AeshConsole console, ControlOperator operator) throws IOException {
                       console.stop();
                       return CommandResult.SUCCESS;
                   }
@@ -45,7 +45,7 @@ Since Æsh is created to be extended and used by other applications it doesn't d
                   private List<File> files;
 
                   @Override
-                  public CommandResult execute(AeshConsole console) throws IOException {
+                  public CommandResult execute(AeshConsole console, ControlOperator operator) throws IOException {
                       if(files != null) {
                         for(File f : files)
                           console.out().print(f.toString());
@@ -81,9 +81,9 @@ Here is a very short code that will start Æsh using the Console API:
             
             final ConsoleCallback consoleCallback = new ConsoleCallback() {
               @Override
-              public int readConsoleOutput(ConsoleOutput output) throws IOException{
-                  console.out().println("======>\"" + output.getBuffer());
-                  if (output.getBuffer().equals("quit") || output.getBuffer().equals("exit")) {
+              public int readConsoleOutput(ConsoleOperation operation) throws IOException{
+                  console.out().println("======>\"" + operation.getBuffer());
+                  if (operation.getBuffer().equals("quit") || operation.getBuffer().equals("exit")) {
                       console.stop();
                   }
               }
@@ -117,17 +117,11 @@ When using the Console API the way you receive user input is with a
 The registered ConsoleCallback is called each time a user press enter and it is possible to change the registered callback when needed.
 %br
 The data object thats sent from the Console is a 
-%a(href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/ConsoleOutput.java") ConsoleOutput object:        
+%a(href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/ConsoleOperation.java") ConsoleOperation object:        
 %ul.icons-ul
   %li
     %i.icon-li.icon-chevron-sign-right>
     buffer: user input
-  %li
-    %i.icon-li.icon-chevron-sign-right>
-    stdOut: if any redirect has been used prior, the std output is stored here
-  %li
-    %i.icon-li.icon-chevron-sign-right>
-    stdErr: if any redirect has been used prior, the std error is stored here
   %li
     %i.icon-li.icon-chevron-sign-right>
     redirectOrPipe: if either piping or redirecting is used, this is set to true.
@@ -143,3 +137,19 @@ The data object thats sent from the Console is a
 
 %p
 In addition to the settings a user can define in the <a href="/docs/base/editingmode.html">init file</a> the developer can also define a lot of settings in Æsh. Read more about settings <a href="/docs/base/settings.html">here</a>.
+%br
+
+%h3 Provided Examples
+
+%p
+As mentioned above, Æsh provides two simple examples that you can use as a quick intro to the API. There is on example each for the two different APIs. 
+%br
+%a(href="https://github.com/aeshell/aesh/blob/master/src/main/java/Example.java") Example.java
+show how to use the low level API. To run it, simply do;
+%kbd
+  java -cp aesh-{version}.jar Example
+%br
+%a(href="https://github.com/aeshell/aesh/blob/master/src/main/java/AeshExample.java") AeshExample.java
+show how to use the high level API. To run it, simply do;
+%kbd
+  java -cp aesh-{version}.jar AeshExample
