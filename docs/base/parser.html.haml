@@ -153,6 +153,14 @@ The different Option types have some common elements like:
       %ul
         %li
           Specify a custom completer
+    %li
+      %i.icon-li.icon-chevron-sign-right>
+      %b
+        validator
+      %ul
+        %li
+          Specify a custom validator
+
 
 %h3 Converter
 When using a "custom" type for a field a converter is needed to inject the correct value. To ensure this we created a simple interface that all the converter implementations need to implement:
@@ -217,6 +225,19 @@ A FooCompleter
           }
                 
 
+%h3 Validator
+%p
+The validator is optional and will be executed during population of the option value. The validator interface looks like:
+%div
+  %pre
+    %code
+      = preserve do
+        :escaped
+          public interface OptionValidator<T> {
+            void validate(T value) throws OptionValidatorException;
+          }
+
+Note that implementations of this interface must have an empty constructor.
 
 %br
 %h2 Builder
