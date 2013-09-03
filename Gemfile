@@ -12,3 +12,4 @@ gem 'htmlcompressor', '~> 0.0.3' # Adds in HTML minification, helps remove the w
 gem 'coffee-script', '~> 2.2.0'
 gem 'rb-inotify', '~> 0.9'
 gem 'RedCloth', '>= 4.2.9'
+gem 'asciidoctor', '~> 0.1.4'
