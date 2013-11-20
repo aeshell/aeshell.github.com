@@ -1,0 +1,54 @@
+---
+layout: docs
+title: Redirection
+index: 5
+---
+
+Redirection
+===========
+Ståle W. Pedersen
+:Author:   Ståle W. Pedersen
+:Email:    <spederse@redhat.com>
+:source-highlighter: prettify
+
+== Redirection
+
+Redirection is a function common to most command-line interpreters, including the various Unix shells that can redirect standard streams to user-specified locations.
+Redirection in Æsh try to emulate how it works in most Unix shells.
+
+=== Redirecting standard input and standard output
+
+To execute *command1* and place the output in *file1*:
+
++command1 > file1+
+
+This will overwrite any existing data in *file1*.
+
+
+To append output to the end of the file, use *>>*:
+
++command1 >> file1+
+
+Using:
+
++command1 < file1+
+executes +command1+, with +file1+ as the source of input (instead of the keyboard).
+
++command1 < infile > outfile+
+
+combines the two: *command1* reads from *infile* and writes to *outfile*.
+
+==== Piping
+
+Programs can be run together such that one program reads the output from another with no need for an explicit intermediate file:
++command1 | command2+ executes +command1+, using its output as the input for +command2+.
+
+==== How this works in Æsh
+
+The current implementation of Æsh solves redirection and piping fairly simple. When the user press *'Enter'* the line is parsed and if either redirect or pipe is found the line will be broken down in pieces. 
+In this example: +command1 > file1+ Æsh will split the line up so that only +command1+ is returned in ConsoleOutput.buffer with ConsoleOutput.redirectOrPipe set to true.
+
+The output from +command1+ will be stored in an internal buffer and when +Console.read(..)+ is called again +> file1+ will be processed.
+
+The same logic is used when pipeline is used. This differ from several Unix shells that's able to run several commands in parallel. Æsh run the commands in sequence.
+

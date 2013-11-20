@@ -1,0 +1,65 @@
+---
+layout: docs
+title: Command
+index: 11
+---
+
+Command
+=======
+Ståle W. Pedersen
+:Author:   Ståle W. Pedersen
+:Email:    <spederse@redhat.com>
+:source-highlighter: prettify
+
+== Command
+
+A command in Æsh is a _program_ thats executed in a shell/terminal. 
+
+To define a command you have to implement the https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/command/Command.java[Command] interface. This interface have one method, execute, which is called when the command is executed.
+
+This is however not enough for Æsh, we also need to add some meta-data like command name, description, etc. Currently we can do this in two ways, either through a builder pattern or with the https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/CommandDefinition.java[CommandDefinition] annotations.
+CommandDefinition have two required fields, name and description. Name is the name of the command and description is used by Æsh to provide some automatically generated info. - so the better you are with describing the commands the better runtime info you'll get.
+
+There is a third attribute to CommandDefinition which is validator. Validator is of type https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/validator/CommandValidator.java[CommandValidator] and will be called just before Command.execute(..) is called. As described in the Option doc Options have their own validator, but with the CommandValidator you can verify the combination of the Option values before executing the Command.
+
+A small example:
+[source,java]
+.ExitCommand.java
+----
+@CommandDefinition(name="exit", description = "exit the program")
+public static class ExitCommand implements Command {
+    @Override
+    public CommandResult execute(CommandInvocation invocation) throws IOException {
+        invocation.stop();
+        return CommandResult.SUCCESS;
+    }
+}
+----
+
+[source,java]
+.Example with validator:
+----
+@CommandDefinition(name = "foo", description = "blah", validator = FooCommandValidator.class)
+public static class FooCommand implements Command {
+
+    @Option(shortName = 'l')
+    private int low;
+    @Option(shortName = 'h')
+    private int high;
+
+    @Override
+    public CommandResult execute(CommandInvocation commandInvocation) throws IOException {
+        commandInvocation.getShell().out().println("you got foooed");
+        return CommandResult.SUCCESS;
+    }
+}
+
+public static class FooCommandValidator implements CommandValidator<FooCommand> {
+    @Override
+    public void validate(FooCommand command) throws CommandValidatorException {
+        if(command.low + command.high < 42)
+            throw new CommandValidatorException("Sum of high and low must be over 42!");
+    }
+}
+----
+

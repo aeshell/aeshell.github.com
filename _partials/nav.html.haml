@@ -6,19 +6,21 @@
         %span.icon-bar
         %span.icon-bar
       .nav-collapse.collapse
-        %ul.nav
+        %ul#nav.nav
           %li{:class=>"#{'active' if page.output_path.start_with?('/index') }" }<
-            %a(href="#{site.base_url}/index.html") Home
+            %a(href="#{site.base_url}/") Home
+          %li{:class=>"#{'active' if page.output_path.start_with?('/about') }" }<
+            %a(href="#{site.base_url}/about/") About
+          %li{:class=>"#{'active' if page.output_path.start_with?('/news') }" }<
+            %a(href="#{site.base_url}/news/") News
+          %li{:class=>"#{'active' if page.output_path.start_with?('/extensions') }" }<
+            %a(href="#{site.base_url}/extensions/") Extensions
           %li{:class=>"#{'active' if page.output_path.start_with?('/downloads') }" }<
-            %a(href="#{site.base_url}/downloads.html") Downloads
+            %a(href="#{site.base_url}/downloads/") Downloads
           %li{:class=>"#{'active' if page.output_path.start_with?('/docs') }" }<
-            %a(href="#{site.base_url}/docs.html") Documentation
-          %li{:class=>"#{'active' if page.output_path.start_with?('/issues') }" }<
-            %a(href="https://issues.jboss.org/browse/AESH") Issues
+            %a(href="#{site.base_url}/docs/") Documentation
+          %li{:class=>"#{'active' if page.output_path.start_with?('/source') }" }<
+            %a(href="http://github.com/aeshell/aesh") Source Code
           %li{:class=>"#{'active' if page.output_path.start_with?('/contribute') }" }<
-            %a(href="#{site.base_url}/contribute.html") Contribute
-
-//        %ul.nav.pull-right
-//          %li
-//            %form.navbar-search
-//              %input.search-query#projectsearch(type="text" placeholder="Search")
+            %a(href="#{site.base_url}/contribute/") Contribute
+= breadcrumb(page.real_page.output_path)

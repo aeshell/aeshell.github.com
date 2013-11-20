@@ -1,0 +1,10 @@
+= 0.20 Released!
+stalep
+2012-09-06
+:revdate: 2012-09-06 22:24:00 +0100
+:awestruct-tags: [release, announcement]
+:awestruct-layout: blog
+:source-highlighter: coderay
+
+We finally released 0.20 which include a rewrite of link:{base_url}/docs/redirection/index.html[redirection and pipelines], link:{base_url}/docs/alias/index.html[aliases] and the possiblity to specify the name of the cli.
+Redirection and pipelines also support filenames with spaces and escaped spaces. Naming the cli is now possible via the Settings object. Aliasing works similar to aliasing in bash.

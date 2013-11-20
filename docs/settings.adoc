@@ -1,0 +1,95 @@
+---
+layout: docs
+title: Settings
+index: 6
+---
+
+Settings
+========
+Ståle W. Pedersen
+:Author:   Ståle W. Pedersen
+:Email:    <spederse@redhat.com>
+:source-highlighter: prettify
+
+== Settings
+
+The https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/settings/Settings.java[Settings] object store all the different tunable properties thats possible to set in the AeshConsole and Console. A Settings instance is created with a https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/settings/SettingsBuilder.java[SettingsBuilder] object where you can choose to specify as much as you want. No valuable are required as all have default values. 
+Since Æsh is also a Readline library it is possible to specify different options in the +.inputrc+ file.
+
+===  Settings properties
+
+* +name+
+** Specify the name that is used when Æsh report errors/msgs. Default is "aesh".
+* +editMode+
+** Specify which editing mode Æsh should start with. If not specified Emacs-mode is default. However, this is setting is overwritten if the user has specificed something else in their init file (+inputrc+). Read more link:{base_url}/docs/editingmode/index.html[here].
+* +historyFile+
+** Specify the name and location of the history file Æsh should read from during initialization and write to during exit. If not specified the default value will be used which is +user.home/.aesh_history+.
+* +historySize+
+** Specify the size of the history file. Default size is 500 and maximum size is +Integer.MAX_VALUE+.
+* +historyDisabled+
+** Set this to true to disable history. By default this is set to false.
+* +historyPersistent+
+** Set this to false to prevent history to be written to file, it will no read from file during initialization either. By default this is set to true.
+* +bellStyle+
+** Specify which bellstype Æsh should use (not implemented yet)
+* +ansiConsole+
+** If the target terminal is non-ANSI this can be set to false. By default this is set to true. Do not change this unless you as a developer really know what you are doing. No, it is not neccessary to set this to false even if the target OS is Windows.
+* +inputStream+
+** Specify input stream, by default this is System.in.
+* +stdOut+
+** Specify output stream, by default this is System.out.
+* +stdErr+
+** Specify output error stream, by default this is System.err.
+* +terminal+
+** Specify which terminal implementation to use. By default POSIXTerminal is used on POSIX systems and WindowsTerminal on Windows.
+* +readInputrc+
+** Specify if Æsh should read settings from the user's +inputrc+ file. By default this is set to true.
+* +inputrc+
+** Specify the location and name of the init file. Default is +user.home/.inputrc+. 
+* +isLogging+
+** Specify if Æsh should log internal operations/logic to file. By default this is set to true.
+* +logFile+
+** Specify the location of the log file. By default this is +/tmp/aesh.log+.
+* +disableCompletion+
+** Specify if completion functionality should be turned off. By default this is set to false;
+* +readAhead+
+** Specify if Æsh should read all the bytes on the buffer if its available. Set to true by default. Do not set this to false if unsure.
+* +isAliasEnabled+
+** Specify if Æsh should enable alias/unalias functionality. Set to true by default.
+* +aliasFile+
+** Specify the location of a alias/unalias file. Default set to +~/.aesh_aliases+
+* +persistAlias+
+** Specify if Æsh should persist changes to aliases during shutdown.
+* +quitHandler+
+** Specify a https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/settings/QuitHandler.java[QuitHandler] that will be called during shutdown.
+* +interruptHook+
+** Specify a https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/helper/InterruptHook.java[InterruptHook] that will be called when the user initiates Ctrl-C
+* +operatorParserEnabled+
+** Specify if Æsh should parse pipelines and redirections. Set to true by default.
+
+=== Define settings runtime
+
+Many properties may be set as JVM properties instead of hard coded in the Settings object. Specifying them as JVM properties will override the values set in the Settings object. Here they are:
+
+* +aesh.terminal+
+** Same as Settings.terminal:
+* +aesh.editMode+
+** Same as Settings.editMode.
+* +aesh.readinputrc+
+** Same as Settings.readInputrc
+* +aesh.inputrc+
+** Same as Settings.inputrc
+* +aesh.historyfile+
+** Same as Settings.historyFile
+* +aesh.historypersistent+
+** Same as Settings.historyPersistent
+* +aesh.historydisabled+
+** Same as Settings.historyDisabled
+* +aesh.historysize+
+** Same as Settings.historySize
+* +aesh.logging+
+** Same as Settings.isLogging
+* +aesh.logfile+
+** Same as Settings.logFile
+* +aesh.disablecompletion+
+** Same as Settings.disableCompletion

@@ -1,0 +1,16 @@
+= 0.24 Released
+stalep
+2012-11-16
+:revdate: 2012-11-16 22:24:00 +0100
+:awestruct-tags: [announcement, release]
+:awestruct-layout: blog
+:source-highlighter: coderay
+
+We have been pushing out new releases fairly often recently. 
+0.23 was released last friday, the release notes can be found https://issues.jboss.org/secure/ReleaseNote.jspa?projectId=12312720&version=12320575[here].
+Today we released version https://issues.jboss.org/secure/ReleaseNote.jspa?projectId=12312720&version=12320602[0.24].
+There are no API changes except that the https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/util/ANSI.java[ANSI.class] was changed to better work in combination with other strings.
+The command line parser was also enhanced to better support quotes and escaped spaces.
+Æsh also support multiline edits with the use of \ at the end of the line which is similar to how it work on posix shells.
+We've also added a better way of controlling logging. From now on no logging will be performed if its not enabled in Settings or by setting the aesh.logging property to true.
+Enjoy!

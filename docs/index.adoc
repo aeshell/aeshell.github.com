@@ -1,0 +1,31 @@
+---
+layout: docs
+title: Index
+index: 1
+---
+
+== Documentation Index
+
+The easiest way to get going with Æsh is to read the link:{base_url}/docs/gettingstarted/index.html[Getting started] guide. 
+
+To test out a simple example provided in Æsh, you can run the gradle command: +gradle installApp+ and then run the start scripts located here: +build/install/aesh/bin+.
+
+If you are using a program that is built on Æsh and want to know more about editing and functionality we recommend reading link:{base_url}/docs/editingmode[Editing] and link:{base_url}/docs/redirection[Redirection]
+
+=== Just starting..
+
+This is just the start of Æsh documentation so please be patient. If you have ideas for documentation or find certain areas lacking, do not hesitate to contact us and help out.
+
+
+The documentation is written in Asciidoc, which is a lightweight markup language. 
+
+Follow these steps to conribute documentation:
+
+* Clone http://github.com/aeshell/aesh.github.com on GitHub.
+* Add a new .adoc file in the docs directory. 
+* Push the empty Asciidoc file to your GitHub repository.
+* Use the GitHub Asciidoc editor to write your docs and preview changes. Of course you can use your own editor if you prefer so.
+
+The Asciidoc Syntax Quick Reference
+http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[quick-reference]
+gives a good introduction about the markup language.

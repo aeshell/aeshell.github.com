@@ -1,0 +1,10 @@
+= 0.22 Released
+stalep
+2012-11-02
+:revdate: 2012-11-02 22:24:00 +0100
+:awestruct-tags: [announcement, release]
+:awestruct-layout: blog
+:source-highlighter: coderay
+
+We're happy to announce the first official release of Æsh!
+It took us a bit more time that first planned, but then this release is one of the bigger one we've had. The single biggest thing is a link:{base_url}/docs/parser/index.html[command line parser], but there are also many enhancements and bug fixes. The release notes can be found https://issues.jboss.org/secure/ReleaseNote.jspa?projectId=12312720&version=12320251[here]. Enjoy!

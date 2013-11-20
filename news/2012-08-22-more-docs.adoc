@@ -1,0 +1,9 @@
+= More Documentation
+stalep
+2012-08-22
+:revdate: 2012-08-22 22:24:00 +0100
+:awestruct-tags: [announcement, website, documentation]
+:awestruct-layout: blog
+:source-highlighter: coderay
+
+We have added a lot more documentation on how to use Æsh and some of its features. It is still not complete, but it should give an easier start on how it works for developers that are new to Æsh.

@@ -1,0 +1,9 @@
+= Even More Documentation
+stalep
+2012-08-23
+:revdate: 2012-08-23 22:24:00 +0100
+:awestruct-tags: [announcement, website, documentation]
+:awestruct-layout: blog
+:source-highlighter: coderay
+
+We have added a link:{base_url}/docs/settings/index.html[settings] and a links:{base_url}/docs/utils/index.html[utils] section and updated some of the other documentation sections. More to come after the release of 0.20 which will include more complete pipeline/redirection support + support for filenames/paths which contain spaces when doing completion/pipeline/redirection.

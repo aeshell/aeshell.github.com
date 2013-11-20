@@ -1,0 +1,16 @@
+= 0.34 Released
+stalep
+2013-03-21
+:revdate: 2013-03-21 22:24:00 +0100
+:awestruct-tags: [announcement, release]
+:awestruct-layout: blog
+:source-highlighter: coderay
+
+First... - sorry for the lack of documentation updates!
+Æsh has been continously updated and is used in even more projects than before. 
+After version 0.33 we made some big changes to the API. - we made Æsh multithreaded!
+The biggest change is that Console.read(..) is gone as you know it. Instead we've added a callback (called ConsoleCallback) which will be called whenever the user press enter. 
+Æsh extensions is also pushed to maven and has some very exiting features like less,more and man. More info regarding the extensions will be added later.
+- and yes, the docs are updated to the latest API changes.
+
+Enjoy!

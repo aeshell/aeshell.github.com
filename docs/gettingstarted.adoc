@@ -1,0 +1,113 @@
+---
+layout: docs
+title: Getting started
+index: 2
+---
+
+Getting started
+===============
+Ståle W. Pedersen
+:Author:   Ståle W. Pedersen
+:Email:    <spederse@redhat.com>
+:source-highlighter: prettify
+
+== Getting started
+
+Æsh provides two fairly different APIs. One low level API which is almost identical to the first API Æsh ever released. This API do not provide any command line parsing out of the box and the behaviour of the shell is very much up to the developer.
+
+The other API is a more high level API which was added in the fall of 2013 (since version 0.41) and provide a lot more tools to easily create commands for the shell/terminal. We will try to illustrate the difference between the two APIs below by writing the same application using the two different APIs.
+  
+The first example show the high level API
+[source,java]
+.AeshExample.java
+----
+public class AeshExample {
+    public static void main(String[] args) {
+
+        Settings settings = new SettingsBuilder().logging(true).create();
+        AeshConsole aeshConsole = new AeshConsoleBuilder().settings(settings)
+                .prompt(new Prompt("[aesh@rules]$ "))
+                .command(ExitCommand.class)
+                .command(LsCommand.class)
+                .create();
+
+        aeshConsole.start();
+    }
+
+    @CommandDefinition(name="exit", description = "exit the program")
+    public static class ExitCommand implements Command {
+        @Override
+        public CommandResult execute(CommandInvocation invocation) {
+            invocation.stop();
+            return CommandResult.SUCCESS;
+        }
+    }
+
+    @CommandDefinition(name="ls", description = "fooing")
+    public static class LsCommand implements Command {
+
+        @Arguments
+        private List<File> files;
+
+        @Override
+        public CommandResult execute(CommandInvocation invocation) {
+            if(files != null) {
+              for(File f : files)
+                invocation.getShell().out().println(f.toString());
+            }
+            return CommandResult.SUCCESS;
+        }
+    }
+}
+----
+
+Here we create a small program that only have two methods; ls and exit. All the command line parsing, population of the option values are all done by æsh. The annotation used to specify the command is identical to what is used in the link:{base_url}/docs/parser/index.html[Command Line Parser page].
+
+The only addition is the Command interface that needs to be implemented as well. Using this API is the easiest way to get you started and should suffice for most cases.
+
+=== Low level API
+
+Defailed info regarding the low level API can be found link:{base_url}/docs/console/index.html[here].
+
+[source,java]
+.A very short code that will start Æsh using the Console API:
+----
+import org.jboss.aesh.console.*;
+public class Example {
+  
+  Console console = new Console(new SettingsBuilder().create());
+  
+  final ConsoleCallback consoleCallback = new ConsoleCallback() {
+    @Override
+    public int readConsoleOutput(ConsoleOperation operation) {
+        console.out().println("======>\"" + operation.getBuffer());
+        if (operation.getBuffer().equals("quit") || operation.getBuffer().equals("exit")) {
+            console.stop();
+        }
+    }
+  };
+  console.setCallback(consoleCallback);
+  console.start();
+}
+----
+
+As you notice this example doesnt do much other than registrering the given input and printing it again.
+
+    
+==== Piping and Redirecting
+
+Æsh supports piping and redirecting similar to who it works in various Unix shells. Read more link:{base_url}/docs/redirection/index.html[here].
+
+==== Settings
+
+In addition to the settings a user can define in the link:{base_url}/docs/editingmode/index.html[init file] the developer can also define a lot of settings in Æsh. Read more about settings link:{base_url}/docs/settings/index.html[here].
+
+==== Provided Examples
+
+As mentioned above, Æsh provides two simple examples that you can use as a quick intro to the API. There is on example each for the two different APIs. 
+
+https://github.com/aeshell/aesh/blob/master/src/main/java/Example.java[Example.java]
+show how to use the low level API. To run it, simply do; +java -cp aesh-{version}.jar Example+
+
+https://github.com/aeshell/aesh/blob/master/src/main/java/AeshExample.java[AeshExample.java]
+show how to use the high level API. To run it, simply do; +java -cp aesh-{version}.jar AeshExample+

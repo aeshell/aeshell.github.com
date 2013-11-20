@@ -1,0 +1,69 @@
+---
+layout: docs
+title: High Level API
+index: 2
+---
+
+High Level API
+=============
+Ståle W. Pedersen
+:Author:   Ståle W. Pedersen
+:Email:    <spederse@redhat.com>
+:source-highlighter: prettify
+
+== High Level API
+
+The high level API enables you to create commands with a variety of options/arguments, completors, validators, ++ fast and efficiently.
+The way to enable the high level API is to use the https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/AeshConsole.java[AeshConsole]. The only way to initiate AeshConsole is to use the https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/AeshConsoleBuilder.java[AeshConsoleBuilder] class. AeshConsoleBuilder accept several different objects, all of them are described  below except Settings which can be found link:{base_url]/docs/settings/index.html[here].
+
+
+=== CommandRegistry
+
+https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/command/registry/CommandRegistry.java[CommandRegistry] is the registry where all the commands are stored. Æsh provide a default CommandRegistry if no external is provided.
+
+
+=== CommandInvocationServices
+
+It is possible to specify your own https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/command/invocation/CommandInvocation.java[CommandInvocation] implementation and to enable that you have to specify your own https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/command/invocation/CommandInvocationProvider.java[CommandInvocationProvider]. It is possible to have multiple CommandInvocationProviders and this is controlled by the https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/command/invocation/CommandInvocationServices.java[CommandInvocationService]. Æsh provide a default implementation for all these classes.
+
+
+=== CommandNotFoundHandler
+
+Æsh allow you to specify a https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/settings/CommandNotFoundHandler.java[CommandNotFoundHandler] that will be called when a user tries to execute a command which name is not found. Æsh will fall back to a default handler if none is provided.
+
+
+=== ManProvider
+
+To make the man command useful it is important to provide a custom https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/helper/ManProvider.java[ManProvider]. There is no need to implement this if man isnt enabled.
+
+=== Prompt
+
+Specify the https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/Prompt.java[Prompt] that will be shown at startup. It is possible to change the prompt when needed during runtime.
+
+[source,java]
+.In the end a small example to tie it all together
+----
+public AeshConsoleExample {
+  public static void main(String[] args) {
+      Settings settings = new SettingsBuilder()
+              .logging(true);
+              .enableMan(true)
+              .readInputrc(false)
+              .create();
+      CommandRegistry registry = new AeshCommandRegistryBuilder()
+              .command(ExitCommand.class)
+              .command(LsCommand.class)
+              .command(TestConsoleCommand.class)
+              .create();
+      AeshConsole aeshConsole = new AeshConsoleBuilder()
+              .commandRegistry(registry)
+              .manProvider(new ManProviderExample())
+              .settings(settings)
+              .prompt(new Prompt("[aesh@rules]$ "))
+              .create();
+
+      aeshConsole.start();
+  }
+}
+----
+

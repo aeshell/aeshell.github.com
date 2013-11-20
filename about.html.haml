@@ -1,0 +1,61 @@
+---
+layout: project
+title: About
+---
+
+.row-fluid
+  .row-fluid
+    .hero-unit
+      %h1 What is &AElig;sh?
+      %p 
+        &AElig;sh is a configurable, extendable, flexible Java Terminal API
+  .row-fluid 
+    .well.post-bg
+      .row-fluid
+        .span6
+          %h4 Configurable
+          %p Almost every feature in &AElig;sh is possible to either disable/enable or extend. All the features described here are just a simple overview, we recommend that you look at the documentation for more info regarding the different subjects.
+        .span6
+          %h4 Flexible
+          %p
+            &AElig;sh provide two different public APIs that for different usecases. One high level API when you need to create commands withing a certain specification and ruls and one low level API where you get full access to the streams and can parse/configure it do your liking.
+      .row-fluid
+        %p
+      .row-fluid
+        .span6
+          %h4 Command Line Parser
+          %p &AElig;sh provide a sophisticated command line parser that will automatically inject the correct value into the specific attribute. It is also possible to specify a validator that will validate the value before it is passed to the specific attribute.
+        .span6
+          %h4 Completion
+          %p &AElig;sh also provide automatic completions based on default or custom rules. &AElig;sh have several built-in completors for common object types which can used or overridden by the developer.
+      .row-fluid
+        %p
+      .row-fluid
+        .span6
+          %h4 Editor Support
+          %p &AElig;sh support both VI and EMACS editing mode. Its also possible to enable your own custom editing mode if wanted. &AElig;sh can be configured to read then +inputrc+ file on startup for custom editing properties. - this can all be disabled if wanted.
+        .span6
+          %h4 Built-in Commands
+          %p &AElig;sh provides a few built-in commands
+          %ul
+            %li alias
+            %li unalias
+            %li man
+          %p
+            They can all be enabled/disabled if wanted. The man command must be integrated into the running console to work properly. Read more in the documentation.
+      .row-fluid
+        %p
+      .row-fluid
+        .span6
+          %h4 Pipeline and Redirect
+          %p &AElig;sh support pipeline and redirection similar to POSIX terminals. The different out/err/in streams are provided in the API. This can be disabled if needed.
+        .span6
+          %h4 History
+          %p &AElig;sh provide history support, both in-memory and to file. All can be enabled and disabled.
+      .row-fluid
+        %p
+      .row-fluid
+        .span6
+          %h4 Undo, Redo, Masking, Paste buffer, etc
+          %p - yes we have that as well....
+

@@ -1,0 +1,52 @@
+---
+layout: docs
+title: Low level API
+index: 2
+---
+
+Low level API
+=============
+Ståle W. Pedersen
+:Author:   Ståle W. Pedersen
+:Email:    <spederse@redhat.com>
+:source-highlighter: prettify
+
+== Low level API
+
+The low level API or Console API is targeted around the Console. It is still supported and have been steadily improved. The biggest change compared to earlier version is that Console now reads from the inputstream in a separate thread. This opens up a lot of possibilities, but also require some changes to the api. The Console.readLine(..) method is gone and now Console provides a callback to handle the input sent from the terminal (an example will be shown below). The way you send data to the out/error streams have also changed a bit. Instead of directly calling a method on Console you now fetch the PrintStream for either out/error and print to it. - just remember that there is not automatically flushing of the print statements only when using println.
+
+=== ConsoleCallback
+
+When using the Console API the way you receive user input is with a 
+https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/ConsoleCallback.java[ConsoleCallback]  
+The registered ConsoleCallback is called each time a user press enter and it is possible to change the registered callback when needed.
+
+The data object thats sent from the Console is a 
+https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/ConsoleOperation.java[ConsoleOperation] object:        
+
+* ControlOperator: what kind of operator is used in _connection_ with this command
+* buffer: user input
+
+[source,java]
+.Here is a very short code that will start Æsh using the Console API:
+----
+import org.jboss.aesh.console.*;
+public class Example {
+  
+  Console console = new Console(new SettingsBuilder().create());
+  
+  final ConsoleCallback consoleCallback = new ConsoleCallback() {
+    @Override
+    public int readConsoleOutput(ConsoleOperation operation) {
+        console.out().println("======>\"" + operation.getBuffer());
+        if (operation.getBuffer().equals("quit") || operation.getBuffer().equals("exit")) {
+            console.stop();
+        }
+    }
+  };
+  console.setCallback(consoleCallback);
+  console.start();
+}
+----
+
+

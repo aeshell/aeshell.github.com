@@ -1,0 +1,9 @@
+= Online
+stalep
+2012-08-16
+:revdate: 2012-08-16 21:58:00 +0100
+:awestruct-tags: [announcement, website]
+:awestruct-layout: blog
+:source-highlighter: coderay
+
+We're finally online with the help of http://awestruct.org/[awestruct]. More info/docs to come in the near future...

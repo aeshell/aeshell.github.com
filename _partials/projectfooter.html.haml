@@ -4,22 +4,46 @@
       %h4 Navigate
       %ul
         %li
-          %a{:href => "#{site.base_url}/docs/base/index.html", :title => "Get Started"} Get Started
+          %a{:href => "#{site.base_url}/about/", :title => "About"} About 
         %li
-          %a{:href => "#{site.base_url}/contribute.html", :title => "Get Involved"} Get Involved
+          %a{:href => "#{site.base_url}/extensions/", :title => "Extensions"} Extensions
         %li
-          %a{:href => "#{site.base_url}/downloads.html", :title => "Download"} Download
+          %a{:href => "#{site.base_url}/downloads/", :title => "Download"} Download
+    .span2
+      %h4 Follow Us
+      %ul
+        %li
+          %a{:href => "#{site.base_url}/news/", :title => "News"} News
+          %a{:href => "#{site.base_url}/news.atom", :title => "Atom"} (Atom Feed)
     .span2
       %h4 Contribute
       %ul
         %li
           %a{:href => "https://issues.jboss.org/browse/AESH", :title => "Submit a bug"} Submit a bug
         %li
-          %a{:href => "#{site.base_url}/contribute.html", :title => "Write code"} Write Code
-//    .span3.offset1
-//      %h4 LGPL 2.1 License
-//      %p All dependencies of this project are available under the LGPL or a compatible license.
-//      %p
-//      .jbossbadge
-//        %a{:href => "http://www.jboss.org/"}
-//          %img{:src => "/cache/static.jboss.org/theme/images/common/jbossbadge.png"}/
+          %a{:href => "https://github.com/aeshell/aesh/fork", :title => "Fork"} Fork The Code
+    .span3.offset1
+      %h4 Eclipse Public License - v 1.0
+      %p All dependencies of this project are available under the EPL or a compatible license.
+  .row-fluid
+    .span6.offset1
+      %p{:style => "margin-top: 5px; font-size: 80%;"}
+        © Copyright 2013 Red Hat, Inc.
+        %br
+        %i.icon-fire
+        Made with
+        %a{:href => "https://github.com/jbossorg/bootstrap-community", :style=>"text-decoration: underline;"}JBoss Community Bootstrap
+        and
+        %a{:href => "http://awestruct.org/", :style=>"text-decoration: underline;"}Awestruct
+        %br
+        %i.icon-globe
+        This website is open source! If you want to improve it,
+        %a{:href => "http://github.com/aeshell/aeshell.github.org", :style=>"text-decoration: underline;"}fork the project, and send a pull request.
+        %br
+        %i.icon-share
+        Website released under
+        %a{:href => "http://creativecommons.org/licenses/by/3.0/", :style=>"text-decoration: underline;"}CC BY 3.0.
+    .span3.offset1
+      .jbossbadge
+        %a{:href => "http://www.jboss.org/"}
+          %img{:src => "http://static.jboss.org/theme/images/common/jbossbadge.png"}/

@@ -1,0 +1,101 @@
+---
+layout: docs
+title: Completion
+index: 4
+---
+
+Completion
+==========
+Ståle W. Pedersen
+:Author:   Ståle W. Pedersen
+:Email:    <spederse@redhat.com>
+:source-highlighter: prettify
+
+== Completion
+
+Æsh provide two different ways of doing completions depending on which API you're using. First we will cover the completion API provided when using AeshConsole and then the more low level API when using Console.
+
+
+=== AeshConsole 
+When using AeshConsole the completion is specified for each Option thats defined in a Command. Here is an example of a simple command:
+[source,java]
+.ColorCommand.java
+----
+@CommandDefinition(name="color", description = "set a color")
+public static class ColorCommand implements Command {
+    @Option
+    private Color color;
+
+    @Override
+    public CommandResult execute(AeshConsole console) throws IOException {
+        if(files != null) {
+          for(File f : files)
+            console.out().print(f.toString());
+        }
+        return CommandResult.SUCCESS;
+    }
+}
+----
+This command is supposed to let the user select 
+
+=== Console
+
+For Console Æsh provide a simple API to connect commands to its tab-completion list. The only thing thats needed is to implement the 
+https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/complete/Completion.java[Completion] interface and attach it to 
+https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/Console.java[Console]
+with the method 
+
+  addCompletion(Completion)
+or
+
+  addCompletions(List<Completion> completionList)
+
+A simple Example:
+[source,java]
+.Example.java
+----
+import org.jboss.aesh.complete.*;
+import org.jboss.aesh.console.*;
+
+public class Example {
+  public static void main(String[] args) throws java.io.IOException {
+    Console console = new Console(new SettingsBuilder().create());
+
+    Completion completer = new Completion() {
+      @Override
+      public void complete(CompleteOperation co) {
+        // very simple completor
+        // if <tab> is pressed when the buffer is 'fo' or 'foo' it will
+        // be completed to 'foobar'
+        if(co.getBuffer().equals("fo") || co.getBuffer().equals("foo"))
+          co.addCompletionCandidate("foobar");
+      }
+    };
+    console.addCompletion(completer);
+
+    final ConsoleCallback consoleCallback = new ConsoleCallback() {
+      @Override
+      public int readConsoleOutput(ConsoleOperation operation) throws IOException {
+        console.out().println("======>\"" + operation.getBuffer());
+        if (operation.getBuffer().equalsIgnoreCase("quit") || 
+            operation.getBuffer().equalsIgnoreCase("exit") || 
+            operation.getBuffer().equalsIgnoreCase("reset")) {
+          console.stop();
+        }
+      }
+    };
+    console.setConsoleCallback(consoleCallback);
+    console.start();
+  }
+}
+----
+
+==== CompleteOperation
+
+The object that is sent with every registered Completion object is 
+https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/complete/CompleteOperation.java[CompletionOperation] :
+* buffer: is the current line when the user pressed 'tab'
+* cursor: the position of the cursor
+* completionCandidates: added by the programmer if the buffer match this completion.
+* offset: set by the programmer if Æsh should 'chop off' some of the completionCandidate when doing completion. Set it to the same value as cursor to keep the buffer unchanged.
+

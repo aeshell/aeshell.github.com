@@ -1,0 +1,24 @@
+= 0.43 Released
+stalep
+2013-11-20
+:revdate: 2013-11-20 12:24:00 +0100
+:awestruct-tags: [announcement, release]
+:awestruct-layout: blog
+:source-highlighter: coderay
+
+To support the JBoss Forge2 Beta2 release we released 0.43 on friday. 0.43 is a 
+rather big release with several new features and API changes. Internally we changed
+how input is parsed so it should be working better with lagging and pasted input.
+
+After some discussion we realized that man (manual pages) would be more fitting
+in the main repo. During the port to main we also changed how it works. 
+Other stuff we've added:
+
+* CommandValidation
+* Possible to override required options (Option.overrideRequired)
+* Graphics!
+* Better Color support/features
+* Possible to specify color/text-type for options
+* ls/grep/cd commands have been added to extensions (still in beta stage)
+
+For more info, read the https://issues.jboss.org/secure/ReleaseNote.jspa?projectId=12312720&version=12322693[Release notes].

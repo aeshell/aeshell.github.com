@@ -1,0 +1,20 @@
+= Welcome to the new Æsh website!
+stalep
+2013-11-16
+:revdate: 2013-11-16 22:24:00 +0100
+:awestruct-tags: [announcement, website]
+:awestruct-layout: blog
+:source-highlighter: coderay
+
+Another weekend and another attempt to get it right. This time we stole
+a lot from the brand new http://wildfly.org/[wildfly.org] web site. I hope 
+Jason et al can forgive us!
+
+We've updated the documentation, restructured it and added more sections.
+Hopefully it should be easier to get around and read up. More info below.
+
+Documentation
+-------------
+Docs have been updated, but there are still changes in the making...
+
+thats all for now!
