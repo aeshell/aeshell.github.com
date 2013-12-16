@@ -66,6 +66,16 @@ Since Æsh is also a Readline library it is possible to specify different option
 ** Specify a https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/helper/InterruptHook.java[InterruptHook] that will be called when the user initiates Ctrl-C
 * +operatorParserEnabled+
 ** Specify if Æsh should parse pipelines and redirections. Set to true by default.
+* +switchMode+*
+** Swithc between Emacs and Vi mode
+* +isManEnabled+*
+** Return true if Man is enabled
+* +getAeshContext+*
+** Get the current AeshContext
+* +isExportEnabled+
+** Return true if Export is enabled
+* +getExportFile+
+** Get the file Export variables are read from and written to
 
 === Define settings runtime
 

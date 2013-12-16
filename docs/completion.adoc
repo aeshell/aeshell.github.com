@@ -23,20 +23,26 @@ When using AeshConsole the completion is specified for each Option thats defined
 ----
 @CommandDefinition(name="color", description = "set a color")
 public static class ColorCommand implements Command {
-    @Option
+    @Option(ColorCompleter.class)
     private Color color;
 
     @Override
     public CommandResult execute(AeshConsole console) throws IOException {
-        if(files != null) {
-          for(File f : files)
-            console.out().print(f.toString());
-        }
+        if(color != null)
+          console.getShell().out().println("We got color: "+color);
         return CommandResult.SUCCESS;
+    }
+    
+    public static class ColorCompleter implements OptionCompleter {
+      @Override
+      public void complete(CompleterInvocation completerInvocation) {
+        if("red".startsWith( completerInvocation.getGivenCompleterValue())
+          completerInvocation.addCompleterValue("red");
+        ...
     }
 }
 ----
-This command is supposed to let the user select 
+This command is supposed to let the user autocomplete the specified color. Note that the completer example is very simplified and not complete.
 
 === Console
 

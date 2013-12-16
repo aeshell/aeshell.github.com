@@ -1,0 +1,26 @@
+= 0.44 Released
+stalep
+2013-12-13
+:revdate: 2013-12-13 18:46:00 +0100
+:awestruct-tags: [announcement, release]
+:awestruct-layout: blog
+:source-highlighter: coderay
+
+Today we released 0.44. Again with new features and new APIs (no, its not compatible
+with earlier releases).
+Validator, Completor and Converter all have the possibility to be invoked by a specific
+provider. This enables the validator, completor and converter to context aware.
+
+The biggest new feature is variable support. It works similar to POSIX variables and is
+defined by the export command. Æsh can read&write the variables during startup/shutdown.
+Another new feature is the AeshContext object which is used to set/get the current working
+directory. The AeshContext object is used for completors and executors.
+We also added the possibility to execute a command programatically calling the AeshConsole method executeCommand.
+
+Other changes:
+
+* Path resolver (still in beta)
+* Filelister improvements
+* Several bugfixes: History, Search, CommandValidator
+
+For more info, read the https://issues.jboss.org/secure/ReleaseNote.jspa?projectId=12312720&version=12323100[Release notes].
