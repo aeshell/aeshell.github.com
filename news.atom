@@ -2,13 +2,63 @@
 <feed xml:lang="en-US" xmlns="http://www.w3.org/2005/Atom">
   <id>http://aeshell.github.io/</id>
   <title>WildFly News</title>
-  <updated>2013-12-16T10:31:38+01:00</updated>
+  <updated>2014-01-16T01:21:15+01:00</updated>
   <link href="http://aeshell.github.io/news.atom" rel="self" type="application/atom+xml" />
   <link href="http://aeshell.github.io/" rel="alternate" type="text/html" />
   <entry>
+    <id>http://aeshell.github.io/news/2014/01/16/0.html</id>
+    <title>0.46 is out!</title>
+    <updated>2014-01-16T01:21:15+01:00</updated>
+    <published>2014-01-16T01:14:00+01:00</published>
+    <link href="http://aeshell.github.io/news/2014/01/16/0.html" rel="alternate" type="text/html" />
+    <author>
+      <name>Ståle W. Pedersen</name>
+    </author>
+    <category term="announcement"></category>
+    <category term="release"></category>
+    <summary>
+      
+      
+      
+      After several days of crunching we&#8217;ve released 0.46.
+      The BIG new feature in this version is that every command/invocation is run in its
+      own thread. For the user it wont affect you much yet, but in upcoming versions we
+      will implement the possibility for running several commands at once. Sending running
+      commands to the background/foreground at will ++
+      
+      
+      As always we&#8217;ve fixed several bugs, especially a lot of Windows related issues.
+      
+      
+      PS: be on the lookout for Forge2, rumors say it is around the corner&#8230;.
+      
+      
+      ...
+    </summary>
+    <content type="html">
+      &lt;div id=&quot;preamble&quot;&gt;
+      &lt;div class=&quot;sectionbody&quot;&gt;
+      &lt;div class=&quot;paragraph&quot;&gt;
+      &lt;p&gt;After several days of crunching we&amp;#8217;ve released 0.46.
+      The BIG new feature in this version is that every command/invocation is run in its
+      own thread. For the user it wont affect you much yet, but in upcoming versions we
+      will implement the possibility for running several commands at once. Sending running
+      commands to the background/foreground at will ++&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;paragraph&quot;&gt;
+      &lt;p&gt;As always we&amp;#8217;ve fixed several bugs, especially a lot of Windows related issues.&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;paragraph&quot;&gt;
+      &lt;p&gt;PS: be on the lookout for Forge2, rumors say it is around the corner&amp;#8230;.&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;/div&gt;
+    </content>
+  </entry>
+  <entry>
     <id>http://aeshell.github.io/news/2013/12/13/0.html</id>
     <title>0.44 Released</title>
-    <updated>2013-12-16T10:31:38+01:00</updated>
+    <updated>2014-01-16T01:11:23+01:00</updated>
     <published>2013-12-13T18:46:00+01:00</published>
     <link href="http://aeshell.github.io/news/2013/12/13/0.html" rel="alternate" type="text/html" />
     <author>
@@ -74,7 +124,7 @@
   <entry>
     <id>http://aeshell.github.io/news/2013/11/20/0.html</id>
     <title>0.43 Released</title>
-    <updated>2013-12-16T10:31:38+01:00</updated>
+    <updated>2014-01-16T01:11:23+01:00</updated>
     <published>2013-11-20T12:24:00+01:00</published>
     <link href="http://aeshell.github.io/news/2013/11/20/0.html" rel="alternate" type="text/html" />
     <author>
@@ -168,7 +218,7 @@
   <entry>
     <id>http://aeshell.github.io/news/2013/11/16/New-Aesh-site.html</id>
     <title>Welcome to the new Æsh website!</title>
-    <updated>2013-12-16T10:31:38+01:00</updated>
+    <updated>2014-01-16T01:11:23+01:00</updated>
     <published>2013-11-16T22:24:00+01:00</published>
     <link href="http://aeshell.github.io/news/2013/11/16/New-Aesh-site.html" rel="alternate" type="text/html" />
     <author>
@@ -232,7 +282,7 @@
   <entry>
     <id>http://aeshell.github.io/news/2013/03/21/0.html</id>
     <title>0.34 Released</title>
-    <updated>2013-12-16T10:31:38+01:00</updated>
+    <updated>2014-01-16T01:11:23+01:00</updated>
     <published>2013-03-21T22:24:00+01:00</published>
     <link href="http://aeshell.github.io/news/2013/03/21/0.html" rel="alternate" type="text/html" />
     <author>
@@ -278,7 +328,7 @@
   <entry>
     <id>http://aeshell.github.io/news/2012/11/16/0.html</id>
     <title>0.24 Released</title>
-    <updated>2013-12-16T10:31:38+01:00</updated>
+    <updated>2014-01-16T01:11:23+01:00</updated>
     <published>2012-11-16T22:24:00+01:00</published>
     <link href="http://aeshell.github.io/news/2012/11/16/0.html" rel="alternate" type="text/html" />
     <author>
@@ -318,7 +368,7 @@
   <entry>
     <id>http://aeshell.github.io/news/2012/11/02/0.html</id>
     <title>0.22 Released</title>
-    <updated>2013-12-16T10:31:38+01:00</updated>
+    <updated>2014-01-16T01:11:23+01:00</updated>
     <published>2012-11-02T22:24:00+01:00</published>
     <link href="http://aeshell.github.io/news/2012/11/02/0.html" rel="alternate" type="text/html" />
     <author>
@@ -350,7 +400,7 @@
   <entry>
     <id>http://aeshell.github.io/news/2012/10/02/new-name.html</id>
     <title>New name!</title>
-    <updated>2013-12-16T10:31:38+01:00</updated>
+    <updated>2014-01-16T01:11:23+01:00</updated>
     <published>2012-10-02T22:24:00+01:00</published>
     <link href="http://aeshell.github.io/news/2012/10/02/new-name.html" rel="alternate" type="text/html" />
     <author>
@@ -381,7 +431,7 @@
   <entry>
     <id>http://aeshell.github.io/news/2012/09/06/0.html</id>
     <title>0.20 Released!</title>
-    <updated>2013-12-16T10:31:38+01:00</updated>
+    <updated>2014-01-16T01:11:23+01:00</updated>
     <published>2012-09-06T22:24:00+01:00</published>
     <link href="http://aeshell.github.io/news/2012/09/06/0.html" rel="alternate" type="text/html" />
     <author>
@@ -413,7 +463,7 @@
   <entry>
     <id>http://aeshell.github.io/news/2012/08/23/even-more-docs.html</id>
     <title>Even More Documentation</title>
-    <updated>2013-12-16T10:31:38+01:00</updated>
+    <updated>2014-01-16T01:11:23+01:00</updated>
     <published>2012-08-23T22:24:00+01:00</published>
     <link href="http://aeshell.github.io/news/2012/08/23/even-more-docs.html" rel="alternate" type="text/html" />
     <author>
@@ -444,7 +494,7 @@
   <entry>
     <id>http://aeshell.github.io/news/2012/08/22/more-docs.html</id>
     <title>More Documentation</title>
-    <updated>2013-12-16T10:31:38+01:00</updated>
+    <updated>2014-01-16T01:11:23+01:00</updated>
     <published>2012-08-22T22:24:00+01:00</published>
     <link href="http://aeshell.github.io/news/2012/08/22/more-docs.html" rel="alternate" type="text/html" />
     <author>
@@ -475,7 +525,7 @@
   <entry>
     <id>http://aeshell.github.io/news/2012/08/16/website.html</id>
     <title>Online</title>
-    <updated>2013-12-16T10:31:38+01:00</updated>
+    <updated>2014-01-16T01:11:23+01:00</updated>
     <published>2012-08-16T21:58:00+01:00</published>
     <link href="http://aeshell.github.io/news/2012/08/16/website.html" rel="alternate" type="text/html" />
     <author>
