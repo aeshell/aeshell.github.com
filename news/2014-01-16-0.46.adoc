@@ -1,0 +1,17 @@
+= 0.46 is out!
+stalep
+2014-01-16
+:revdate: 2014-01-16 01:14:00 +0100
+:awestruct-tags: [announcement, release]
+:awestruct-layout: blog
+:source-highlighter: coderay
+
+After several days of crunching we've released 0.46.
+The BIG new feature in this version is that every command/invocation is run in its
+own thread. For the user it wont affect you much yet, but in upcoming versions we
+will implement the possibility for running several commands at once. Sending running
+commands to the background/foreground at will ++
+
+As always we've fixed several bugs, especially a lot of Windows related issues.
+
+PS: be on the lookout for Forge2, rumors say it is around the corner....
