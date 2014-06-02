@@ -13,7 +13,7 @@ Ståle W. Pedersen
 
 == Option
 
-A link:{base_url}/doc/command/index.html[Command] option is defined by either an Option annotation or an OptionBuilder object.
+A link:{base_url}/docs/command/index.html[Command] option is defined by either an Option annotation or an OptionBuilder object.
 In this document we will focus on the annotations and its values.
 Æsh support several different options types each with defined as a seperate annotation. The differen annotations:
 
@@ -78,7 +78,7 @@ With OptionRenderer you can specify how a specific option should look. Eg you ca
 
 
 [source,java]
-.ExitCommand.java
+.TestCommand.java
 ----
 @CommandDefinition(name="ls", description = "[OPTION]... [FILE]...")
 public static class TestCommand implements Command {
@@ -104,7 +104,7 @@ public static class TestCommand implements Command {
     private List<File> arguments;
 
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws IOException {
+    public CommandResult execute(CommandInvocation commandInvocation) throws IOException, InterruptedException {
         if(help) {
             commandInvocation.getShell().out().println(commandInvocation.getHelpInfo("ls"));
         }

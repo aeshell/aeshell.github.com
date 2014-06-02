@@ -1,0 +1,33 @@
+= 0.55 is out!
+stalep
+2014-06-01
+:revdate: 2014-06-01 01:14:00 +0100
+:awestruct-tags: [announcement, release]
+:awestruct-layout: blog
+:source-highlighter: coderay
+
+It's been a long time since we've done any updates here, but don't think we've been
+slacking. On May 29th we released version 0.55!
+
+First we must thank our external contributors that helped made Æsh so much better.
+
+* Robert Balent, awesome work on path resolver, redirection ++
+* Daniel Cunha, refactoring, cleanups and new commands
+* Helio Frota, refactoring, cleanups +
+
+You guys rock!!
+
+Since the last update we've made a lot of changes. We've added a lot of new features
+and fixed many bugs. Some of the higlights:
+
+* Added export command (variables)
+* Added the possibility to interrupt running commands with ctrl-c/ctrl-d
+* Added several new commands; cd, pwd, pushd, popd, clear, grep, cat and touch
+* Enhanced and fixed the path resolver
+* Added result callback when a command has finished
+* Added processing of unclosed quotes
+* Added support for ignoreeof
+* Fixed issue when Æsh is started in the background
+* Fixed several Windows specific issues
+* plus much more
+

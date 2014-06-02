@@ -20,8 +20,6 @@ To define a command you have to implement the https://github.com/aeshell/aesh/bl
 This is however not enough for Æsh, we also need to add some meta-data like command name, description, etc. Currently we can do this in two ways, either through a builder pattern or with the https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/CommandDefinition.java[CommandDefinition] annotations.
 CommandDefinition have two required fields, name and description. Name is the name of the command and description is used by Æsh to provide some automatically generated info. - so the better you are with describing the commands the better runtime info you'll get.
 
-There is a third attribute to CommandDefinition which is validator. Validator is of type https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/validator/CommandValidator.java[CommandValidator] and will be called just before Command.execute(..) is called. As described in the Option doc Options have their own validator, but with the CommandValidator you can verify the combination of the Option values before executing the Command.
-
 A small example:
 [source,java]
 .ExitCommand.java
@@ -29,12 +27,14 @@ A small example:
 @CommandDefinition(name="exit", description = "exit the program")
 public static class ExitCommand implements Command {
     @Override
-    public CommandResult execute(CommandInvocation invocation) throws IOException {
+    public CommandResult execute(CommandInvocation invocation) throws IOException, InterruptedException {
         invocation.stop();
         return CommandResult.SUCCESS;
     }
 }
 ----
+
+There is a third attribute to CommandDefinition which is validator. Validator is of type https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/validator/CommandValidator.java[CommandValidator] and will be called just before Command.execute(..) is called. As described in the Option doc Options have their own validator, but with the CommandValidator you can verify the combination of the Option values before executing the Command.
 
 [source,java]
 .Example with validator:
@@ -48,7 +48,7 @@ public static class FooCommand implements Command {
     private int high;
 
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws IOException {
+    public CommandResult execute(CommandInvocation commandInvocation) throws IOException, InterruptedException {
         commandInvocation.getShell().out().println("you got foooed");
         return CommandResult.SUCCESS;
     }
@@ -63,3 +63,4 @@ public static class FooCommandValidator implements CommandValidator<FooCommand> 
 }
 ----
 
+The last attribute is a result handler. The result handler is of type https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/result/ResultHandler.java[ResultHandler] and is called just after Command.execute(..) has returned. Similar to Validator this attribute is optional.
