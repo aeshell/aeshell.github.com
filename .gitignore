@@ -10,6 +10,9 @@ _site
 .settings
 .project
 .buildpath
+.idea/
 
 ## Ruby tools
 .rvmrc
+.sass-cache/
+cache/
