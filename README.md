@@ -1,7 +1,7 @@
 æsh-site
 ============
 
-Source of [Æsh Website](http://aeshell.github.org)
+Source of [Æsh Website](http://aeshell.github.io)
 
 
 Prerequisites
