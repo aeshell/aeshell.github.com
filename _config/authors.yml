@@ -17,3 +17,15 @@ Brian’s background is in international business and East Asian studies, with a
   location: "Ballwin, MO"
   occupation: "Domain Management Lead"
   avatar: bstansberry.jpg
+eprogramming:
+  name: "Helio Frota"
+  bio: "I'm tech lead / hands-on technical software architect at CIALNE."
+  location: "Fortaleza, Brazil"
+  occupation: "Hands-on technical software architect"
+  avatar: eprogramming.jpg
+soro:
+  name: "Daniel Cunha"
+  bio: "A simple Java developer"
+  location: "Florianópolis, Brazil"
+  occupation: "Software Developer"
+  avatar: soro.jpg
