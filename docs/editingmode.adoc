@@ -117,4 +117,4 @@ Changing key bindings will only work in Emacs mode.
 
 
 ---
-Disclamer: Much of this documentation was taken from the GNU Readline docs. Please read the GNU Readline documentation <a href="http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html#Documentation">here</a> for more info regarding GNU Readline and its options.
+Disclamer: Much of this documentation was taken from the GNU Readline docs. Please read the GNU Readline documentation link:http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html#Documentation"[here] for more info regarding GNU Readline and its options.
