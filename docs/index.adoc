@@ -21,11 +21,11 @@ The documentation is written in Asciidoc, which is a lightweight markup language
 
 Follow these steps to conribute documentation:
 
-* Clone http://github.com/aeshell/aesh.github.com on GitHub.
+* Clone https://github.com/aeshell/aeshell.github.com on GitHub.
 * Add a new .adoc file in the docs directory. 
 * Push the empty Asciidoc file to your GitHub repository.
 * Use the GitHub Asciidoc editor to write your docs and preview changes. Of course you can use your own editor if you prefer so.
 
 The Asciidoc Syntax Quick Reference
-http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[quick-reference]
+link:http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[quick-reference]
 gives a good introduction about the markup language.
