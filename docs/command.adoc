@@ -13,7 +13,7 @@ Ståle W. Pedersen
 
 == Command
 
-A command in Æsh is a _program_ thats executed in a shell/terminal. 
+A command in Æsh is a _program_ thats executed in a shell/terminal.
 
 To define a command you have to implement the https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/console/command/Command.java[Command] interface. This interface have one method, execute, which is called when the command is executed.
 
