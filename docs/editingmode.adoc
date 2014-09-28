@@ -5,20 +5,24 @@ index: 7
 ---
 
 Editing
--------
+=======
+Ståle W. Pedersen
+:Author:   Ståle W. Pedersen
+:Email:    <spederse@redhat.com>
+:source-highlighter: prettify
+
+== Editing
 
 Similar to the GNU Readline library Æsh provides functions that allow users to edit command lines as they are typed in. Æsh har two different editing modes, Emacs and Vi. As with GNU Readline Emacs mode is default.
 Features in Æsh includes functions to maintain a list of previously-entered command lines, to recall and perhaps reedit those lines, and perform csh-like history expansion on previous commands.
 
-Introduction to Line Editing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=== Introduction to Line Editing
 
 Often during an interactive session you type in a long line of text, only to notice that the first word on the line is misspelled. Æsh gives you a set of commands for manipulating the text as you type it in, allowing you to just fix your typo, and not forcing you to retype the majority of the line. Using these editing commands, you move the cursor to the place that needs correction, and delete or insert the text of the corrections. Then, when you are satisfied with the line, you simply press +RET+. You do not have to be at the end of the line to press +RET+; the entire line is accepted regardless of the location of the cursor within the line.
 
 To describe the notation used to represent keystrokes, the text +C-k+ is read as 'Control-K' describes the character produced when the +k+ key is pressed while the Control key is depressed. The text +M-k+ is read as 'Meta-K' and describes the character produced when the Meta key (if you have one) is pressed, and the +k+ key is pressed. The Meta key is labeled +ALT+ on many keyboards.
 
-Essentials
-~~~~~~~~~~
+=== Essentials
 
 In order to enter characters into the line, simply type them. The typed character appears where the cursor was, and then the cursor moves one space to the right. If you mistype a character, you can use your erase character to back up and delete the mistyped character.
 
@@ -26,8 +30,7 @@ Sometimes you may mistype a character, and not notice the error until you have t
 
 When you add text in the middle of a line, you will notice that characters to the right of the cursor are `pushed over' to make room for the text that you have inserted. Likewise, when you delete text behind the cursor, characters to the right of the cursor are `pulled back' to fill in the blank space created by the removal of the text. A list of the bare essentials for editing the text of an input line follows.
 
-Emacs Commands
-~~~~~~~~~~~~~~
+=== Emacs Commands
 
 * +C-b+
 ** Move back one character.
@@ -58,8 +61,7 @@ empty line.
 ** Kill from the cursor to the end of the current word, or, if between words, to the end of the next word.
 Word boundaries are the same as those used by +M-f+.
 
-Vi Commands
-~~~~~~~~~~~
+=== Vi Commands
 
 Æsh does not have a full set of +vi+ editing functions, it does contain enough to allow simple editing of the line. Æsh vi mode behaves as specified in the POSIX standard.
 
@@ -67,8 +69,7 @@ When you enter a line in +vi+ mode, you are already placed in 'insertion' mode, 
 
 In order to switch interactively between +emacs+ and +vi+ editing modes, use the command +M-C-j+ (bound to emacs-editing-mode when in +vi+ mode and to vi-editing-mode in +emacs+ mode). The Readline default is +emacs+ mode.
 
-Searching for Commands in History
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=== Searching for Commands in History
 
 Æsh provides commands for searching through the command history for lines containing a specified string. There are two search modes:  *incremental* and *non-incremental*.
 
@@ -76,21 +77,18 @@ Incremental searches begin before the user has finished typing the search string
 To search backward in the history for a particular string, type +C-r+. Typing +C-s+ searches forward through the history. The characters present in the value of the +isearch-terminators+ variable are used to 
 terminate an incremental search. If that variable has not been assigned a value, the +ESC+ and +C-J+ characters will terminate an incremental search. +C-g+ will abort an incremental search and restore the original line. When the search is terminated, the history entry containing the search string becomes the current line.
 
-Æsh Init File
-~~~~~~~~~~~~~
+=== Æsh Init File
 
 Although the Æsh library comes with a set of Emacs-like keybindings installed by default, it is possible to use a different set of keybindings.
 Any user can customize programs that use Readline by putting commands in an +inputrc+ file, conventionally in his home directory. The name of this file is taken from the value of the environment variable +INPUTRC+. If that variable is unset, the default is +~/.inputrc+.  If that file does not exist or cannot be read, the ultimate default is +/etc/inputrc+.
 
 It is also possible to change from the default Emacs-like key binding to use Vi line editing in the init file.
 
-Æsh Init File Syntax
-~~~~~~~~~~~~~~~~~~~~
+=== Æsh Init File Syntax
 
 Æsh only support a simple structure of the GNU Readline init file. The current implementation only support variable settings and key bindings outside of conditional constructs. Blank lines are ignored and lines beginning with a +#+ are comments. 
 
-Variables
-~~~~~~~~~
+=== Variables
 
 The syntax for setting variables is simple: +set variable value+
 
@@ -105,8 +103,7 @@ Current supported variable settings in Æsh:
 * +disable-completion+
 ** If set to +On+, Readline will inhibit word completion. Completion characters will be inserted into the line as if they had been mapped to +self-insert+. The default is +off+.
 
-Key Bindings
-~~~~~~~~~~~~
+=== Key Bindings
 
 The syntax for controlling key bindings in the init file is simple. First you need to find the name of the command that you want to change. The following sections contain tables of the command name, the default keybinding, if any, and a short description of what the command does.
 Once you know the name of the command, simply place on a line in the init file the name of the key you wish to bind the command to, a colon, and then the name of the command. There can be no space between the key name and the colon -- that will be interpreted as part of the key name. The name of the key can be expressed in different ways, depending on what you find most comfortable.
@@ -117,4 +114,4 @@ Changing key bindings will only work in Emacs mode.
 
 
 ---
-Disclamer: Much of this documentation was taken from the GNU Readline docs. Please read the GNU Readline documentation <a href="http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html#Documentation">here</a> for more info regarding GNU Readline and its options.
+Disclamer: Much of this documentation was taken from the GNU Readline docs. Please read the GNU Readline documentation link:http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html#Documentation"[here] for more info regarding GNU Readline and its options.

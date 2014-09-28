@@ -1,0 +1,210 @@
+---
+layout: docs
+title: Command Line Parser
+index: 9
+---
+
+Parse
+=====
+Ståle W. Pedersen
+:Author:   Ståle W. Pedersen
+:Email:    <spederse@redhat.com>
+:source-highlighter: prettify
+
+== Parse
+
+=== Command Line Parser
+
+Æsh provide a Command Line Parser API which make it very easy to parse command lines. The command line parser is independant of the Console API, but can be used with it if wanted. The API support defining the commands you want parsed both with annotations and with a builder pattern.
+
+=== Annotations
+
+Probably the easiest way to define a parser is by using annotations. 
+The annotation must be defined at class level and is called link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/CommandDefinition.java[CommandDefinition]. 
+CommandDefinition is the only strong requirement, but without any Options or Arguments the command would not accept any attributes.
+
+There are four different option types:
+
+link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/Option.java[*Option*] 
+      is the simplest kind of Option with only one value
+      
+      Example: -h foo
+
+link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/OptionList.java[OptionList]
+      can contain several values. It must be defined in connection to a field that implements Collection.
+      
+      Example: --foo bar1,bar2,bar3
+      
+link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/OptionGroup.java[OptionGroup]
+      is similar to OptionList in that it store several values, but OptionGroup also store the key given. This annotation must be used in connection to a field that implements Map.
+      
+      Example: -Dname1=value1 -Dname2=value2
+      
+link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/Arguments.java[Arguments]
+      defines the possible arguments thats given to a command. It do not require any option key, but as OptionList it require that the field must implement Collection.
+
+=== A simple first example:
+[source,java]
+.Example1.java
+----
+@CommandDefinition(name = "example1", description = "a simple example")
+public class Example1 {
+
+  @Option(name = "X", description = "enable X", hasValue = false)
+  private Boolean enableX;
+
+  @Option(shortName = 'e', name = "equal", description = "enable equal", required = true)
+  private String equal;
+
+  @Option(shortName = 'i', name = "int1")
+  private Integer int1;
+
+  @OptionList
+  public List<String> values;
+
+  public Boolean getEnableX() { return enableX; }
+  public String getEqual() { return equal; }
+  public List<String> getValues() { return values; }
+}
+----
+So lets make it a bit more interesting and say that we want to use this class to parse an line like: 
+"example1 --X --equal blabla --values one,two,three"
+[source,java]
+.Example1Test.java
+----
+Example1 example1 = new Example1();
+//this will throw an error if the object do not use the required annotations and
+//if the line contain option name/values that do not match the defined options
+ParserGenerator.parseAndPopulate(example1, "example1 --X --equal blabla --values one,two,three");
+assertTrue(example1.getEnableX());
+assertEquals("blabla", example1.getEqual());
+assertEquals("one", example1.getValues().get(0));
+----
+A lot of the different settings are available for each option type which are described below.
+
+=== Option
+
+The different Option types have some common elements like:
+
+* +name+
+** The option name. If it's not set the field name will be used. Two dashes (--) are added to the name on the command line.
+* +shortName+ 
+** The short option name. If it's not set the first char of name will be used. One dash (-) is added to the short name on the command line.
+* +description+
+** A simple description of the option. This info is displayed when help info is shown.
+* +required+
+** Specify if this option is required. Defaults to false.
+* +defaultValue[]+
+** Specify the default value(s) that will be used if the option do not have any value. Defaults to empty array.
+* +hasValue+
+** Define if this option should have a value connected to it. Only possible to set this to true when the field type is Boolean/boolean. Default is true.
+* +converter+
+** Specify a custom converter for the data type of the connected field.
+* +completer+
+** Specify a custom completer
+* +validator+
+** Specify a custom validator
+
+=== Converter
+When using a "custom" type for a field a converter is needed to inject the correct value. To ensure this we created a simple interface that all the converter implementations need to implement:
+[source,java]
+.CLConverter.java
+----
+public interface CLConverter<T> {
+   T convert(String input);
+}
+----
+
+Lets show an example of a rather simple (and ignorant) CurrencyConverter:
+[source, java]
+.CurrencyConverter.java
+----
+import java.util.Currency;
+
+public class CurrencyConverter implements CLConverter<Currency> {
+  @Override
+  public Currency convert(String input) {
+    return Currency.getInstance(input);
+  }
+}
+----
+A more production friendly converter would try to do some validation of the input etc...
+
+=== Completer
+Note that a completer is not needed if you only want to parse a command line and just populate the values. But if you are creating your own commands and want the possibility to autocomplete the values you need a completer.
+Aesh already have a built in completer for Files and Boolean/booleans, all other types require adefined completer.
+The Completer interface looks like:
+[source, java]
+.OptionCompleter.java
+----
+public interface OptionCompleter {
+  CompleterData complete(String completeValue);
+}
+----
+
+A FooCompleter 
+[source, java]
+.FooOptionCompleter.java
+----
+public class FooOptionCompleter {
+  @Override
+  public CompleterData complete(String completeValue) {
+    List<String> values = new ArrayList<String>();
+    if(completeValue == null || completeValue.length() == 0)
+      values.add("Foo");
+    else if("Foo".startsWith(completeValue))
+      values.add("Foo")
+    return new CompleterData(values);
+  }
+}
+----
+
+=== Validator
+The validator is optional and will be executed during population of the option value. The validator interface looks like:
+[source,java]
+.OptionValidator.java
+----
+public interface OptionValidator<T> {
+  void validate(T value) throws OptionValidatorException;
+}
+----
+
+Note that implementations of this interface must have an empty constructor.
+
+=== Builder
+
+It is also possible to create a parser by using the builder classes. As with annotations there are two classes; link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/ParserBuilder.java[ParserBuilder] and link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/OptionBuilder.java[OptionBuilder].
+A simple example on how they can be used:
+
+How the parser is used is described in the section below.
+
+=== Usage
+
+When using annotations you create the parser like:
+
+[source,java]
+----
+CommandLineParser parser = ParserGenerator.generateParser(MyCommand1.class);
+----
+
+With a builder you use:
+[source,java]
+----
+CommandLineParser parser = ParserBuilder(....).generateParser();
+----
+
+The link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/CommandLineParser.java[CommandLineParser] object has two tasks. First is to parse a command line and the other is to print out usage info based on the defined parameter and options.
+
+To parse a line simply do:
+
+[source,java]
+----
+CommandLine cl = commandLineParser.parse(inputString);
+----
+
+The link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/cl/CommandLine.java[CommandLine] class have many defined methods of checking if specific options where enabled and with what value.
+
+Please note that if any unspecified options are found an IllegalArgumentException will be thrown. Also, if a required option is not found or options specified with a value, but is not given any an IllegalArgumentException will be thrown.
+
+The CommandLine also feature a nice way of printing out a usage text (help info). This text is parsed from the defined parameter/options.
+

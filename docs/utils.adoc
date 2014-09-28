@@ -18,15 +18,13 @@ Ståle W. Pedersen
 === Parser
 
 When working with command-based programs there is always a lot of text parsing, sorting, ordering, etc...
-<a href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/util/Parser.java">Parser</a> provide a method +formatDisplayList+ to format lists in the same way it is sorted in Bash. Æsh use this method internally to sort completions and filenames/directories when redirecting. Several extensions also use it for displaying filenames/directories.
+link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/util/Parser.java[Parser] provide a method +formatDisplayList+ to format lists in the same way it is sorted in Bash. Æsh use this method internally to sort completions and filenames/directories when redirecting. Several extensions also use it for displaying filenames/directories.
 
 Another useful method is +findWordClosestToCursor+. This method will return the word closest to the cursor (from the left) and also merge words that are diveded by escaped spaces. Eg: the word foo\ bar and cursor is on the position after 'r', the method will return "foo\ bar". If the word didnt have escaped space, but "normal" space like: "foo bar" the same method would return "bar.
-<br/>
 
 === FileLister
 
-https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/util/FileLister.java[FileLister] have one very useful method: +listMatchingDirectories+. Based on a text given as input in addition to the current working directory it will try to find every file/folder that match the given input. If no input is given it will list the current working directory.An example: given the input text: +/var/log/s+ the method will add every file and folder starting with 'e' in the +/var/log+ directory to the Completion object given as parameter to the method. Note that this can be used oustide a complete operation too. Just fetch the possible files/directories with: +CompletionOperation.getCompletionCandidates()+.
-<br/>
+link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/util/FileLister.java[FileLister] have one very useful method: +listMatchingDirectories+. Based on a text given as input in addition to the current working directory it will try to find every file/folder that match the given input. If no input is given it will list the current working directory.An example: given the input text: +/var/log/s+ the method will add every file and folder starting with 'e' in the +/var/log+ directory to the Completion object given as parameter to the method. Note that this can be used oustide a complete operation too. Just fetch the possible files/directories with: +CompletionOperation.getCompletionCandidates()+.
 
 === Colors and Text types
 
@@ -34,14 +32,14 @@ Since Æsh is targeting ANSI terminals it also provide a API to easily generate 
 
 ==== TerminalCharacter
 
-<a href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/terminal/TerminalCharacter.java">TerminalCharacter</a> is a value object that describes how a character should be displayed in the terminal. It is possible to specify the background and text <a href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/terminal/Color.java">color</a> and the <a href="https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/terminal/CharacterType.java">character type</a>.
+link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/terminal/TerminalCharacter.java[TerminalCharacter] is a value object that describes how a character should be displayed in the terminal. It is possible to specify the background and text link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/terminal/Color.java[color] and the link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/terminal/CharacterType.java[character type].
 
 ==== TerminalString
 
-https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/terminal/TerminalString.java[TerminalString] is a value object that describes how a String object should be displayed in the terminal. It has the same background and text color and character type attributes as TerminalCharacter.
+link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/terminal/TerminalString.java[TerminalString] is a value object that describes how a String object should be displayed in the terminal. It has the same background and text color and character type attributes as TerminalCharacter.
 
 
-If these classes do not suit your need Æsh also provide a class https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/util/ANSI.java[ANSI] that provides many methods like:
+If these classes do not suit your need Æsh also provide a class link:https://github.com/aeshell/aesh/blob/master/src/main/java/org/jboss/aesh/util/ANSI.java[ANSI] that provides many methods like:
 * changing text color
 * changing background color
 * reseting
