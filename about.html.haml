@@ -9,8 +9,13 @@ title: About
       %h1 What is &AElig;sh?
       %p 
         &AElig;sh is a configurable, extendable, flexible Java Terminal API
+        &AElig;sh consists of several modules, most notable is &AElig;sh itself, &AElig;sh-Readline and &AElig;sh-Extensions
   .row-fluid 
     .well.post-bg
+      %h2 &AElig;sh
+      %p
+        &AElig;sh is a Command API built on top of &AElig;sh-Readline. In the simplest sense &AElig;sh do not know/care about any terminal, it parses input and output and execute commands. This some of the featurs of &AElig;sh:
+
       .row-fluid
         .span6
           %h4 Configurable
@@ -36,13 +41,13 @@ title: About
           %p &AElig;sh support both VI and EMACS editing mode. Its also possible to enable your own custom editing mode if wanted. &AElig;sh can be configured to read then +inputrc+ file on startup for custom editing properties. - this can all be disabled if wanted.
         .span6
           %h4 Built-in Commands
-          %p &AElig;sh provides a few built-in commands
+          %p &AElig;sh provides a few built-in commands which can be enable/disabled as needed.
           %ul
             %li alias
             %li unalias
             %li man
+            %li export
           %p
-            They can all be enabled/disabled if wanted. The man command must be integrated into the running console to work properly. Read more in the documentation.
       .row-fluid
         %p
       .row-fluid
@@ -60,5 +65,29 @@ title: About
           %p Æsh provide variable support similar to POSIX shells. The variables can be managed during runtime with the export command and/or from a file during startup.
         .span6
           %h4 Undo, Redo, Masking, Paste buffer, etc
-          %p - yes we have that as well....
-
+          %p - yes all the features thats available through &AElig;sh-Readline is also available through &AElig;sh.
+  .row-fluid 
+    .well.post-bg
+      %h2 &AElig;sh-Readline
+      %p
+        &AElig;sh-Readline is the module that's responsible for all the terminal interaction. It supports a wide range of terminal connections, not only local.
+      .row-fluid
+        .span6
+          %h4 Local terminals
+          %p &AElig;sh-Readline supports local/native terminal connection on the following plattforms:
+          %ul
+            %li POSIX (Linux, HPUX, Solaris, ++)
+            %li Mac
+            %li Windows
+        .span6
+          %h4 Telnet
+          %p
+            &AElig;sh-readline can be started as a Telnet service that accepts remote connections over the Telnet protocol.
+      .row-fluid
+        .span6
+          %h4 SSH
+          %p &AElig;sh-readline can be started as a SSH service that accepts remote connections over the SSH protocol.
+        .span6
+          %h4 Websocket
+          %p
+            &AElig;sh-readline can be started as a Websocket service that accepts remote connections through a web browser.
