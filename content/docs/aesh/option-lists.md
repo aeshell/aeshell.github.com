@@ -1,0 +1,102 @@
+---
+date: '2026-01-11T15:00:00+01:00'
+draft: false
+title: 'Option Lists'
+---
+
+The `@OptionList` annotation defines options that accept multiple values separated by a delimiter.
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `name` | `String` | `""` | Option name (variable name if empty) |
+| `shortName` | `char` | `'\u0000'` | Short name (e.g., `-p`) |
+| `description` | `String` | `""` | Help description |
+| `valueSeparator` | `char` | `','` | Character separating values |
+| `required` | `boolean` | `false` | Is option required? |
+| `defaultValue` | `String[]` | `{}` | Default values |
+| `askIfNotSet` | `boolean` | `false` | Prompt user if not set |
+| `converter` | `Class<? extends Converter>` | `NullConverter.class` | Custom value converter |
+| `completer` | `Class<? extends OptionCompleter>` | `NullOptionCompleter.class` | Custom completer |
+| `validator` | `Class<? extends OptionValidator>` | `NullValidator.class` | Custom validator |
+| `activator` | `Class<? extends OptionActivator>` | `NullActivator.class` | Custom activator |
+| `renderer` | `Class<? extends OptionRenderer>` | `NullOptionRenderer.class` | Custom renderer |
+| `parser` | `Class<? extends OptionParser>` | `AeshOptionParser.class` | Custom parser |
+
+## Basic Example
+
+```java
+@CommandDefinition(name = "build")
+public class BuildCommand implements Command<CommandInvocation> {
+
+    @OptionList(name = "modules", description = "Modules to build")
+    private List<String> modules;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Building: " + String.join(", ", modules));
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Usage: `build --modules module1,module2,module3`
+Or with space: `build --modules module1,module2,module3`
+
+## Custom Separator
+
+Use `valueSeparator` to change the delimiter:
+
+```java
+@OptionList(name = "ports", valueSeparator = ':', description = "Port list")
+private List<Integer> ports;
+```
+
+Usage: `build --ports 8080:8081:8082`
+
+## With Converter
+
+```java
+@OptionList(
+    name = "files", 
+    converter = PathConverter.class,
+    description = "List of files"
+)
+private List<Path> files;
+
+public static class PathConverter implements Converter<Path> {
+    @Override
+    public Path convert(String input) {
+        return Paths.get(input);
+    }
+}
+```
+
+Usage: `process --files /path/file1.txt,/path/file2.txt`
+
+## Default Values
+
+```java
+@OptionList(
+    defaultValue = {"core", "utils", "api"},
+    description = "Modules"
+)
+private List<String> modules;
+```
+
+## Set Collection
+
+Use `Set` instead of `List` to eliminate duplicates:
+
+```java
+@OptionList(description = "Unique tags")
+private Set<String> tags;
+```
+
+## Custom Types
+
+```java
+@OptionList(converter = VersionConverter.class, description = "Supported versions")
+private List<Version> versions;
+```
