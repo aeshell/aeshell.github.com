@@ -614,6 +614,20 @@ try {
 }
 ```
 
+## Working Examples
+
+The [aesh-examples repository](https://github.com/aeshell/aesh-examples) contains complete working examples demonstrating both runners:
+
+### Console Runner Examples
+- **[getting-started](https://github.com/aeshell/aesh-examples/tree/master/aesh/getting-started)** - Full console application with multiple commands, history, and aliases
+- **[getting-started-input](https://github.com/aeshell/aesh-examples/tree/master/aesh/getting-started-input)** - Interactive input handling and validation
+
+### Runtime Runner Examples
+- **[getting-started-runtime](https://github.com/aeshell/aesh-examples/tree/master/aesh/getting-started-runtime)** - CLI tool pattern with command-line argument processing
+- **[native-runtime](https://github.com/aeshell/aesh-examples/tree/master/aesh/native-runtime)** - GraalVM native image compilation
+
+See the [Examples and Tutorials](../examples) page for detailed information about all available examples.
+
 ## Best Practices
 
 1. **Always add exit command**: For console applications, always call `.addExitCommand()` to allow users to exit gracefully.

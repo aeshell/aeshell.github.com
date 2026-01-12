@@ -149,3 +149,24 @@ public class CompletionExample {
     }
 }
 ```
+
+## Next Steps
+
+Now that you understand the basics:
+
+- Learn about the [Readline API](../readline-api) for advanced features
+- Explore [Edit Modes](../edit-modes) for Emacs and Vi key bindings
+- Discover [Completion](../completion) strategies for tab completion
+- Check out [Remote Connectivity](../connectivity) for SSH, Telnet, and WebSocket support
+- Browse complete working code in [Examples and Tutorials](../examples)
+
+## Working Examples
+
+The [aesh-examples repository](https://github.com/aeshell/aesh-examples) contains several readline examples:
+
+- **[getting-started](https://github.com/aeshell/aesh-examples/tree/master/readline/getting-started)** - Simple readline example
+- **[getting-started-ext](https://github.com/aeshell/aesh-examples/tree/master/readline/getting-started-ext)** - Extended example with more features
+- **[shell](https://github.com/aeshell/aesh-examples/tree/master/readline/shell)** - Simple shell implementation
+- **[snake](https://github.com/aeshell/aesh-examples/tree/master/readline/snake)** - Snake game demonstrating terminal control
+
+See the [Examples and Tutorials](../examples) page for detailed information about all available examples.

@@ -189,3 +189,14 @@ telnet.start();
 
 // Both run concurrently
 ```
+
+## Working Examples
+
+The [aesh-examples repository](https://github.com/aeshell/aesh-examples) contains complete working examples for all connectivity types:
+
+- **[shell-ssh](https://github.com/aeshell/aesh-examples/tree/master/readline/shell-ssh)** - Shell over SSH with authentication
+- **[shell-telnet](https://github.com/aeshell/aesh-examples/tree/master/readline/shell-telnet)** - Shell over Telnet
+- **[shell-websocket](https://github.com/aeshell/aesh-examples/tree/master/readline/shell-websocket)** - Web-based terminal over WebSocket
+- **[cmd-mirror-ssh](https://github.com/aeshell/aesh-examples/tree/master/readline/cmd-mirror-ssh)** - Command mirroring over SSH
+
+See the [Examples and Tutorials](../examples) page for detailed information about all available examples, including setup instructions and complete source code.
