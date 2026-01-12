@@ -48,7 +48,7 @@ public class HelloCommand implements Command<CommandInvocation> {
 }
 ```
 
-## Running the Console
+## Running your first Command
 
 Use the `AeshConsoleRunner` to start an interactive console:
 
