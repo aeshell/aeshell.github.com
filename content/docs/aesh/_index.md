@@ -183,7 +183,8 @@ Ready to build your CLI application?
 1. **[Installation](installation)** - Add Æsh to your project
 2. **[Getting Started](getting-started)** - Create your first command
 3. **[Command Definition](command-definition)** - Learn about command structure
-4. **[Examples](examples)** - Explore complete working examples
+4. **[Extensions Library](extensions)** - Use ready-made commands (ls, cd, cat, etc.)
+5. **[Examples](examples)** - Explore complete working examples
 
 ## Æsh vs Æsh Readline
 

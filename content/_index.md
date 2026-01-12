@@ -251,11 +251,17 @@ implementation 'org.aesh:aesh:1.7'
 implementation 'org.aesh:readline:3.5'
 ```
 
+**Extensions (Optional - Ready-made commands):**
+```groovy
+implementation 'org.aesh:aesh-extensions:1.7'
+```
+
 ## Documentation
 
 - **[Getting Started Guide](/docs)** - Choose the right library and get started
 - **[Æsh Documentation](/docs/aesh)** - Complete command framework reference
 - **[Readline Documentation](/docs/readline)** - Terminal API reference
+- **[Extensions Library](/docs/aesh/extensions)** - Pre-built commands (ls, cd, cat, etc.)
 - **[Examples Repository](https://github.com/aeshell/aesh-examples)** - Working code examples
 
 ## Requirements
@@ -267,6 +273,7 @@ implementation 'org.aesh:readline:3.5'
 
 - **GitHub Repository:** [github.com/aeshell/aesh](https://github.com/aeshell/aesh)
 - **Examples Repository:** [github.com/aeshell/aesh-examples](https://github.com/aeshell/aesh-examples)
+- **Extensions Repository:** [github.com/aeshell/aesh-extensions](https://github.com/aeshell/aesh-extensions)
 - **Issue Tracker:** [github.com/aeshell/aesh/issues](https://github.com/aeshell/aesh/issues)
 - **Discussions:** [github.com/aeshell/aesh/discussions](https://github.com/aeshell/aesh/discussions)
 

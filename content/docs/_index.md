@@ -148,6 +148,7 @@ readline.readline(connection, "prompt> ", input -> {
 - [Converters](/docs/aesh/converters) - Type conversion
 - [Activators](/docs/aesh/activators) - Conditional options
 - [Renderers](/docs/aesh/renderers) - Custom output formatting
+- [Extensions Library](/docs/aesh/extensions) - Ready-made commands (ls, cd, cat, etc.)
 
 ---
 
