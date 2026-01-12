@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Getting Started with Æsh Readline'
+weight: 2
 ---
 
 This guide will help you get started with Æsh Readline quickly.

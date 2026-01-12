@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Arguments'
+weight: 5
 ---
 
 The `@Argument` annotation defines positional command-line arguments.

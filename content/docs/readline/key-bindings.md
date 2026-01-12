@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Key Bindings'
+weight: 5
 ---
 
 Æsh Readline supports customizable key bindings for editing operations.

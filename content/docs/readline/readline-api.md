@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Readline API'
+weight: 3
 ---
 
 The `Readline` class provides the main API for reading input from a terminal.

@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Remote Connectivity'
+weight: 10
 ---
 
 Æsh Readline supports remote connections via SSH, Telnet, and WebSockets.

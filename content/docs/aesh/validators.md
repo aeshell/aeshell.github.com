@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Validators'
+weight: 9
 ---
 
 Validators validate option/argument values before command execution.

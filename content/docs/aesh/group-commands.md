@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Group Commands'
+weight: 7
 ---
 
 Group commands allow you to create hierarchical command structures, similar to `git` with subcommands like `commit`, `push`, `pull`.

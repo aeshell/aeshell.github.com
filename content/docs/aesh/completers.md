@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Completers'
+weight: 8
 ---
 
 Completers provide tab-completion suggestions for options and arguments.

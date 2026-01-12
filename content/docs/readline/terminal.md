@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Terminal'
+weight: 8
 ---
 
 Æsh Readline provides terminal abstraction through the `Connection` and `Terminal` interfaces.
