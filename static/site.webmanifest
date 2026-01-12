@@ -1,0 +1,20 @@
+{
+  "name": "Æsh - Another Extendable SHell",
+  "short_name": "Æsh",
+  "description": "Java libraries for building powerful command-line interfaces",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#868D36",
+  "background_color": "#EAE7D8",
+  "display": "standalone"
+}

@@ -1,0 +1,161 @@
+/* Æsh Custom Theme - Based on design.jboss.org/aesh */
+
+/* Brand Colors */
+:root {
+  /* Æsh primary colors from the official design */
+  --aesh-olive-green: #868D36;
+  --aesh-dark-olive: #5C584A;
+  --aesh-darker-brown: #49463B;
+  --aesh-cream: #EAE7D8;
+  --aesh-white: #FFFFFF;
+  
+  /* Override Hextra theme colors with Æsh branding */
+  --primary-hue: 64;
+  --primary-saturation: 45%;
+  --primary-lightness: 38%;
+  
+  /* Accent color using the olive green */
+  --accent-color: var(--aesh-olive-green);
+  --link-color: var(--aesh-olive-green);
+}
+
+/* Dark mode specific overrides */
+.dark {
+  --accent-color: var(--aesh-olive-green);
+  --link-color: var(--aesh-olive-green);
+}
+
+/* Link colors */
+a {
+  color: var(--aesh-olive-green);
+}
+
+a:hover {
+  color: var(--aesh-dark-olive);
+}
+
+.dark a {
+  color: var(--aesh-olive-green);
+}
+
+.dark a:hover {
+  opacity: 0.8;
+}
+
+/* Primary buttons and interactive elements */
+button[type="submit"],
+.btn-primary,
+.button-primary {
+  background-color: var(--aesh-olive-green);
+  border-color: var(--aesh-olive-green);
+}
+
+button[type="submit"]:hover,
+.btn-primary:hover,
+.button-primary:hover {
+  background-color: var(--aesh-dark-olive);
+  border-color: var(--aesh-dark-olive);
+}
+
+/* Navigation highlights */
+nav a.active,
+nav a[aria-current="page"] {
+  color: var(--aesh-olive-green);
+  border-bottom-color: var(--aesh-olive-green);
+}
+
+/* Code blocks - subtle olive tint */
+pre,
+code {
+  background-color: rgba(134, 141, 54, 0.05);
+}
+
+.dark pre,
+.dark code {
+  background-color: rgba(134, 141, 54, 0.1);
+}
+
+/* Headings with subtle olive accent */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--aesh-dark-olive);
+}
+
+.dark h1, 
+.dark h2, 
+.dark h3, 
+.dark h4, 
+.dark h5, 
+.dark h6 {
+  color: var(--aesh-cream);
+}
+
+/* Search and focus states */
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--aesh-olive-green);
+  outline-color: var(--aesh-olive-green);
+}
+
+/* Sidebar active items */
+.sidebar a.active,
+.sidebar a[aria-current="page"] {
+  background-color: rgba(134, 141, 54, 0.1);
+  border-left-color: var(--aesh-olive-green);
+  color: var(--aesh-olive-green);
+}
+
+/* Logo styling */
+.logo img {
+  height: 2rem;
+  width: auto;
+}
+
+/* Custom styling for the home page hero section */
+.hero-section {
+  border-bottom: 3px solid var(--aesh-olive-green);
+}
+
+/* Blockquotes with olive accent */
+blockquote {
+  border-left-color: var(--aesh-olive-green);
+}
+
+/* Tables */
+table thead {
+  background-color: rgba(134, 141, 54, 0.1);
+}
+
+.dark table thead {
+  background-color: rgba(134, 141, 54, 0.15);
+}
+
+/* Footer accent */
+footer {
+  border-top: 1px solid rgba(134, 141, 54, 0.2);
+}
+
+/* Badge and tag styling */
+.badge,
+.tag {
+  background-color: var(--aesh-olive-green);
+  color: white;
+}
+
+/* Scrollbar styling for webkit browsers */
+::-webkit-scrollbar-thumb {
+  background-color: var(--aesh-olive-green);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--aesh-dark-olive);
+}
+
+/* Selection color */
+::selection {
+  background-color: rgba(134, 141, 54, 0.3);
+}
+
+.dark ::selection {
+  background-color: rgba(134, 141, 54, 0.5);
+}
