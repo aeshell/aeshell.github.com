@@ -42,6 +42,8 @@ Think of it this way: Æsh is built **on top of** Æsh Readline. Æsh provides t
 - **Stream Support** - Standard out and standard error handling
 - **Shell Features** - Redirect, alias, and pipeline support
 - **Remote Connectivity** - SSH, Telnet, and WebSocket terminal servers
+- **[Color Detection](color-detection)** - Automatic terminal theme and color depth detection
+- **[Terminal Colors](terminal-colors)** - RGB colors, theme-aware styling, and color depth adaptation
 
 ## Architecture
 
