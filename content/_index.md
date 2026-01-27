@@ -235,7 +235,7 @@ private static void read(TerminalConnection connection, Readline readline) {
 <dependency>
     <groupId>org.aesh</groupId>
     <artifactId>readline</artifactId>
-    <version>3.5</version>
+    <version>2.6</version>
 </dependency>
 ```
 
@@ -248,7 +248,7 @@ implementation 'org.aesh:aesh:1.7'
 
 **Readline:**
 ```groovy
-implementation 'org.aesh:readline:3.5'
+implementation 'org.aesh:readline:2.6'
 ```
 
 **Extensions (Optional - Ready-made commands):**

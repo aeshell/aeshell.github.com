@@ -67,9 +67,179 @@ private String filePath;
 
 ## Default Values
 
+### Static Default Values
+
 ```java
 @Option(defaultValue = "INFO", description = "Log level")
 private String logLevel;
+```
+
+### Environment Variables
+
+Use the `${ }` syntax to reference environment variables as default values:
+
+```java
+@Option(defaultValue = "${HOME}", description = "Home directory")
+private String homeDir;
+
+@Option(defaultValue = "${USER}", description = "Username")
+private String username;
+
+@Option(defaultValue = "${DATABASE_URL}", description = "Database connection URL")
+private String databaseUrl;
+```
+
+If the environment variable is not set, the option will have no default value (null).
+
+### Environment Variables with Fallback
+
+Provide a fallback value after a colon (`:`) in case the environment variable is not set:
+
+```java
+@Option(defaultValue = "${PORT:8080}", description = "Server port")
+private int port;
+
+@Option(defaultValue = "${LOG_LEVEL:INFO}", description = "Log level")
+private String logLevel;
+
+@Option(defaultValue = "${DATABASE_HOST:localhost}", description = "Database host")
+private String dbHost;
+```
+
+If `PORT` is not set, the default will be `8080`. If `LOG_LEVEL` is not set, the default will be `INFO`.
+
+### System Properties
+
+Reference Java system properties using the same syntax:
+
+```java
+@Option(defaultValue = "${user.home}", description = "User home directory")
+private String userHome;
+
+@Option(defaultValue = "${user.name}", description = "Current user")
+private String userName;
+
+@Option(defaultValue = "${java.io.tmpdir}", description = "Temp directory")
+private String tempDir;
+
+@Option(defaultValue = "${os.name}", description = "Operating system")
+private String osName;
+```
+
+### System Properties with Fallback
+
+```java
+@Option(defaultValue = "${my.app.config:/etc/myapp/config}", description = "Config path")
+private String configPath;
+```
+
+### Combined Example
+
+```java
+@CommandDefinition(name = "connect", description = "Connect to database")
+public class ConnectCommand implements Command<CommandInvocation> {
+
+    @Option(
+        shortName = 'h',
+        defaultValue = "${DB_HOST:localhost}",
+        description = "Database host"
+    )
+    private String host;
+
+    @Option(
+        shortName = 'p',
+        defaultValue = "${DB_PORT:5432}",
+        description = "Database port"
+    )
+    private int port;
+
+    @Option(
+        shortName = 'u',
+        defaultValue = "${DB_USER:${user.name}}",
+        description = "Database user (defaults to system user)"
+    )
+    private String user;
+
+    @Option(
+        shortName = 'd',
+        defaultValue = "${DB_NAME:myapp}",
+        description = "Database name"
+    )
+    private String database;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println(String.format(
+            "Connecting to %s@%s:%d/%s", user, host, port, database));
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Usage:
+```bash
+# Uses all defaults (environment variables or fallback values)
+$ connect
+Connecting to john@localhost:5432/myapp
+
+# Override with environment variables
+$ export DB_HOST=prod-db.example.com
+$ export DB_PORT=5433
+$ connect
+Connecting to john@prod-db.example.com:5433/myapp
+
+# Override with command-line options (highest priority)
+$ connect -h dev-db.local -p 5434
+Connecting to john@dev-db.local:5434/myapp
+```
+
+### Priority Order
+
+When determining option values, Æsh uses this priority (highest to lowest):
+
+1. **Command-line argument** - Explicitly provided by user
+2. **Environment variable / System property** - If referenced in `defaultValue`
+3. **Fallback value** - Value after `:` in the `defaultValue` expression
+4. **Field initializer** - Java field initialization value
+5. **null** - If nothing else is set
+
+### Multiple Default Values
+
+For options that accept multiple values (lists/arrays), provide multiple defaults:
+
+```java
+@Option(defaultValue = {"${DEFAULT_TAG:latest}", "stable"}, description = "Image tags")
+private List<String> tags;
+```
+
+### Environment Variables in Arguments
+
+The same syntax works with `@Argument`:
+
+```java
+@Argument(defaultValue = "${PWD:${user.dir}}", description = "Working directory")
+private String workingDirectory;
+```
+
+### Best Practices
+
+1. **Always provide fallbacks** - Use `${VAR:fallback}` to ensure sensible defaults when environment variables aren't set.
+
+2. **Document expected variables** - Tell users which environment variables your application reads.
+
+3. **Use consistent naming** - Follow conventions like `MYAPP_DATABASE_HOST` for your app's variables.
+
+4. **Prefer environment variables for secrets** - Don't hardcode passwords; use `${DB_PASSWORD}` without a fallback.
+
+```java
+// Good: Password from environment, no fallback (will be null if not set)
+@Option(defaultValue = "${DB_PASSWORD}", description = "Database password")
+private String password;
+
+// In execute(), check if password was provided
+if (password == null) {
+    password = shell.readLine(new Prompt("Password: ", '*'));
+}
 ```
 
 ## Custom Types with Converter

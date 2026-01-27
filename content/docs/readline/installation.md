@@ -13,7 +13,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>readline</artifactId>
-  <version>3.5</version>
+  <version>2.6</version>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ Add the dependency to your `build.gradle`:
 
 ```groovy
 dependencies {
-    implementation 'org.aesh:readline:3.5'
+    implementation 'org.aesh:readline:2.6'
 }
 ```
 
@@ -47,7 +47,7 @@ mvn clean install
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>terminal-ssh</artifactId>
-  <version>3.5</version>
+  <version>2.6</version>
 </dependency>
 ```
 
@@ -57,7 +57,7 @@ mvn clean install
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>terminal-telnet</artifactId>
-  <version>3.5</version>
+  <version>2.6</version>
 </dependency>
 ```
 
@@ -67,7 +67,7 @@ mvn clean install
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>terminal-http</artifactId>
-  <version>3.5</version>
+  <version>2.6</version>
 </dependency>
 ```
 
