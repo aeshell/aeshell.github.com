@@ -318,6 +318,34 @@ SettingsBuilder.builder()
         .build();
 ```
 
+### Sub-Command Mode Settings
+
+#### subCommandModeSettings(SubCommandModeSettings)
+
+Configures the behavior of sub-command mode for group commands.
+
+```java
+import org.aesh.command.settings.SubCommandModeSettings;
+
+SubCommandModeSettings subCmdSettings = SubCommandModeSettings.builder()
+        .enabled(true)                          // Enable/disable sub-command mode
+        .exitCommand("exit")                    // Primary exit command
+        .alternativeExitCommand("..")           // Alternative exit command
+        .contextSeparator(":")                  // Nested context separator
+        .showArgumentInPrompt(true)             // Show value in prompt
+        .contextCommand("context")              // Command to display context
+        .enterMessage("Entering {name} mode.")  // Entry message
+        .exitHint("Type '{exit}' to return.")   // Exit hint
+        .exitOnCtrlC(true)                      // Ctrl+C exits sub-command mode
+        .build();
+
+SettingsBuilder.builder()
+        .subCommandModeSettings(subCmdSettings)
+        .build();
+```
+
+See [Sub-Command Mode](/docs/aesh/sub-command-mode) for complete documentation.
+
 ### Additional Options
 
 #### readInputrc(boolean)
@@ -438,6 +466,7 @@ public CommandResult execute(CommandInvocation invocation) {
 | `setRedirection` | `boolean` | `true` | Enable redirection operators |
 | `readInputrc` | `boolean` | `true` | Read .inputrc configuration |
 | `echoCtrl` | `boolean` | `true` | Echo control characters |
+| `subCommandModeSettings` | `SubCommandModeSettings` | defaults | Sub-command mode configuration |
 
 ## Best Practices
 

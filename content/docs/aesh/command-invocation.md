@@ -28,29 +28,39 @@ public class ExampleCommand implements Command<CommandInvocation> {
 
 ```java
 public interface CommandInvocation {
-    
+
     // Output methods
     void print(String message);
     void println(String message);
-    
+
     // Shell access
     Shell getShell();
-    
+
     // Control methods
     void stop();
-    
+
     // Help system
     String getHelpInfo();
     String getHelpInfo(String commandName);
-    
+
     // Configuration access
     CommandInvocationConfiguration getConfiguration();
-    
+
     // Operator support
     Operator getOperator();
-    
+
     // Piped input
     String getInputLine() throws InterruptedException;
+
+    // Sub-command mode
+    boolean enterSubCommandMode(Command<?> command);
+    void exitSubCommandMode();
+    boolean isInSubCommandMode();
+    CommandContext getCommandContext();
+    <T> T getParentValue(String name, Class<T> type);
+    <T> T getParentValue(String name, Class<T> type, T defaultValue);
+    <T> T getInheritedValue(String name, Class<T> type);
+    <T> T getInheritedValue(String name, Class<T> type, T defaultValue);
 }
 ```
 
@@ -323,6 +333,238 @@ public class UppercaseCommand implements Command<CommandInvocation> {
 **Usage:** `echo "hello world" | uppercase`
 
 **Output:** `HELLO WORLD`
+
+## Sub-Command Mode Methods
+
+These methods support [Sub-Command Mode](/docs/aesh/sub-command-mode), allowing group commands to create interactive contexts where subcommands can access parent values.
+
+### enterSubCommandMode(Command)
+
+Enters sub-command mode for the current group command. Returns `true` if successful, `false` if sub-command mode is disabled.
+
+```java
+@GroupCommandDefinition(name = "project", groupCommands = {BuildCommand.class, TestCommand.class})
+public class ProjectCommand implements Command<CommandInvocation> {
+
+    @Option(name = "name", required = true)
+    private String projectName;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Project: " + projectName);
+
+        // Enter sub-command mode - prompt changes to "project[myapp]>"
+        if (invocation.enterSubCommandMode(this)) {
+            invocation.println("Available commands: build, test");
+        }
+
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+### exitSubCommandMode()
+
+Exits the current sub-command mode level. If nested, returns to the parent context. If at the top level, returns to the main prompt.
+
+```java
+@CommandDefinition(name = "done", description = "Exit project mode")
+public class DoneCommand implements Command<CommandInvocation> {
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.exitSubCommandMode();
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+### isInSubCommandMode()
+
+Returns `true` if currently in sub-command mode.
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) {
+    if (invocation.isInSubCommandMode()) {
+        invocation.println("Currently in sub-command mode");
+    } else {
+        invocation.println("Running at top level");
+    }
+    return CommandResult.SUCCESS;
+}
+```
+
+### getParentValue(String name, Class&lt;T&gt; type)
+
+Retrieves a value from the parent command by field name. Returns `null` if not found or not in sub-command mode.
+
+```java
+@CommandDefinition(name = "build", description = "Build the project")
+public class BuildCommand implements Command<CommandInvocation> {
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        // Get parent's projectName field value
+        String projectName = invocation.getParentValue("projectName", String.class);
+
+        if (projectName != null) {
+            invocation.println("Building " + projectName);
+        } else {
+            invocation.println("Error: No project name available");
+        }
+
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+### getParentValue(String name, Class&lt;T&gt; type, T defaultValue)
+
+Same as above, but returns a default value if the parent value is not found.
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) {
+    // Get parent value with default
+    Boolean verbose = invocation.getParentValue("verbose", Boolean.class, false);
+
+    if (verbose) {
+        invocation.println("[VERBOSE] Starting build process...");
+    }
+
+    return CommandResult.SUCCESS;
+}
+```
+
+### getInheritedValue(String name, Class&lt;T&gt; type)
+
+Retrieves a value from inherited options (options marked with `inherited = true` on the parent). Returns `null` if not found.
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) {
+    // Get inherited option value
+    Boolean verbose = invocation.getInheritedValue("verbose", Boolean.class);
+
+    if (verbose != null && verbose) {
+        invocation.println("[VERBOSE] Detailed output enabled");
+    }
+
+    return CommandResult.SUCCESS;
+}
+```
+
+### getInheritedValue(String name, Class&lt;T&gt; type, T defaultValue)
+
+Same as above, but returns a default value if the inherited value is not found.
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) {
+    // Get inherited value with default
+    String logLevel = invocation.getInheritedValue("logLevel", String.class, "INFO");
+    invocation.println("Log level: " + logLevel);
+
+    return CommandResult.SUCCESS;
+}
+```
+
+### getCommandContext()
+
+Returns the `CommandContext` object for advanced context manipulation. Most use cases are covered by the methods above.
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) {
+    CommandContext context = invocation.getCommandContext();
+
+    // Check context depth (nesting level)
+    int depth = context.depth();
+    invocation.println("Context depth: " + depth);
+
+    // Get the context path (e.g., "module:project")
+    String path = context.getContextPath();
+    invocation.println("Context path: " + path);
+
+    return CommandResult.SUCCESS;
+}
+```
+
+### Sub-Command Mode Example
+
+Here's a complete example showing how subcommands access parent values:
+
+```java
+@GroupCommandDefinition(
+    name = "project",
+    description = "Project management",
+    groupCommands = {BuildCommand.class, StatusCommand.class}
+)
+public class ProjectCommand implements Command<CommandInvocation> {
+
+    @Option(name = "name", required = true)
+    private String projectName;
+
+    @Option(name = "verbose", hasValue = false, inherited = true)
+    private boolean verbose;
+
+    public String getProjectName() { return projectName; }
+    public boolean isVerbose() { return verbose; }
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Project: " + projectName);
+        invocation.enterSubCommandMode(this);
+        return CommandResult.SUCCESS;
+    }
+}
+
+@CommandDefinition(name = "build", description = "Build the project")
+public class BuildCommand implements Command<CommandInvocation> {
+
+    @ParentCommand
+    private ProjectCommand parent;  // Direct injection
+
+    @Option(name = "verbose", hasValue = false)
+    private boolean verbose;  // Auto-populated from parent's inherited option
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        // Method 1: Use @ParentCommand annotation
+        String name = parent.getProjectName();
+
+        // Method 2: Use getParentValue()
+        String name2 = invocation.getParentValue("projectName", String.class);
+
+        // Method 3: Check inherited values
+        Boolean inheritedVerbose = invocation.getInheritedValue("verbose", Boolean.class);
+
+        invocation.println("Building " + name);
+        if (verbose) {
+            invocation.println("[VERBOSE] Compiling sources...");
+        }
+
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+**Usage:**
+```
+[myapp]$ project --name=myapp --verbose
+Project: myapp
+Entering project mode.
+
+project[myapp]> build
+Building myapp
+[VERBOSE] Compiling sources...
+
+project[myapp]> exit
+[myapp]$
+```
+
+See [Sub-Command Mode](/docs/aesh/sub-command-mode) for complete documentation.
 
 ## Complete Example
 

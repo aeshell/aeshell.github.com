@@ -58,6 +58,8 @@ That's it! Æsh automatically:
 ### Command Hierarchies
 - **Group commands** - Create command trees like `git remote add` or `docker container start`
 - **Subcommands** - Unlimited nesting depth for complex CLIs
+- **Sub-command mode** - Interactive contexts where subcommands share parent options
+- **Inherited options** - Parent options automatically available to subcommands
 - **Dynamic registration** - Add and remove commands at runtime
 
 ### User Experience

@@ -254,6 +254,58 @@ public class KubectlCommand implements GroupCommand<CommandInvocation> {
 }
 ```
 
+## Sub-Command Mode
+
+Group commands can enter an interactive **sub-command mode** where users work within the group's context. This is useful for workflows that involve multiple operations on the same resource.
+
+```java
+@GroupCommandDefinition(
+    name = "project",
+    description = "Project management",
+    groupCommands = {BuildCommand.class, TestCommand.class}
+)
+public class ProjectCommand implements Command<CommandInvocation> {
+
+    @Option(name = "name", required = true)
+    private String projectName;
+
+    @Option(name = "verbose", hasValue = false, inherited = true)  // Available to subcommands
+    private boolean verbose;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Project: " + projectName);
+
+        // Enter sub-command mode - prompt changes to "project[myapp]>"
+        invocation.enterSubCommandMode(this);
+
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Usage:
+```
+[myapp]$ project --name=myapp --verbose
+Project: myapp
+Entering project mode.
+
+project[myapp]> build
+Building myapp...
+
+project[myapp]> test
+Testing myapp...
+
+project[myapp]> exit
+[myapp]$
+```
+
+See [Sub-Command Mode](/docs/aesh/sub-command-mode) for complete documentation on:
+- Accessing parent values via `@ParentCommand` or `getParentValue()`
+- Inherited options with `inherited = true`
+- Configuring prompts, exit commands, and messages
+- Nested contexts
+
 ## Best Practices
 
 1. **Use meaningful group names** - Group names should clearly indicate the category of commands they contain.
@@ -265,3 +317,5 @@ public class KubectlCommand implements GroupCommand<CommandInvocation> {
 4. **Use consistent naming** - Follow conventions like `noun-verb` or `verb-noun` consistently.
 
 5. **Generate help** - Use `generateHelp = true` for automatic help generation.
+
+6. **Consider sub-command mode** - For group commands that users will interact with repeatedly, enable sub-command mode for a better experience.

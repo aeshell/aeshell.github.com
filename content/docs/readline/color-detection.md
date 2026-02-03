@@ -112,7 +112,7 @@ connection.write("\u001B[" + errorText + "mError: Something went wrong\u001B[0m\
 | `getSuggestedWarningCode()` | 93 (bright yellow) | 33 (yellow) | Warnings |
 | `getSuggestedInfoCode()` | 94 (bright blue) | 34 (blue) | Info messages |
 | `getSuggestedDebugCode()` | 37 (white) | 90 (gray) | Debug messages |
-| `getSuggestedTraceCode()` | 90 (gray) | 90 (gray) | Trace messages (least prominent) |
+| `getSuggestedTraceCode()` | 242 (256-color gray) | 90 (gray) | Trace messages (least prominent) |
 | `getSuggestedTimestampCode()` | 96 (bright cyan) | 36 (cyan) | Timestamps in logs |
 | `getSuggestedMessageCode()` | 95 (bright magenta) | 35 (magenta) | Highlighted messages |
 

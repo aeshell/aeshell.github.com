@@ -150,7 +150,7 @@ TerminalColor message = TerminalColor.forMessage(cap);      // Magenta (for high
 | `forWarning()` | Bright yellow | Normal yellow | Warnings |
 | `forInfo()` | Bright cyan | Normal blue | Info messages |
 | `forDebug()` | White | Gray | Debug messages (subdued) |
-| `forTrace()` | Gray | Gray | Trace messages (least prominent) |
+| `forTrace()` | 256-color gray | Gray | Trace messages (least prominent) |
 | `forHighlight()` | Bright white | Black | Emphasized text |
 | `forMuted()` | Normal white | Normal black | Secondary text |
 | `forTimestamp()` | Bright cyan | Normal cyan | Log timestamps |
@@ -300,6 +300,64 @@ builder.trace("Trace message");      // Gray (least prominent)
 builder.timestamp("10:30:45");       // Cyan (subdued, for log timestamps)
 builder.message("Highlighted");      // Magenta (for highlighted messages)
 ```
+
+### Customizing Semantic Colors
+
+You can override the default semantic colors directly on the builder:
+
+```java
+// Override colors on the builder (takes precedence over capability)
+ANSIBuilder builder = ANSIBuilder.builder()
+    .errorCode(196)      // 256-color bright red
+    .successCode(46)     // 256-color green
+    .warningCode(208)    // 256-color orange
+    .infoCode(75)        // 256-color cyan
+    .debugCode(250)      // 256-color light gray
+    .traceCode(240)      // 256-color dark gray
+    .timestampCode(244)  // 256-color gray
+    .messageCode(201);   // 256-color magenta
+
+// Now semantic methods use your custom colors
+builder.error("Custom error color");
+builder.success("Custom success color");
+```
+
+Builder overrides take precedence over `TerminalColorCapability` settings:
+
+```java
+// Capability with default colors
+TerminalColorCapability cap = TerminalColorDetector.detect(connection);
+
+// Builder overrides specific colors
+ANSIBuilder builder = ANSIBuilder.builder(cap)
+    .errorCode(196)      // Override error to 256-color red
+    .timestampCode(244); // Override timestamp to gray
+
+// error() uses 196, other methods still use capability defaults
+```
+
+You can use basic ANSI codes (30-37, 90-97), 256-color palette indices (0-255), or RGB/hex values:
+
+```java
+// Basic ANSI codes
+builder.errorCode(31);    // Basic red
+builder.successCode(92);  // Bright green
+
+// 256-color palette indices
+builder.errorCode(196);   // 256-color bright red
+builder.infoCode(75);     // 256-color cyan
+
+// RGB values (true color)
+builder.errorRgb(255, 0, 0);        // Red
+builder.successRgb(0, 255, 0);      // Green
+builder.warningRgb(255, 165, 0);    // Orange
+
+// Hex values
+builder.errorHex("#FF5733");        // Coral
+builder.timestampHex("6495ED");     // Cornflower blue
+```
+
+Color priority: **RGB override > code override > capability > default**.
 
 ### Extended Color Support
 

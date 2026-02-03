@@ -23,6 +23,7 @@ The `@Option` annotation defines command-line options (flags with values).
 | `acceptNameWithoutDashes` | `boolean` | `false` | Allow option name without `--` prefix |
 | `negatable` | `boolean` | `false` | Enable `--no-{name}` form for boolean options |
 | `negationPrefix` | `String` | `"no-"` | Prefix for negated form (e.g., `"without-"`) |
+| `inherited` | `boolean` | `false` | Make option available to subcommands in sub-command mode |
 | `converter` | `Class<? extends Converter>` | `NullConverter.class` | Custom value converter |
 | `completer` | `Class<? extends OptionCompleter>` | `NullOptionCompleter.class` | Custom completer |
 | `validator` | `Class<? extends OptionValidator>` | `NullValidator.class` | Custom validator |
@@ -167,6 +168,83 @@ Building with:
 2. **Combine with `hasValue = false`** - Negatable options should have `hasValue = false` since they are boolean flags.
 
 3. **Default values** - Use `defaultValue = "true"` if you want the option enabled by default and allow users to disable it with the negated form.
+
+## Inherited Options
+
+Inherited options are automatically available to all subcommands when using [sub-command mode](/docs/aesh/sub-command-mode). Mark an option with `inherited = true` on a group command, and subcommands with matching field names will have the value auto-populated.
+
+### Basic Usage
+
+```java
+@GroupCommandDefinition(
+    name = "project",
+    groupCommands = {BuildCommand.class, TestCommand.class}
+)
+public class ProjectCommand implements Command<CommandInvocation> {
+
+    @Option(name = "verbose", hasValue = false, inherited = true)
+    private boolean verbose;
+
+    @Option(name = "config", inherited = true)
+    private String configFile;
+}
+
+@CommandDefinition(name = "build")
+public class BuildCommand implements Command<CommandInvocation> {
+
+    // These fields are auto-populated from parent's inherited options
+    @Option(name = "verbose", hasValue = false)
+    private boolean verbose;
+
+    @Option(name = "config")
+    private String configFile;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        if (verbose) {
+            invocation.println("[VERBOSE] Using config: " + configFile);
+        }
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+### How It Works
+
+1. When a group command enters sub-command mode, inherited option values are cached
+2. When a subcommand is executed, the populator looks for matching field names
+3. If a subcommand field matches an inherited option and wasn't explicitly set by the user, it receives the inherited value
+4. User-provided values always take precedence over inherited values
+
+### Programmatic Access
+
+You can also access inherited values programmatically:
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) {
+    // Get inherited value by name
+    Boolean verbose = invocation.getInheritedValue("verbose", Boolean.class);
+    String config = invocation.getInheritedValue("configFile", String.class);
+
+    // With default value
+    Boolean debug = invocation.getInheritedValue("debug", Boolean.class, false);
+
+    return CommandResult.SUCCESS;
+}
+```
+
+### Best Practices
+
+1. **Use for common flags** - Options like `--verbose`, `--debug`, `--config` that apply to all subcommands are good candidates.
+
+2. **Don't overuse** - Only mark options as inherited if subcommands actually need them.
+
+3. **Match field names** - For auto-population, the subcommand's field name must match the parent's field name.
+
+4. **Document inheritance** - Let users know which options are inherited in your documentation.
+
+See [Sub-Command Mode](/docs/aesh/sub-command-mode) for complete documentation.
 
 ## Required Options
 
