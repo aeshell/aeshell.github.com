@@ -21,6 +21,8 @@ The `@Option` annotation defines command-line options (flags with values).
 | `askIfNotSet` | `boolean` | `false` | Prompt user if not set |
 | `overrideRequired` | `boolean` | `false` | Override required validation |
 | `acceptNameWithoutDashes` | `boolean` | `false` | Allow option name without `--` prefix |
+| `negatable` | `boolean` | `false` | Enable `--no-{name}` form for boolean options |
+| `negationPrefix` | `String` | `"no-"` | Prefix for negated form (e.g., `"without-"`) |
 | `converter` | `Class<? extends Converter>` | `NullConverter.class` | Custom value converter |
 | `completer` | `Class<? extends OptionCompleter>` | `NullOptionCompleter.class` | Custom completer |
 | `validator` | `Class<? extends OptionValidator>` | `NullValidator.class` | Custom validator |
@@ -57,6 +59,114 @@ private boolean verbose;
 ```
 
 Usage: `greet -v` or `greet --verbose`
+
+## Negatable Options
+
+Negatable options allow boolean flags to be explicitly set to `false` using a `--no-{name}` syntax. This is useful when you have a default value of `true` and want users to be able to disable the feature.
+
+### Basic Usage
+
+```java
+@Option(hasValue = false, negatable = true, description = "Enable verbose output")
+private boolean verbose;
+```
+
+Usage:
+- `mycommand --verbose` sets `verbose` to `true`
+- `mycommand --no-verbose` sets `verbose` to `false`
+
+### Custom Negation Prefix
+
+By default, the negation prefix is `"no-"`. You can customize it with the `negationPrefix` property:
+
+```java
+@Option(hasValue = false, negatable = true, negationPrefix = "without-",
+        description = "Enable color output")
+private boolean color;
+
+@Option(hasValue = false, negatable = true, negationPrefix = "disable-",
+        description = "Enable caching")
+private boolean cache;
+```
+
+Usage:
+- `mycommand --color` / `mycommand --without-color`
+- `mycommand --cache` / `mycommand --disable-cache`
+
+### Help Output
+
+Negatable options automatically show both forms in help output:
+
+```
+Options:
+  --verbose, --no-verbose       Enable verbose output
+  --color, --without-color      Enable color output
+```
+
+### Completion Support
+
+Tab completion works for both the positive and negated forms. Typing `--no-` and pressing Tab will show all available negated options.
+
+### Complete Example
+
+```java
+@CommandDefinition(name = "build", description = "Build the project")
+public class BuildCommand implements Command<CommandInvocation> {
+
+    @Option(hasValue = false, negatable = true, defaultValue = "true",
+            description = "Run tests during build")
+    private boolean tests;
+
+    @Option(hasValue = false, negatable = true, defaultValue = "true",
+            description = "Enable compiler optimizations")
+    private boolean optimize;
+
+    @Option(hasValue = false, negatable = true, negationPrefix = "skip-",
+            description = "Generate documentation")
+    private boolean docs;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Building with:");
+        invocation.println("  Tests: " + tests);
+        invocation.println("  Optimize: " + optimize);
+        invocation.println("  Docs: " + docs);
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Usage:
+```bash
+# Run with defaults (tests=true, optimize=true, docs=false)
+$ build
+Building with:
+  Tests: true
+  Optimize: true
+  Docs: false
+
+# Disable tests and optimization, enable docs
+$ build --no-tests --no-optimize --docs
+Building with:
+  Tests: false
+  Optimize: false
+  Docs: true
+
+# Use custom prefix
+$ build --skip-docs
+Building with:
+  Tests: true
+  Optimize: true
+  Docs: false
+```
+
+### Important Notes
+
+1. **Boolean types only** - The `negatable` property is only valid for `boolean` or `Boolean` field types. Using it with other types will result in a parsing exception.
+
+2. **Combine with `hasValue = false`** - Negatable options should have `hasValue = false` since they are boolean flags.
+
+3. **Default values** - Use `defaultValue = "true"` if you want the option enabled by default and allow users to disable it with the negated form.
 
 ## Required Options
 
