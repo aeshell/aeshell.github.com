@@ -127,24 +127,28 @@ import org.aesh.terminal.utils.TerminalColorCapability;
 TerminalColorCapability cap = TerminalColorDetector.detect(connection);
 
 // Get theme-appropriate colors
-TerminalColor error = TerminalColor.forError(cap);      // Red
-TerminalColor success = TerminalColor.forSuccess(cap);  // Green
-TerminalColor warning = TerminalColor.forWarning(cap);  // Yellow
-TerminalColor info = TerminalColor.forInfo(cap);        // Cyan/Blue
+TerminalColor error = TerminalColor.forError(cap);          // Red
+TerminalColor success = TerminalColor.forSuccess(cap);      // Green
+TerminalColor warning = TerminalColor.forWarning(cap);      // Yellow
+TerminalColor info = TerminalColor.forInfo(cap);            // Cyan/Blue
 TerminalColor highlight = TerminalColor.forHighlight(cap);  // Emphasized
-TerminalColor muted = TerminalColor.forMuted(cap);      // Dimmed
+TerminalColor muted = TerminalColor.forMuted(cap);          // Dimmed
+TerminalColor timestamp = TerminalColor.forTimestamp(cap);  // Cyan (for log timestamps)
+TerminalColor message = TerminalColor.forMessage(cap);      // Magenta (for highlighted messages)
 ```
 
 ### How Theme Adaptation Works
 
-| Method | Dark Theme | Light Theme |
-|--------|------------|-------------|
-| `forError()` | Bright red | Normal red |
-| `forSuccess()` | Bright green | Normal green |
-| `forWarning()` | Bright yellow | Normal yellow |
-| `forInfo()` | Bright cyan | Normal blue |
-| `forHighlight()` | Bright white | Black |
-| `forMuted()` | Normal white | Normal black |
+| Method | Dark Theme | Light Theme | Use Case |
+|--------|------------|-------------|----------|
+| `forError()` | Bright red | Normal red | Error messages |
+| `forSuccess()` | Bright green | Normal green | Success messages |
+| `forWarning()` | Bright yellow | Normal yellow | Warnings |
+| `forInfo()` | Bright cyan | Normal blue | Info messages |
+| `forHighlight()` | Bright white | Black | Emphasized text |
+| `forMuted()` | Normal white | Normal black | Secondary text |
+| `forTimestamp()` | Bright cyan | Normal cyan | Log timestamps |
+| `forMessage()` | Bright magenta | Normal magenta | Highlighted messages |
 
 These methods ensure readable colors on any background. On dark themes, bright colors stand out. On light themes, normal intensity prevents eye strain.
 
@@ -235,20 +239,164 @@ connection.write(colored.toString());
 
 ## Using with ANSIBuilder
 
-For more complex formatting, use `ANSIBuilder`:
+For more complex formatting, use `ANSIBuilder`. It provides a fluent API for building ANSI-formatted strings with support for basic colors, 256-color palette, true color RGB, and theme-aware semantic colors.
+
+### Basic Usage
 
 ```java
-import org.aesh.readline.util.ANSIBuilder;
+import org.aesh.terminal.utils.ANSIBuilder;
 
 String output = ANSIBuilder.builder()
-    .red().text("Error: ").reset()
-    .text("Something went wrong")
+    .redText("Error: ")
+    .append("Something went wrong")
     .toString();
 
-// With RGB (where supported)
-String rgbOutput = ANSIBuilder.builder()
-    .trueColor(255, 87, 51).text("Orange text").reset()
+// Bold and colors
+String styled = ANSIBuilder.builder()
+    .bold("Title: ").append("Some text")
     .toString();
+```
+
+### Theme-Aware Builder
+
+Create a builder with detected terminal capabilities for automatic theme adaptation:
+
+```java
+TerminalColorCapability cap = TerminalColorDetector.detect(connection);
+ANSIBuilder builder = ANSIBuilder.builder(cap);
+
+// Semantic colors adapt to the terminal theme
+String output = builder
+    .timestamp("2024-01-15 10:30:45").append(" ")
+    .success("[INFO]").append(" ")
+    .message("Application started")
+    .toString();
+```
+
+### Semantic Color Methods
+
+The builder provides theme-aware semantic colors:
+
+```java
+ANSIBuilder builder = ANSIBuilder.builder(cap);
+
+builder.error("Error message");      // Red (bright on dark, normal on light)
+builder.success("Success message");  // Green
+builder.warning("Warning message");  // Yellow
+builder.info("Info message");        // Blue
+builder.timestamp("10:30:45");       // Cyan (subdued, for log timestamps)
+builder.message("Highlighted");      // Magenta (for highlighted messages)
+```
+
+### Extended Color Support
+
+#### 256-Color Palette
+
+```java
+// Foreground color from 256-color palette
+builder.color256(208).append("Orange text");
+
+// Background color from 256-color palette
+builder.bg256(17).append("Blue background");
+
+// With text directly
+builder.color256(196, "Red text");
+```
+
+#### True Color (24-bit RGB)
+
+```java
+// RGB foreground
+builder.rgb(255, 87, 51).append("Orange text");
+
+// RGB background
+builder.bgRgb(30, 30, 30).append("Dark background");
+
+// From hex string
+builder.hex("#FF5733").append("Coral text");
+builder.bgHex("#1E1E1E").append("Dark background");
+```
+
+#### Bright Colors
+
+```java
+// Enable bright mode for the next color
+builder.bright().redText().append("Bright red");
+
+// Turn off bright mode
+builder.brightOff();
+```
+
+### Convenience Methods
+
+```java
+// toLine() - returns string with newline appended
+connection.write(builder.error("Error occurred").toLine());
+
+// appendLine() - appends text with newline, returns builder
+builder.appendLine("Line 1").appendLine("Line 2");
+
+// reset() or clear() - clears builder for reuse
+builder.reset();
+builder.success("New content");
+```
+
+### Reusing the Builder
+
+For efficiency, reuse a single builder instance:
+
+```java
+ANSIBuilder builder = ANSIBuilder.builder(cap);
+
+// First message
+connection.write(builder.error("Error occurred").toLine());
+
+// Reset and reuse for next message
+builder.reset();
+connection.write(builder.success("Operation completed").toLine());
+
+// Reset and reuse again
+builder.reset();
+connection.write(builder
+    .timestamp("10:30:45").append(" ")
+    .info("[INFO]").append(" ")
+    .message("Processing...")
+    .toLine());
+```
+
+### Complete Example
+
+```java
+TerminalColorCapability cap = TerminalColorDetector.detect(connection);
+ANSIBuilder builder = ANSIBuilder.builder(cap);
+
+// Log-style output with timestamps
+connection.write(builder
+    .timestamp("2024-01-15 10:30:45").append(" ")
+    .success("[INFO]").append(" ")
+    .message("Application started")
+    .toLine());
+
+builder.reset();
+connection.write(builder
+    .timestamp("2024-01-15 10:30:46").append(" ")
+    .warning("[WARN]").append(" ")
+    .append("Low memory condition")
+    .toLine());
+
+builder.reset();
+connection.write(builder
+    .timestamp("2024-01-15 10:30:47").append(" ")
+    .error("[ERROR]").append(" ")
+    .append("Connection failed")
+    .toLine());
+
+// Using 256-color for custom branding
+builder.reset();
+connection.write(builder
+    .color256(208, "MyApp").append(": ")
+    .append("Custom colored branding")
+    .toLine());
 ```
 
 ## Complete Example
@@ -327,6 +475,8 @@ public class ColorfulApp {
 | `forInfo(cap)` | Theme-aware cyan/blue for info |
 | `forHighlight(cap)` | Theme-aware emphasis color |
 | `forMuted(cap)` | Theme-aware secondary text color |
+| `forTimestamp(cap)` | Theme-aware cyan for log timestamps |
+| `forMessage(cap)` | Theme-aware magenta for highlighted messages |
 
 ### Instance Methods
 

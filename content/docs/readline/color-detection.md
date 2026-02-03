@@ -93,10 +93,62 @@ int errorText = cap.getSuggestedErrorCode();        // 31 or 91 (red variants)
 int successText = cap.getSuggestedSuccessCode();    // 32 or 92 (green variants)
 int warningText = cap.getSuggestedWarningCode();    // 33 or 93 (yellow variants)
 int infoText = cap.getSuggestedInfoCode();          // 34 or 94 (blue variants)
+int timestampText = cap.getSuggestedTimestampCode(); // 36 or 96 (cyan variants)
+int messageText = cap.getSuggestedMessageCode();     // 35 or 95 (magenta variants)
 
 // Use in ANSI escape sequences
 connection.write("\u001B[" + errorText + "mError: Something went wrong\u001B[0m\n");
 ```
+
+### All Suggested Colors
+
+| Method | Dark Theme | Light Theme | Use Case |
+|--------|------------|-------------|----------|
+| `getSuggestedForegroundCode()` | 37 (white) | 30 (black) | Normal text |
+| `getSuggestedErrorCode()` | 91 (bright red) | 31 (red) | Error messages |
+| `getSuggestedSuccessCode()` | 92 (bright green) | 32 (green) | Success messages |
+| `getSuggestedWarningCode()` | 93 (bright yellow) | 33 (yellow) | Warnings |
+| `getSuggestedInfoCode()` | 94 (bright blue) | 34 (blue) | Info messages |
+| `getSuggestedTimestampCode()` | 96 (bright cyan) | 36 (cyan) | Timestamps in logs |
+| `getSuggestedMessageCode()` | 95 (bright magenta) | 35 (magenta) | Highlighted messages |
+
+### Customizing Suggested Colors
+
+You can override the default suggested colors using the `Builder`:
+
+```java
+// Start with detected capability and customize specific colors
+TerminalColorCapability detected = TerminalColorDetector.detect(connection);
+TerminalColorCapability custom = TerminalColorCapability.builder(detected)
+    .errorCode(196)      // Custom 256-color bright red
+    .successCode(46)     // Custom 256-color green
+    .timestampCode(244)  // Custom 256-color gray for timestamps
+    .build();
+
+// Now getSuggestedErrorCode() returns 196 instead of theme-based default
+int error = custom.getSuggestedErrorCode();  // Returns 196
+```
+
+Or build from scratch:
+
+```java
+TerminalColorCapability custom = TerminalColorCapability.builder()
+    .colorDepth(ColorDepth.COLORS_256)
+    .theme(TerminalTheme.DARK)
+    .errorCode(196)
+    .successCode(46)
+    .warningCode(208)
+    .infoCode(39)
+    .timestampCode(244)
+    .messageCode(255)
+    .foregroundCode(252)
+    .build();
+```
+
+This is useful when:
+- You have specific brand colors to use
+- User preferences should override theme-based defaults
+- You need 256-color or RGB codes instead of basic ANSI colors
 
 ## ColorDepth
 
@@ -385,12 +437,14 @@ import org.aesh.terminal.utils.TerminalColorCapability;
 TerminalColorCapability cap = TerminalColorDetector.detect(connection);
 
 // These methods automatically choose appropriate colors for the theme
-TerminalColor error = TerminalColor.forError(cap);      // Red, bright on dark
-TerminalColor success = TerminalColor.forSuccess(cap);  // Green, bright on dark
-TerminalColor warning = TerminalColor.forWarning(cap);  // Yellow, bright on dark
-TerminalColor info = TerminalColor.forInfo(cap);        // Cyan/Blue, bright on dark
+TerminalColor error = TerminalColor.forError(cap);          // Red, bright on dark
+TerminalColor success = TerminalColor.forSuccess(cap);      // Green, bright on dark
+TerminalColor warning = TerminalColor.forWarning(cap);      // Yellow, bright on dark
+TerminalColor info = TerminalColor.forInfo(cap);            // Cyan/Blue, bright on dark
 TerminalColor highlight = TerminalColor.forHighlight(cap);  // Emphasized text
-TerminalColor muted = TerminalColor.forMuted(cap);      // Secondary/dim text
+TerminalColor muted = TerminalColor.forMuted(cap);          // Secondary/dim text
+TerminalColor timestamp = TerminalColor.forTimestamp(cap);  // Cyan, for log timestamps
+TerminalColor message = TerminalColor.forMessage(cap);      // Magenta, for highlighted messages
 ```
 
 On **dark themes**, these return bright variants for readability. On **light themes**, they use normal intensity to avoid glaring colors.
@@ -414,6 +468,38 @@ connection.write(errorMsg.toString() + "\n");
 connection.write(okMsg.toString() + "\n");
 connection.write(infoMsg.toString() + "\n");
 ```
+
+### Example: Log Output with Timestamps
+
+Use `ANSIBuilder` for rich log-style output with timestamps:
+
+```java
+TerminalColorCapability cap = TerminalColorDetector.detect(connection);
+ANSIBuilder builder = ANSIBuilder.builder(cap);
+
+// Log line with timestamp, level, and message
+connection.write(builder
+    .timestamp("2024-01-15 10:30:45").append(" ")
+    .success("[INFO]").append(" ")
+    .message("Application started successfully")
+    .toLine());
+
+builder.reset();
+connection.write(builder
+    .timestamp("2024-01-15 10:30:46").append(" ")
+    .warning("[WARN]").append(" ")
+    .append("Low memory condition detected")
+    .toLine());
+
+builder.reset();
+connection.write(builder
+    .timestamp("2024-01-15 10:30:47").append(" ")
+    .error("[ERROR]").append(" ")
+    .append("Connection to database failed")
+    .toLine());
+```
+
+Output adapts automatically to the terminal theme - bright colors on dark backgrounds, normal colors on light backgrounds.
 
 ### Color Depth Adaptation
 
