@@ -93,6 +93,8 @@ int errorText = cap.getSuggestedErrorCode();        // 31 or 91 (red variants)
 int successText = cap.getSuggestedSuccessCode();    // 32 or 92 (green variants)
 int warningText = cap.getSuggestedWarningCode();    // 33 or 93 (yellow variants)
 int infoText = cap.getSuggestedInfoCode();          // 34 or 94 (blue variants)
+int debugText = cap.getSuggestedDebugCode();        // 90 or 37 (gray/white variants)
+int traceText = cap.getSuggestedTraceCode();        // 90 (gray - least prominent)
 int timestampText = cap.getSuggestedTimestampCode(); // 36 or 96 (cyan variants)
 int messageText = cap.getSuggestedMessageCode();     // 35 or 95 (magenta variants)
 
@@ -109,8 +111,13 @@ connection.write("\u001B[" + errorText + "mError: Something went wrong\u001B[0m\
 | `getSuggestedSuccessCode()` | 92 (bright green) | 32 (green) | Success messages |
 | `getSuggestedWarningCode()` | 93 (bright yellow) | 33 (yellow) | Warnings |
 | `getSuggestedInfoCode()` | 94 (bright blue) | 34 (blue) | Info messages |
+| `getSuggestedDebugCode()` | 37 (white) | 90 (gray) | Debug messages |
+| `getSuggestedTraceCode()` | 90 (gray) | 90 (gray) | Trace messages (least prominent) |
 | `getSuggestedTimestampCode()` | 96 (bright cyan) | 36 (cyan) | Timestamps in logs |
 | `getSuggestedMessageCode()` | 95 (bright magenta) | 35 (magenta) | Highlighted messages |
+
+The log level colors follow a prominence hierarchy from most to least visible:
+**ERROR > WARN > INFO > DEBUG > TRACE**
 
 ### Customizing Suggested Colors
 
@@ -139,6 +146,8 @@ TerminalColorCapability custom = TerminalColorCapability.builder()
     .successCode(46)
     .warningCode(208)
     .infoCode(39)
+    .debugCode(250)      // 256-color light gray
+    .traceCode(240)      // 256-color dark gray
     .timestampCode(244)
     .messageCode(255)
     .foregroundCode(252)
@@ -480,8 +489,8 @@ ANSIBuilder builder = ANSIBuilder.builder(cap);
 // Log line with timestamp, level, and message
 connection.write(builder
     .timestamp("2024-01-15 10:30:45").append(" ")
-    .success("[INFO]").append(" ")
-    .message("Application started successfully")
+    .error("[ERROR]").append(" ")
+    .append("Connection to database failed")
     .toLine());
 
 builder.reset();
@@ -494,12 +503,26 @@ connection.write(builder
 builder.reset();
 connection.write(builder
     .timestamp("2024-01-15 10:30:47").append(" ")
-    .error("[ERROR]").append(" ")
-    .append("Connection to database failed")
+    .info("[INFO]").append(" ")
+    .message("Application started successfully")
+    .toLine());
+
+builder.reset();
+connection.write(builder
+    .timestamp("2024-01-15 10:30:48").append(" ")
+    .debug("[DEBUG]").append(" ")
+    .append("Configuration loaded from /etc/app.conf")
+    .toLine());
+
+builder.reset();
+connection.write(builder
+    .timestamp("2024-01-15 10:30:49").append(" ")
+    .trace("[TRACE]").append(" ")
+    .append("Entering method processRequest()")
     .toLine());
 ```
 
-Output adapts automatically to the terminal theme - bright colors on dark backgrounds, normal colors on light backgrounds.
+Output adapts automatically to the terminal theme - bright colors on dark backgrounds, normal colors on light backgrounds. Debug and trace use subdued colors (white/gray) to be less prominent than the colored log levels.
 
 ### Color Depth Adaptation
 

@@ -126,11 +126,15 @@ import org.aesh.terminal.utils.TerminalColorCapability;
 // Detect terminal capabilities
 TerminalColorCapability cap = TerminalColorDetector.detect(connection);
 
-// Get theme-appropriate colors
+// Get theme-appropriate colors for log levels
 TerminalColor error = TerminalColor.forError(cap);          // Red
 TerminalColor success = TerminalColor.forSuccess(cap);      // Green
 TerminalColor warning = TerminalColor.forWarning(cap);      // Yellow
 TerminalColor info = TerminalColor.forInfo(cap);            // Cyan/Blue
+TerminalColor debug = TerminalColor.forDebug(cap);          // White/Gray (subdued)
+TerminalColor trace = TerminalColor.forTrace(cap);          // Gray (least prominent)
+
+// Other semantic colors
 TerminalColor highlight = TerminalColor.forHighlight(cap);  // Emphasized
 TerminalColor muted = TerminalColor.forMuted(cap);          // Dimmed
 TerminalColor timestamp = TerminalColor.forTimestamp(cap);  // Cyan (for log timestamps)
@@ -145,10 +149,14 @@ TerminalColor message = TerminalColor.forMessage(cap);      // Magenta (for high
 | `forSuccess()` | Bright green | Normal green | Success messages |
 | `forWarning()` | Bright yellow | Normal yellow | Warnings |
 | `forInfo()` | Bright cyan | Normal blue | Info messages |
+| `forDebug()` | White | Gray | Debug messages (subdued) |
+| `forTrace()` | Gray | Gray | Trace messages (least prominent) |
 | `forHighlight()` | Bright white | Black | Emphasized text |
 | `forMuted()` | Normal white | Normal black | Secondary text |
 | `forTimestamp()` | Bright cyan | Normal cyan | Log timestamps |
 | `forMessage()` | Bright magenta | Normal magenta | Highlighted messages |
+
+Log level colors follow a prominence hierarchy: **ERROR > WARN > INFO > DEBUG > TRACE**
 
 These methods ensure readable colors on any background. On dark themes, bright colors stand out. On light themes, normal intensity prevents eye strain.
 
@@ -275,15 +283,20 @@ String output = builder
 
 ### Semantic Color Methods
 
-The builder provides theme-aware semantic colors:
+The builder provides theme-aware semantic colors for log levels:
 
 ```java
 ANSIBuilder builder = ANSIBuilder.builder(cap);
 
+// Log level colors (most to least prominent)
 builder.error("Error message");      // Red (bright on dark, normal on light)
-builder.success("Success message");  // Green
 builder.warning("Warning message");  // Yellow
+builder.success("Success message");  // Green
 builder.info("Info message");        // Blue
+builder.debug("Debug message");      // White/Gray (subdued)
+builder.trace("Trace message");      // Gray (least prominent)
+
+// Other semantic colors
 builder.timestamp("10:30:45");       // Cyan (subdued, for log timestamps)
 builder.message("Highlighted");      // Magenta (for highlighted messages)
 ```
