@@ -296,9 +296,35 @@ public class ImageDemo {
 
 ## Protocol Detection
 
-The API uses environment variables and terminal type to detect the graphics protocol:
+The API uses multiple methods to detect the graphics protocol, from most to least accurate:
 
-### Environment Variables Checked
+### 1. DA1 Device Attributes (Most Accurate for Sixel)
+
+Query the terminal's device attributes for authoritative Sixel detection:
+
+```java
+// Use DA1 query for accurate Sixel detection
+ImageProtocol protocol = connection.queryImageProtocol(500);
+
+switch (protocol) {
+    case KITTY:
+        // Kitty graphics protocol
+        break;
+    case ITERM2:
+        // iTerm2 inline images
+        break;
+    case SIXEL:
+        // Authoritatively detected via DA1 parameter 4
+        break;
+    case NONE:
+        // No image support
+        break;
+}
+```
+
+The DA1 response includes parameter 4 when Sixel is supported, providing reliable detection even for terminals that don't set specific environment variables.
+
+### 2. Environment Variables
 
 | Variable | Protocol |
 |----------|----------|
@@ -308,7 +334,7 @@ The API uses environment variables and terminal type to detect the graphics prot
 | `WEZTERM_PANE` | iTerm2 |
 | `TERM_PROGRAM=vscode` | iTerm2 |
 
-### TERM Variable Patterns
+### 3. TERM Variable Patterns
 
 | TERM contains | Protocol |
 |---------------|----------|
@@ -318,6 +344,21 @@ The API uses environment variables and terminal type to detect the graphics prot
 | `iterm`, `wezterm`, `mintty` | iTerm2 |
 | `vscode`, `tabby`, `hyper` | iTerm2 |
 | `mlterm`, `foot`, `contour` | Sixel |
+
+### Heuristic vs Query-Based Detection
+
+```java
+// Heuristic detection (fast, no terminal query)
+// Uses environment variables and TERM type
+Device device = connection.device();
+ImageProtocol protocol = device.getImageProtocol();
+
+// Query-based detection (accurate, queries terminal)
+// Uses DA1 for authoritative Sixel detection
+ImageProtocol protocol = connection.queryImageProtocol(500);
+```
+
+Use heuristic detection when you need immediate results. Use query-based detection when accuracy is important and you can wait for the terminal response.
 
 ### Manual Protocol Override
 

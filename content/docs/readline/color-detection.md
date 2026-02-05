@@ -234,6 +234,51 @@ This works with most modern terminal emulators including:
 - GNOME Terminal, Konsole, xterm
 - Windows Terminal
 
+#### Direct Color Queries via Connection
+
+You can also query colors directly using the `Connection` interface:
+
+```java
+// Query background color (OSC 11)
+int[] bg = connection.queryBackgroundColor(500);
+if (bg != null) {
+    int r = bg[0], g = bg[1], b = bg[2];
+    boolean isDark = (r + g + b) / 3 < 128;
+    System.out.println("Background: RGB(" + r + "," + g + "," + b + ")");
+}
+
+// Query foreground color (OSC 10)
+int[] fg = connection.queryForegroundColor(500);
+
+// Query cursor color (OSC 12)
+int[] cursor = connection.queryCursorColor(500);
+
+// Generic OSC query for any code
+String result = connection.queryOsc(oscCode, "?", 500, responseParser);
+```
+
+#### OSC Support Detection with Device Attributes
+
+Use DA1 device attributes to determine if OSC queries are likely to work:
+
+```java
+// Query device attributes first
+DeviceAttributes da = connection.queryPrimaryDeviceAttributes(500);
+
+// Check if OSC queries are likely supported
+if (connection.supportsOscQueries(da)) {
+    int[] bgColor = connection.queryBackgroundColor(500);
+    // ...
+}
+
+// Or use combined query-based check
+if (connection.querySupportsOscQueries(500)) {
+    // Terminal likely supports OSC queries
+}
+```
+
+Terminals that report modern features (ANSI color, Sixel graphics, device class >= 62) typically support OSC queries.
+
 ### 2. Environment Variables
 
 Checks standard environment variables:
