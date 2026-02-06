@@ -1,5 +1,5 @@
 ---
-date: '2026-01-26T10:00:00+01:00'
+date: '2026-02-06T10:00:00+01:00'
 draft: false
 title: 'Remote Connectivity'
 weight: 10
@@ -383,6 +383,15 @@ public class TelnetShell {
 
 WebSocket terminals enable browser-based terminal access, perfect for web applications. The terminal-http module uses Netty for high-performance WebSocket handling and includes a default web page using [xterm.js](https://github.com/xtermjs/xterm.js).
 
+### Features
+
+The terminal-http module provides:
+
+- **Dynamic terminal resize** - Terminal automatically adjusts when browser window is resized
+- **Client capability reporting** - Browser reports terminal type, color depth, and features on connect
+- **Modern terminal type** - Uses `xterm-256color` for full color and capability support
+- **xterm.js integration** - Professional terminal rendering with cursor blinking, selection, and more
+
 ### Maven Dependency
 
 ```xml
@@ -463,6 +472,37 @@ NettyWebsocketTtyBootstrap bootstrap = new NettyWebsocketTtyBootstrap()
 
 Place your `index.html` at `src/main/resources/com/myapp/web/index.html`.
 
+### Accessing Client Capabilities
+
+After the client sends the `init` message, you can access the reported capabilities:
+
+```java
+import org.aesh.terminal.http.HttpTtyConnection;
+import org.aesh.terminal.http.HttpDevice;
+
+private void handleConnection(Connection connection) {
+    if (connection instanceof HttpTtyConnection) {
+        HttpTtyConnection httpConn = (HttpTtyConnection) connection;
+
+        // Wait for init (or check isInitialized())
+        HttpDevice device = (HttpDevice) httpConn.device();
+
+        // Access client-reported capabilities
+        String termType = device.type();              // "xterm-256color"
+        String colorDepth = device.getReportedColorDepth();  // "TRUE_COLOR"
+        List<String> features = device.getFeatures(); // ["UNICODE", "CLIPBOARD"]
+        String userAgent = device.getUserAgent();
+
+        // Check for specific features
+        if (device.hasFeature("CLIPBOARD")) {
+            // Client supports clipboard operations
+        }
+    }
+
+    // Continue with readline...
+}
+```
+
 ### WebSocket-Only Mode
 
 For applications that serve HTML from a separate web server:
@@ -477,7 +517,7 @@ NettyWebsocketTtyBootstrap bootstrap = new NettyWebsocketTtyBootstrap()
 
 ### Browser Client with xterm.js
 
-Create an HTML client using xterm.js from CDN:
+Create an HTML client using xterm.js with FitAddon for dynamic resizing:
 
 ```html
 <!doctype html>
@@ -492,35 +532,39 @@ Create an HTML client using xterm.js from CDN:
             margin: 0;
             padding: 0;
             background: #1e1e1e;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
         }
         .wrapper {
             display: flex;
             flex-direction: column;
-            align-items: center;
+            height: 100vh;
             padding: 20px;
-            min-height: 100vh;
             box-sizing: border-box;
         }
         h1 {
-            margin: 0 0 20px 0;
+            margin: 0 0 10px 0;
             font-size: 24px;
             color: #f0f0f0;
+            text-align: center;
+            flex-shrink: 0;
         }
         #terminal-container {
+            flex: 1;
             border: 2px solid #444;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
             padding: 10px;
             background: #000;
+            min-height: 0;
         }
         .connection-status {
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             padding: 8px 16px;
             border-radius: 4px;
             font-size: 14px;
+            display: inline-block;
+            align-self: center;
         }
         .status-connected { background: #1a472a; color: #4ade80; }
         .status-disconnected { background: #4a1a1a; color: #f87171; }
@@ -535,6 +579,7 @@ Create an HTML client using xterm.js from CDN:
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.js"></script>
     <script>
         (function() {
             'use strict';
@@ -546,6 +591,16 @@ Create an HTML client using xterm.js from CDN:
                 statusEl.textContent = message;
             }
 
+            // Detect terminal capabilities
+            function detectCapabilities() {
+                return {
+                    type: 'xterm-256color',
+                    colorDepth: 'TRUE_COLOR',
+                    features: navigator.clipboard ? ['UNICODE', 'CLIPBOARD'] : ['UNICODE'],
+                    userAgent: navigator.userAgent
+                };
+            }
+
             function connect() {
                 var wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 var wsHost = window.location.host || 'localhost:8080';
@@ -554,16 +609,17 @@ Create an HTML client using xterm.js from CDN:
                 setStatus('connecting', 'Connecting to ' + wsUrl + '...');
 
                 var socket = new WebSocket(wsUrl);
+                var term = null;
+                var fitAddon = null;
+                var resizeTimeout = null;
 
                 socket.onopen = function() {
                     setStatus('connected', 'Connected');
 
-                    var term = new Terminal({
-                        cols: 120,
-                        rows: 40,
+                    term = new Terminal({
                         cursorBlink: true,
                         cursorStyle: 'block',
-                        fontFamily: '"DejaVu Sans Mono", "Liberation Mono", "Courier New", monospace',
+                        fontFamily: '"DejaVu Sans Mono", monospace',
                         fontSize: 14,
                         theme: {
                             background: '#000000',
@@ -572,34 +628,68 @@ Create an HTML client using xterm.js from CDN:
                         }
                     });
 
+                    // Load FitAddon for dynamic resizing
+                    fitAddon = new FitAddon.FitAddon();
+                    term.loadAddon(fitAddon);
+
                     term.open(document.getElementById('terminal-container'));
+                    fitAddon.fit();
+
+                    // Send init message with capabilities
+                    var caps = detectCapabilities();
+                    caps.cols = term.cols;
+                    caps.rows = term.rows;
+                    socket.send(JSON.stringify({
+                        action: 'init',
+                        type: caps.type,
+                        colorDepth: caps.colorDepth,
+                        features: caps.features,
+                        cols: caps.cols,
+                        rows: caps.rows,
+                        userAgent: caps.userAgent
+                    }));
 
                     socket.onmessage = function(event) {
-                        if (event.type === 'message') {
-                            term.write(event.data);
-                        }
+                        term.write(event.data);
                     };
 
                     term.onData(function(data) {
                         socket.send(JSON.stringify({action: 'read', data: data}));
                     });
 
+                    // Send resize events to server
+                    term.onResize(function(size) {
+                        socket.send(JSON.stringify({
+                            action: 'resize',
+                            cols: size.cols,
+                            rows: size.rows
+                        }));
+                    });
+
+                    // Handle window resize with debouncing
+                    function handleResize() {
+                        if (resizeTimeout) clearTimeout(resizeTimeout);
+                        resizeTimeout = setTimeout(function() {
+                            if (fitAddon) fitAddon.fit();
+                        }, 100);
+                    }
+                    window.addEventListener('resize', handleResize);
+
                     socket.onclose = function(event) {
                         setStatus('disconnected', 'Disconnected (code: ' + event.code + ')');
                         term.write('\r\n\x1b[31mConnection closed.\x1b[0m\r\n');
+                        window.removeEventListener('resize', handleResize);
                     };
 
                     socket.onerror = function(error) {
                         setStatus('disconnected', 'Connection error');
-                        console.error('WebSocket error:', error);
                     };
 
                     term.focus();
                 };
 
-                socket.onerror = function(error) {
+                socket.onerror = function() {
                     setStatus('disconnected', 'Failed to connect');
-                    console.error('WebSocket connection error:', error);
                 };
             }
 
@@ -610,13 +700,44 @@ Create an HTML client using xterm.js from CDN:
 </html>
 ```
 
+This example includes:
+- **FitAddon** for automatic terminal resizing
+- **Capability detection** sent via `init` action
+- **Resize event handling** with debouncing
+- **Responsive layout** using flexbox
+
 ### Message Protocol
 
 The WebSocket uses JSON messages for communication:
 
-**Client to Server (input):**
+**Client to Server - Initialization (sent on connect):**
+```json
+{
+  "action": "init",
+  "type": "xterm-256color",
+  "colorDepth": "TRUE_COLOR",
+  "features": ["UNICODE", "CLIPBOARD"],
+  "cols": 120,
+  "rows": 40,
+  "userAgent": "Mozilla/5.0 ..."
+}
+```
+
+The `init` action reports client capabilities:
+- `type` - Terminal type (e.g., "xterm-256color")
+- `colorDepth` - Color support ("TRUE_COLOR", "256", "16")
+- `features` - Supported features array
+- `cols`/`rows` - Initial terminal dimensions
+- `userAgent` - Browser identification
+
+**Client to Server - User Input:**
 ```json
 {"action": "read", "data": "user input here"}
+```
+
+**Client to Server - Terminal Resize:**
+```json
+{"action": "resize", "cols": 100, "rows": 30}
 ```
 
 **Server to Client (output):**

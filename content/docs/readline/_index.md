@@ -1,5 +1,5 @@
 ---
-date: '2026-01-11T15:00:00+01:00'
+date: '2026-02-06T15:00:00+01:00'
 draft: false
 title: 'Æsh Readline'
 ---
@@ -44,7 +44,7 @@ Think of it this way: Æsh is built **on top of** Æsh Readline. Æsh provides t
 - **Remote Connectivity** - SSH, Telnet, and WebSocket terminal servers
 - **[Terminal Environment](terminal-environment)** - Centralized terminal detection (type, color depth, multiplexers)
 - **[Color Detection](color-detection)** - Automatic terminal theme and color depth detection
-- **[Terminal Colors](terminal-colors)** - RGB colors, theme-aware styling, and color depth adaptation
+- **[Terminal Colors](terminal-colors)** - RGB/HSL colors, theme-aware styling, and color depth adaptation
 - **[Device Attributes](device-attributes)** - DA1/DA2 terminal capability queries
 - **[Terminal Images](terminal-images)** - Sixel, Kitty, and iTerm2 inline image support
 

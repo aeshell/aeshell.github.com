@@ -1,5 +1,5 @@
 ---
-date: '2026-01-26T14:00:00+01:00'
+date: '2026-02-06T14:00:00+01:00'
 draft: false
 title: 'Terminal Colors'
 weight: 10
@@ -110,6 +110,90 @@ TerminalColor color = TerminalColor.fromHex("#FF5733");
 if (color.isTrueColor()) {
     int[] fg = color.getTextRGB();       // [255, 87, 51]
     int[] bg = color.getBackgroundRGB(); // null if not set
+}
+```
+
+## HSL Color Support
+
+HSL (Hue, Saturation, Lightness) is often more intuitive than RGB for color selection and is especially useful for generating color palettes. The color wheel makes it easy to:
+
+- **Create color variations** by adjusting lightness
+- **Generate harmonious colors** by rotating hue
+- **Control color intensity** via saturation
+
+### HSL Color Wheel
+
+| Hue (degrees) | Color |
+|---------------|-------|
+| 0° | Red |
+| 60° | Yellow |
+| 120° | Green |
+| 180° | Cyan |
+| 240° | Blue |
+| 300° | Magenta |
+| 360° | Red (wraps around) |
+
+### From HSL Values
+
+```java
+// Foreground only - pure red at full saturation
+TerminalColor red = TerminalColor.fromHSL(0, 100, 50);
+
+// Both foreground and background
+TerminalColor custom = TerminalColor.fromHSL(
+    0, 100, 65,      // Foreground: light red (good for dark terminals)
+    240, 80, 20      // Background: dark blue
+);
+
+// Optimal lightness for different backgrounds:
+// - Dark terminals: use lightness 60-75 for visible colors
+// - Light terminals: use lightness 25-40 for visible colors
+int darkL = 65;  // For dark backgrounds
+int lightL = 35; // For light backgrounds
+```
+
+### HSL Conversion Utilities
+
+Convert between HSL and RGB:
+
+```java
+// HSL to RGB
+int[] rgb = TerminalColor.hslToRgb(180, 80, 65);  // Cyan-ish
+// Returns: [92, 230, 230]
+
+// RGB to HSL
+float[] hsl = TerminalColor.rgbToHsl(255, 128, 0);  // Orange
+// Returns: [30.0, 100.0, 50.0] (H=30°, S=100%, L=50%)
+```
+
+### Getting HSL from True Color
+
+```java
+TerminalColor color = TerminalColor.fromRGB(255, 0, 0);
+
+float[] fgHsl = color.getTextHSL();       // [0.0, 100.0, 50.0]
+float[] bgHsl = color.getBackgroundHSL(); // null if not set
+```
+
+### Example: HSL Color Wheel Visualization
+
+```java
+// Display colors across the hue wheel
+TerminalColorCapability cap = TerminalColorCapability.builder().build();
+boolean isDark = cap.getTheme() == TerminalTheme.DARK;
+
+int lightness = isDark ? 65 : 35;  // Adjust for theme
+int saturation = 80;
+
+for (int hue = 0; hue <= 360; hue += 30) {
+    int[] rgb = TerminalColor.hslToRgb(hue, saturation, lightness);
+
+    String sample = ANSIBuilder.builder(cap)
+        .rgb(rgb[0], rgb[1], rgb[2])
+        .append(String.format("Hue: %3d°", hue))
+        .toString();
+
+    System.out.println(sample);
 }
 ```
 
@@ -471,9 +555,14 @@ builder.warningRgb(255, 165, 0);    // Orange
 // Hex values
 builder.errorHex("#FF5733");        // Coral
 builder.timestampHex("6495ED");     // Cornflower blue
+
+// HSL values (hue, saturation%, lightness%)
+builder.errorHsl(0, 80, 65);        // Light red for dark theme
+builder.successHsl(120, 80, 65);    // Light green for dark theme
+builder.warningHsl(60, 80, 65);     // Light yellow for dark theme
 ```
 
-Color priority: **RGB override > code override > capability > default**.
+Color priority: **RGB/HSL override > code override > capability > default**.
 
 ### Extended Color Support
 
@@ -502,6 +591,27 @@ builder.bgRgb(30, 30, 30).append("Dark background");
 // From hex string
 builder.hex("#FF5733").append("Coral text");
 builder.bgHex("#1E1E1E").append("Dark background");
+```
+
+#### HSL Colors
+
+HSL is ideal for generating readable colors that adapt to terminal themes:
+
+```java
+// HSL foreground (hue 0-360, saturation 0-100, lightness 0-100)
+builder.hsl(0, 80, 65).append("Light red");    // Good for dark themes
+builder.hsl(120, 80, 35).append("Dark green"); // Good for light themes
+
+// HSL background
+builder.bgHsl(240, 80, 20).append("Dark blue background");
+
+// With text directly
+builder.hsl(180, 80, 65, "Cyan text");
+
+// Theme-adaptive pattern
+boolean isDark = cap.getTheme() == TerminalTheme.DARK;
+int lightness = isDark ? 65 : 35;
+builder.hsl(0, 80, lightness).append("Theme-adaptive red");
 ```
 
 #### Bright Colors
@@ -656,6 +766,10 @@ public class ColorfulApp {
 | `fromRGB(tr, tg, tb, br, bg, bb)` | Create with RGB foreground and background |
 | `fromHex(hex)` | Create from hex string (e.g., "#FF5733") |
 | `fromHex(textHex, bgHex)` | Create both colors from hex |
+| `fromHSL(h, s, l)` | Create with HSL foreground |
+| `fromHSL(th, ts, tl, bh, bs, bl)` | Create with HSL foreground and background |
+| `hslToRgb(h, s, l)` | Convert HSL to RGB array |
+| `rgbToHsl(r, g, b)` | Convert RGB to HSL array |
 | `forError(cap)` | Theme-aware red for errors |
 | `forSuccess(cap)` | Theme-aware green for success |
 | `forWarning(cap)` | Theme-aware yellow for warnings |
@@ -672,6 +786,8 @@ public class ColorfulApp {
 | `isTrueColor()` | Check if using RGB mode |
 | `getTextRGB()` | Get foreground RGB array or null |
 | `getBackgroundRGB()` | Get background RGB array or null |
+| `getTextHSL()` | Get foreground HSL array or null |
+| `getBackgroundHSL()` | Get background HSL array or null |
 | `forCapability(cap)` | Adapt to terminal's color depth |
 | `toColor256()` | Convert RGB to 256-color palette |
 | `toColor16()` | Convert RGB to basic 16 colors |
