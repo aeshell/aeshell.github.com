@@ -224,6 +224,122 @@ The RGB to 16-color conversion:
 2. **Dominant channel**: Determines base color from strongest RGB channel
 3. **Intensity**: Bright if luminance > 60%, normal otherwise
 
+## ANSI Color Utilities
+
+The `ANSI` class provides utility methods for converting between RGB values and ANSI color codes. This is useful when you have RGB values (e.g., from OSC color queries) and need to find the closest ANSI equivalent.
+
+### RGB to 256-Color Palette
+
+Convert RGB to the nearest 256-color palette index:
+
+```java
+import org.aesh.terminal.utils.ANSI;
+
+// Convert RGB to 256-color palette index (16-255)
+int index = ANSI.rgbTo256Color(255, 128, 0);  // Returns palette index
+
+// Use in escape sequence
+connection.write("\u001B[38;5;" + index + "mColored text\u001B[0m");
+```
+
+### RGB to Basic ANSI Colors
+
+Convert RGB to basic ANSI color codes (16 colors):
+
+```java
+// Get foreground color code (30-37 or 90-97)
+// Brightness is automatically determined from luminance
+int fgCode = ANSI.rgbToAnsiColor(255, 0, 0);  // Returns 91 (bright red)
+
+// With explicit brightness control
+int normalRed = ANSI.rgbToAnsiColor(255, 0, 0, false);  // Returns 31
+int brightRed = ANSI.rgbToAnsiColor(255, 0, 0, true);   // Returns 91
+
+// Get background color code (40-47 or 100-107)
+int bgCode = ANSI.rgbToAnsiBackgroundColor(0, 0, 128);  // Returns blue background
+
+// Get just the basic color code (30-37) without brightness offset
+int basicCode = ANSI.rgbToBasicColorCode(0, 200, 0);  // Returns 32 (green)
+```
+
+### Basic Color Code Reference
+
+| Code | Color | Bright Code |
+|------|-------|-------------|
+| 30 | Black | 90 |
+| 31 | Red | 91 |
+| 32 | Green | 92 |
+| 33 | Yellow | 93 |
+| 34 | Blue | 94 |
+| 35 | Magenta | 95 |
+| 36 | Cyan | 96 |
+| 37 | White | 97 |
+
+Background codes add 10 (40-47 normal, 100-107 bright).
+
+### Brightness Detection
+
+Check if an RGB color should use the bright variant:
+
+```java
+boolean isBright = ANSI.rgbIsBright(200, 200, 200);  // true
+boolean isDark = ANSI.rgbIsBright(50, 50, 50);       // false
+```
+
+### Reverse Conversion: 256-Color to RGB
+
+Convert a 256-color palette index back to RGB:
+
+```java
+// Get RGB values for a palette index
+int[] rgb = ANSI.color256ToRgb(196);  // Returns [255, 0, 0] for bright red
+int[] gray = ANSI.color256ToRgb(244); // Returns grayscale RGB
+
+System.out.println("R=" + rgb[0] + " G=" + rgb[1] + " B=" + rgb[2]);
+```
+
+### Example: Using with OSC Color Queries
+
+Combine color queries with ANSI conversion:
+
+```java
+// Query the terminal's background color
+int[] bgColor = connection.queryBackgroundColor(500);
+
+if (bgColor != null) {
+    // Convert to 256-color index
+    int paletteIndex = ANSI.rgbTo256Color(bgColor[0], bgColor[1], bgColor[2]);
+    System.out.println("Background is palette color: " + paletteIndex);
+
+    // Convert to basic ANSI code
+    int ansiCode = ANSI.rgbToAnsiColor(bgColor[0], bgColor[1], bgColor[2]);
+    System.out.println("Nearest basic ANSI code: " + ansiCode);
+
+    // Check brightness for theme detection
+    boolean isDark = !ANSI.rgbIsBright(bgColor[0], bgColor[1], bgColor[2]);
+    System.out.println("Theme: " + (isDark ? "dark" : "light"));
+}
+```
+
+### Example: Palette Color Round-Trip
+
+```java
+// Query a palette color from the terminal
+int[] rgb = connection.queryPaletteColor(1, 500);
+
+if (rgb != null) {
+    // Convert back to palette index
+    int index = ANSI.rgbTo256Color(rgb[0], rgb[1], rgb[2]);
+
+    // Find nearest basic ANSI equivalent
+    int ansiCode = ANSI.rgbToAnsiColor(rgb[0], rgb[1], rgb[2]);
+
+    System.out.println("Palette 1: RGB(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")");
+    System.out.println("  -> 256-color index: " + index);
+    System.out.println("  -> Basic ANSI code: " + ansiCode);
+}
+```
+
 ## Using with TerminalString
 
 `TerminalColor` is typically used with `TerminalString` for styled output:

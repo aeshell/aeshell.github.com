@@ -279,6 +279,30 @@ if (connection.querySupportsOscQueries(500)) {
 
 Terminals that report modern features (ANSI color, Sixel graphics, device class >= 62) typically support OSC queries.
 
+#### Converting RGB to ANSI Color Codes
+
+After querying RGB colors, you can convert them to ANSI color codes using the `ANSI` utility class:
+
+```java
+int[] bgColor = connection.queryBackgroundColor(500);
+
+if (bgColor != null) {
+    // Convert to 256-color palette index
+    int paletteIndex = ANSI.rgbTo256Color(bgColor[0], bgColor[1], bgColor[2]);
+
+    // Convert to basic ANSI foreground code (30-37 or 90-97)
+    int ansiCode = ANSI.rgbToAnsiColor(bgColor[0], bgColor[1], bgColor[2]);
+
+    // Check brightness for theme detection
+    boolean isDark = !ANSI.rgbIsBright(bgColor[0], bgColor[1], bgColor[2]);
+
+    // Reverse conversion: get RGB from palette index
+    int[] rgb = ANSI.color256ToRgb(paletteIndex);
+}
+```
+
+See [Terminal Colors](terminal-colors#ansi-color-utilities) for complete documentation of RGB/ANSI conversion utilities.
+
 ### 2. Environment Variables
 
 Checks standard environment variables:

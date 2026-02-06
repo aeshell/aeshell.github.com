@@ -199,6 +199,40 @@ if (bg != null) {
 int[] cursor = connection.queryCursorColor(500);
 ```
 
+### Palette Color Queries
+
+Query colors from the 256-color palette using OSC 4:
+
+```java
+// Query palette color by index (0-255)
+int[] color = connection.queryPaletteColor(1, 500);
+if (color != null) {
+    System.out.println("Palette 1: RGB(" + color[0] + "," + color[1] + "," + color[2] + ")");
+
+    // Convert to nearest 256-color index
+    int index = ANSI.rgbTo256Color(color[0], color[1], color[2]);
+
+    // Convert to basic ANSI code
+    int ansiCode = ANSI.rgbToAnsiColor(color[0], color[1], color[2]);
+}
+```
+
+Palette indices:
+- 0-7: Standard ANSI colors
+- 8-15: Bright ANSI colors
+- 16-231: 6x6x6 color cube
+- 232-255: Grayscale ramp
+
+### OSC Query with Index Parameter
+
+For OSC codes that require an index (like OSC 4), use the indexed query method:
+
+```java
+// Query OSC 4 with index parameter
+int[] rgb = connection.queryOsc(4, 1, "?", 500,
+        input -> ANSI.parseOscColorResponse(input, 4, 1));
+```
+
 ### OSC Support Detection
 
 Check if the terminal supports OSC queries:
