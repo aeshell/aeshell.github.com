@@ -79,6 +79,32 @@ if (conn.device().supportsImages()) {
 }
 ```
 
+### Protocol Detection from Environment
+
+The `ImageProtocolDetector` uses [`TerminalEnvironment`](terminal-environment) for detection:
+
+```java
+import org.aesh.terminal.image.ImageProtocolDetector;
+import org.aesh.terminal.Device;
+
+// Detect from current environment (uses TerminalEnvironment)
+ImageProtocol protocol = ImageProtocolDetector.detectFromEnvironment();
+
+// Get protocol for a specific terminal type
+Device.TerminalType type = Device.TerminalType.KITTY;
+ImageProtocol kittyProtocol = ImageProtocolDetector.getProtocolForTerminalType(type);
+// Returns: ImageProtocol.KITTY
+```
+
+### Protocol by Terminal Type
+
+| Terminal Type | Image Protocol |
+|---------------|----------------|
+| `KITTY`, `GHOSTTY`, `KONSOLE` | KITTY |
+| `ITERM2`, `WEZTERM`, `MINTTY`, `VSCODE`, `TABBY`, `HYPER` | ITERM2 |
+| `FOOT`, `CONTOUR` | SIXEL |
+| Others | NONE |
+
 ## TerminalImageBuilder
 
 The `TerminalImageBuilder` class provides a fluent API for creating images:

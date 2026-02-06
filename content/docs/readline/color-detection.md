@@ -305,13 +305,20 @@ See [Terminal Colors](terminal-colors#ansi-color-utilities) for complete documen
 
 ### 2. Environment Variables
 
-Checks standard environment variables:
+Checks standard environment variables via [`TerminalEnvironment`](terminal-environment):
 
 | Variable | Example | Meaning |
 |----------|---------|---------|
 | `COLORFGBG` | `15;0` | Foreground;Background color indices |
 | `COLORTERM` | `truecolor` | Color depth hint |
 | `APPLE_INTERFACE_STYLE` | `Dark` | macOS dark mode |
+| `TERM_PROGRAM` | `iTerm.app` | Terminal program identifier |
+| `KITTY_WINDOW_ID` | `1` | Kitty terminal indicator |
+| `ITERM_SESSION_ID` | `w0t0p0` | iTerm2 session indicator |
+| `WEZTERM_PANE` | `0` | WezTerm terminal indicator |
+| `GHOSTTY_RESOURCES_DIR` | `/path` | Ghostty terminal indicator |
+
+The `TerminalEnvironment` class parses these once and caches the results. See [Terminal Environment](terminal-environment) for details on all supported environment variables and terminal types.
 
 ### 3. Terminal-Specific Detection
 
@@ -346,16 +353,30 @@ Queries the Windows registry for `AppsUseLightTheme`.
 
 ## Multiplexer Support (tmux/screen)
 
-When running inside tmux or GNU Screen, color detection requires special handling:
+When running inside tmux or GNU Screen, color detection requires special handling. The [`TerminalEnvironment`](terminal-environment) class provides centralized multiplexer detection:
 
 ```java
+import org.aesh.terminal.utils.TerminalEnvironment;
+
+TerminalEnvironment env = TerminalEnvironment.getInstance();
+
 // Check if running in a multiplexer
-if (TerminalColorDetector.isRunningInTmux()) {
+if (env.isInTmux()) {
     System.out.println("Running inside tmux");
 }
 
-if (TerminalColorDetector.isRunningInMultiplexer()) {
+if (env.isInMultiplexer()) {
     System.out.println("Running inside tmux or screen");
+}
+
+// Check if passthrough is enabled
+if (env.isTmuxPassthroughEnabled()) {
+    System.out.println("OSC passthrough is enabled");
+}
+
+// Legacy static methods still work
+if (TerminalColorDetector.isRunningInTmux()) {
+    System.out.println("Running inside tmux");
 }
 ```
 

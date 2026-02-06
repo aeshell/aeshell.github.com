@@ -198,6 +198,55 @@ if (da.likelySupportsOscQueries()) {
 }
 ```
 
+## Terminal Environment Detection
+
+The [`TerminalEnvironment`](terminal-environment) class provides centralized detection of terminal type and capabilities:
+
+```java
+import org.aesh.terminal.Device;
+import org.aesh.terminal.utils.TerminalEnvironment;
+
+TerminalEnvironment env = TerminalEnvironment.getInstance();
+
+// Detect terminal type
+Device.TerminalType type = env.getTerminalType();
+System.out.println("Terminal: " + type.getIdentifier());
+
+// Check for specific terminals
+if (env.isKitty()) {
+    System.out.println("Running in Kitty");
+}
+if (env.isJetBrains()) {
+    System.out.println("Running in JetBrains IDE");
+}
+
+// Check multiplexer status
+if (env.isInMultiplexer()) {
+    System.out.println("Running in tmux or screen");
+}
+
+// Check OSC support
+if (env.supportsOscQueries()) {
+    System.out.println("OSC queries supported");
+}
+
+// Get color depth
+ColorDepth depth = env.getDefaultColorDepth();
+```
+
+The `Device` interface methods also use `TerminalEnvironment` internally:
+
+```java
+Device device = connection.device();
+
+// These use TerminalEnvironment
+Device.TerminalType type = device.detectTerminalType();
+boolean oscSupported = device.supportsOscQueries();
+boolean isMultiplexer = device.isMultiplexer();
+```
+
+See [Terminal Environment](terminal-environment) for complete documentation.
+
 ## Image Protocol Detection
 
 Detect the terminal's inline image support:

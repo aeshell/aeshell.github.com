@@ -282,6 +282,95 @@ if (da != null) {
 }
 ```
 
+## Synergy with Terminal Environment
+
+The `DeviceAttributes` class provides synergy methods that work with [`TerminalEnvironment`](terminal-environment) and `Device.TerminalType` for comprehensive terminal detection:
+
+### Inferring Terminal Type from DA
+
+```java
+import org.aesh.terminal.Device;
+import org.aesh.terminal.utils.TerminalEnvironment;
+
+// Heuristic detection (fast, always available)
+Device.TerminalType heuristicType = TerminalEnvironment.detectTerminalType();
+
+// Authoritative detection from DA1/DA2
+DeviceAttributes da = connection.queryDeviceAttributes(500);
+if (da != null) {
+    Device.TerminalType authType = da.inferTerminalType();
+    System.out.println("Inferred type: " + authType.getIdentifier());
+}
+```
+
+### Validating Terminal Type
+
+Verify that heuristic detection matches actual capabilities:
+
+```java
+Device.TerminalType envType = TerminalEnvironment.detectTerminalType();
+DeviceAttributes da = connection.queryDeviceAttributes(500);
+
+if (da != null && !da.matchesTerminalType(envType)) {
+    System.out.println("Warning: Terminal capabilities differ from expected for " +
+                       envType.getIdentifier());
+}
+```
+
+### Inferring Color Depth
+
+Get authoritative color depth from DA1:
+
+```java
+DeviceAttributes da = connection.queryDeviceAttributes(500);
+if (da != null) {
+    ColorDepth depth = da.inferColorDepth();
+    System.out.println("Color depth: " + depth);
+}
+```
+
+### Capability Summary
+
+Generate a comprehensive capabilities report:
+
+```java
+Device.TerminalType envType = TerminalEnvironment.detectTerminalType();
+DeviceAttributes da = connection.queryDeviceAttributes(500);
+
+if (da != null) {
+    String summary = da.getCapabilitySummary(envType);
+    System.out.println(summary);
+}
+```
+
+Output example:
+```
+Terminal: kitty
+DA1 Class: 64
+DA2 Type: VT420
+
+Capabilities:
+  Color Depth: COLORS_256
+  Sixel Graphics: Yes
+  ANSI Color: Yes
+  Mouse Support: Yes
+  OSC Queries: Likely
+```
+
+### Expected Features by Terminal Type
+
+Each `Device.TerminalType` knows its expected DA1 features:
+
+```java
+// Get expected features for a terminal type
+Set<DeviceAttributes.Feature> expected = Device.TerminalType.KITTY.getExpectedFeatures();
+// Contains: SIXEL, ANSI_COLOR, ANSI_TEXT_LOCATOR
+
+// Convenience methods
+boolean expectsSixel = Device.TerminalType.KITTY.expectsSixel();  // true
+boolean expectsMouse = Device.TerminalType.XTERM.expectsMouse();  // true
+```
+
 ## Common DA1 Response Patterns
 
 Different terminals return different DA1 responses:

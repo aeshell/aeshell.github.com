@@ -235,19 +235,52 @@ int[] rgb = connection.queryOsc(4, 1, "?", 500,
 
 ### OSC Support Detection
 
-Check if the terminal supports OSC queries:
+Not all terminals support all OSC queries. For example, JetBrains IDE terminals
+don't support OSC 4 (palette queries). Use the `Device` enums to check
+terminal capabilities before querying:
 
 ```java
-// Basic heuristic check
-boolean supportsOsc = connection.supportsOscQueries();
+import org.aesh.terminal.Device.TerminalType;
+import org.aesh.terminal.Device.OscCode;
 
-// More accurate check using Device Attributes
-DeviceAttributes attrs = connection.queryPrimaryDeviceAttributes(500);
-boolean supportsOsc = connection.supportsOscQueries(attrs);
+// Detect terminal type from environment
+TerminalType termType = connection.getTerminalType();
+System.out.println("Terminal: " + termType.getIdentifier());
 
-// Query-based check (sends DA1 query)
-boolean supportsOsc = connection.querySupportsOscQueries(500);
+// Check specific OSC support
+if (connection.supportsPaletteQuery()) {
+    int[] color = connection.queryPaletteColor(1, 500);
+    // Use color...
+}
+
+// Or use the convenience method that checks support first
+int[] color = connection.queryPaletteColorIfSupported(1, 500);
+if (color != null) {
+    // Terminal supports OSC 4 and returned a color
+}
+
+// Check for OSC 10/11 support
+if (connection.supportsColorQuery()) {
+    int[] fg = connection.queryForegroundColor(500);
+    int[] bg = connection.queryBackgroundColor(500);
+}
+
+// Check if running in JetBrains IDE
+Device device = connection.device();
+if (device != null && device.isJetBrainsTerminal()) {
+    // Use fallback approach for palette colors
+}
+
+// Check for any OSC code support
+if (connection.supportsOscCode(OscCode.CLIPBOARD)) {
+    // Terminal supports clipboard access via OSC 52
+}
 ```
+
+Known terminal limitations:
+- **JetBrains IDEs**: No OSC 4 (palette) support
+- **Linux console**: No OSC query support
+- **Alacritty**: No OSC 52 (clipboard) support
 
 ## Device Attributes (DA1/DA2)
 
