@@ -2,28 +2,42 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Group Commands'
+weight: 7
 ---
 
 Group commands allow you to create hierarchical command structures, similar to `git` with subcommands like `commit`, `push`, `pull`.
 
 ## @GroupCommandDefinition
 
-Use the `@GroupCommandDefinition` annotation to define a command group:
+Use the `@GroupCommandDefinition` annotation to define a command group. The `groupCommands` property specifies which commands are subcommands of this group:
 
 ```java
 @GroupCommandDefinition(
     name = "git",
-    description = "Version control system"
+    description = "Version control system",
+    groupCommands = {CommitCommand.class, PushCommand.class, PullCommand.class}
 )
 public class GitCommand implements GroupCommand<CommandInvocation> {
     
     @Override
     public CommandResult execute(CommandInvocation invocation) {
-        invocation.println("Git commands: commit, push, pull");
+        // This is called when user types just "git" without a subcommand
+        invocation.println("Usage: git <command> [options]");
+        invocation.println("Commands: commit, push, pull");
         return CommandResult.SUCCESS;
     }
 }
 ```
+
+### Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `name` | `String` | required | The group command name |
+| `description` | `String` | `""` | Description shown in help |
+| `groupCommands` | `Class[]` | `{}` | Array of subcommand classes |
+| `generateHelp` | `boolean` | `false` | Auto-generate `--help` option |
+| `aliases` | `String[]` | `{}` | Alternative names for the group |
 
 ## Subcommands
 
@@ -33,7 +47,7 @@ Define subcommands as regular commands with `@CommandDefinition`:
 @CommandDefinition(name = "commit", description = "Commit changes")
 public class CommitCommand implements Command<CommandInvocation> {
 
-    @Option(shortName = 'm', description = "Commit message")
+    @Option(shortName = 'm', description = "Commit message", required = true)
     private String message;
 
     @Option(shortName = 'a', hasValue = false, description = "Add all files")
@@ -41,6 +55,9 @@ public class CommitCommand implements Command<CommandInvocation> {
 
     @Override
     public CommandResult execute(CommandInvocation invocation) {
+        if (addAll) {
+            invocation.println("Adding all modified files...");
+        }
         invocation.println("Committing: " + message);
         return CommandResult.SUCCESS;
     }
@@ -52,9 +69,25 @@ public class PushCommand implements Command<CommandInvocation> {
     @Option(name = "remote", description = "Remote repository")
     private String remote = "origin";
 
+    @Option(name = "branch", description = "Branch to push")
+    private String branch = "main";
+
     @Override
     public CommandResult execute(CommandInvocation invocation) {
-        invocation.println("Pushing to: " + remote);
+        invocation.println("Pushing " + branch + " to " + remote + "...");
+        return CommandResult.SUCCESS;
+    }
+}
+
+@CommandDefinition(name = "pull", description = "Pull from remote")
+public class PullCommand implements Command<CommandInvocation> {
+
+    @Option(name = "remote", description = "Remote repository")
+    private String remote = "origin";
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Pulling from " + remote + "...");
         return CommandResult.SUCCESS;
     }
 }
@@ -62,14 +95,12 @@ public class PushCommand implements Command<CommandInvocation> {
 
 ## Registering Group Commands
 
-Group commands work the same as regular commands - just register them all:
+Only the top-level group command needs to be registered. The subcommands are automatically available through the `groupCommands` property:
 
 ```java
 AeshConsoleRunner.builder()
-        .command(GitCommand.class)
-        .command(CommitCommand.class)
-        .command(PushCommand.class)
-        .prompt("[git]$ ")
+        .command(GitCommand.class)  // Subcommands are included via @GroupCommandDefinition
+        .prompt("[myapp]$ ")
         .addExitCommand()
         .start();
 ```
@@ -77,23 +108,214 @@ AeshConsoleRunner.builder()
 ## Usage
 
 Users can now invoke commands as:
-- `git` - Shows the group command help
+- `git` - Shows the group command help/usage
 - `git commit -m "fix bug"` - Runs the commit command
+- `git commit -a -m "fix all"` - Commit with add all option
 - `git push --remote upstream` - Runs the push command
+- `git pull` - Runs the pull command with defaults
+
+```
+[myapp]$ git
+Usage: git <command> [options]
+Commands: commit, push, pull
+
+[myapp]$ git commit -m "Initial commit"
+Committing: Initial commit
+
+[myapp]$ git push --remote upstream --branch develop
+Pushing develop to upstream...
+```
 
 ## Nested Groups
 
-You can create deeply nested command structures:
+You can create deeply nested command structures by having a group command as a subcommand of another group:
 
 ```
-git
-├── commit
-├── push
-├── pull
-└── branch
+docker
+├── container
+│   ├── ls
+│   ├── start
+│   ├── stop
+│   └── rm
+├── image
+│   ├── ls
+│   ├── pull
+│   └── rm
+└── volume
     ├── create
-    ├── delete
-    └── list
+    └── rm
 ```
 
-Each level is defined as a separate command with appropriate relationships.
+### Example: Docker-like Command Structure
+
+```java
+// Top-level group
+@GroupCommandDefinition(
+    name = "docker",
+    description = "Container management",
+    groupCommands = {ContainerGroup.class, ImageGroup.class, VolumeGroup.class}
+)
+public class DockerCommand implements GroupCommand<CommandInvocation> {
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Usage: docker <command>");
+        invocation.println("Commands: container, image, volume");
+        return CommandResult.SUCCESS;
+    }
+}
+
+// Nested group for container commands
+@GroupCommandDefinition(
+    name = "container",
+    description = "Manage containers",
+    groupCommands = {ContainerLsCommand.class, ContainerStartCommand.class, 
+                     ContainerStopCommand.class, ContainerRmCommand.class}
+)
+public class ContainerGroup implements GroupCommand<CommandInvocation> {
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Usage: docker container <command>");
+        return CommandResult.SUCCESS;
+    }
+}
+
+// Leaf command
+@CommandDefinition(name = "ls", description = "List containers")
+public class ContainerLsCommand implements Command<CommandInvocation> {
+    
+    @Option(shortName = 'a', hasValue = false, description = "Show all containers")
+    private boolean all;
+    
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        if (all) {
+            invocation.println("Listing all containers...");
+        } else {
+            invocation.println("Listing running containers...");
+        }
+        return CommandResult.SUCCESS;
+    }
+}
+
+@CommandDefinition(name = "start", description = "Start a container")
+public class ContainerStartCommand implements Command<CommandInvocation> {
+    
+    @Argument(description = "Container ID or name", required = true)
+    private String container;
+    
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Starting container: " + container);
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Usage:
+```
+[myapp]$ docker container ls -a
+Listing all containers...
+
+[myapp]$ docker container start mycontainer
+Starting container: mycontainer
+```
+
+## Group Commands with Shared Options
+
+You can add options to the group command itself that apply to all subcommands:
+
+```java
+@GroupCommandDefinition(
+    name = "kubectl",
+    description = "Kubernetes CLI",
+    groupCommands = {GetCommand.class, ApplyCommand.class, DeleteCommand.class}
+)
+public class KubectlCommand implements GroupCommand<CommandInvocation> {
+    
+    @Option(shortName = 'n', name = "namespace", description = "Kubernetes namespace")
+    private String namespace = "default";
+    
+    @Option(name = "context", description = "Kubernetes context")
+    private String context;
+    
+    public String getNamespace() {
+        return namespace;
+    }
+    
+    public String getContext() {
+        return context;
+    }
+    
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Usage: kubectl [options] <command>");
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+## Sub-Command Mode
+
+Group commands can enter an interactive **sub-command mode** where users work within the group's context. This is useful for workflows that involve multiple operations on the same resource.
+
+```java
+@GroupCommandDefinition(
+    name = "project",
+    description = "Project management",
+    groupCommands = {BuildCommand.class, TestCommand.class}
+)
+public class ProjectCommand implements Command<CommandInvocation> {
+
+    @Option(name = "name", required = true)
+    private String projectName;
+
+    @Option(name = "verbose", hasValue = false, inherited = true)  // Available to subcommands
+    private boolean verbose;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Project: " + projectName);
+
+        // Enter sub-command mode - prompt changes to "project[myapp]>"
+        invocation.enterSubCommandMode(this);
+
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Usage:
+```
+[myapp]$ project --name=myapp --verbose
+Project: myapp
+Entering project mode.
+
+project[myapp]> build
+Building myapp...
+
+project[myapp]> test
+Testing myapp...
+
+project[myapp]> exit
+[myapp]$
+```
+
+See [Sub-Command Mode](/docs/aesh/sub-command-mode) for complete documentation on:
+- Accessing parent values via `@ParentCommand` or `getParentValue()`
+- Inherited options with `inherited = true`
+- Configuring prompts, exit commands, and messages
+- Nested contexts
+
+## Best Practices
+
+1. **Use meaningful group names** - Group names should clearly indicate the category of commands they contain.
+
+2. **Provide help in the group command** - When the group command is invoked without a subcommand, show usage information.
+
+3. **Keep nesting shallow** - Avoid more than 2-3 levels of nesting for usability.
+
+4. **Use consistent naming** - Follow conventions like `noun-verb` or `verb-noun` consistently.
+
+5. **Generate help** - Use `generateHelp = true` for automatic help generation.
+
+6. **Consider sub-command mode** - For group commands that users will interact with repeatedly, enable sub-command mode for a better experience.

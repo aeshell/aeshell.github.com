@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Terminal'
+weight: 8
 ---
 
 Æsh Readline provides terminal abstraction through the `Connection` and `Terminal` interfaces.
@@ -147,4 +148,122 @@ Get current cursor position:
 Point position = connection.getCursorPosition();
 int row = position.getRow();
 int col = position.getColumn();
+```
+
+## Device Attributes
+
+Query the terminal for its capabilities using DA1/DA2 escape sequences:
+
+```java
+// Query primary device attributes (DA1)
+DeviceAttributes da = connection.queryPrimaryDeviceAttributes(500);
+
+if (da != null) {
+    // Check device class (conformance level)
+    int deviceClass = da.getDeviceClass();  // 62=VT220, 64=VT420, etc.
+
+    // Check feature support
+    if (da.supportsSixel()) {
+        System.out.println("Terminal supports Sixel graphics");
+    }
+    if (da.supportsAnsiColor()) {
+        System.out.println("Terminal supports ANSI colors");
+    }
+    if (da.supportsMouse()) {
+        System.out.println("Terminal supports mouse/locator");
+    }
+}
+
+// Query both DA1 and DA2
+DeviceAttributes full = connection.queryDeviceAttributes(500);
+if (full != null && full.hasDA2()) {
+    System.out.println("Terminal type: " + full.getTerminalType().getName());
+    System.out.println("Firmware version: " + full.getFirmwareVersion());
+}
+```
+
+### DeviceAttributes Class
+
+The `DeviceAttributes` class provides:
+
+- **Device class**: Conformance level (1=VT100, 62=VT220, 64=VT420)
+- **Features**: Set of supported capabilities (Sixel, ANSI color, mouse, etc.)
+- **Terminal type**: From DA2 (VT100, VT220, VT420, xterm)
+- **Firmware version**: Version number from DA2
+
+```java
+// Check if OSC queries are likely supported based on DA1 features
+if (da.likelySupportsOscQueries()) {
+    int[] bgColor = connection.queryBackgroundColor(500);
+}
+```
+
+## Image Protocol Detection
+
+Detect the terminal's inline image support:
+
+```java
+// Heuristic detection (fast, no terminal query)
+Device device = connection.device();
+ImageProtocol protocol = device.getImageProtocol();
+
+// Query-based detection (accurate, uses DA1)
+ImageProtocol protocol = connection.queryImageProtocol(500);
+
+switch (protocol) {
+    case KITTY:
+        // Kitty, Ghostty, Konsole
+        break;
+    case ITERM2:
+        // iTerm2, WezTerm, VS Code, Mintty
+        break;
+    case SIXEL:
+        // xterm, mlterm, foot, contour
+        break;
+    case NONE:
+        // No inline image support
+        break;
+}
+```
+
+The `ImageProtocolDetector` class combines multiple detection methods:
+1. Environment variables (KITTY_WINDOW_ID, ITERM_SESSION_ID, etc.)
+2. Terminal type string (from TERM environment variable)
+3. DA1 device attributes (authoritative Sixel detection)
+
+## OSC Queries
+
+Query the terminal using OSC (Operating System Command) sequences:
+
+```java
+// Query background color
+int[] bgColor = connection.queryBackgroundColor(500);
+if (bgColor != null) {
+    int r = bgColor[0], g = bgColor[1], b = bgColor[2];
+    boolean isDark = (r + g + b) / 3 < 128;
+}
+
+// Query foreground color
+int[] fgColor = connection.queryForegroundColor(500);
+
+// Generic OSC query with custom parser
+String result = connection.queryOsc(oscCode, "?", 500, input -> {
+    // Parse the response
+    return parseResponse(input);
+});
+```
+
+### OSC Support Detection
+
+```java
+// Check if OSC queries are supported
+if (connection.supportsOscQueries()) {
+    // Safe to use OSC queries
+}
+
+// More accurate check using DA1 attributes
+DeviceAttributes da = connection.queryPrimaryDeviceAttributes(500);
+if (connection.supportsOscQueries(da)) {
+    // DA1 indicates modern terminal features
+}
 ```

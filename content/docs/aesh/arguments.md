@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Arguments'
+weight: 5
 ---
 
 The `@Argument` annotation defines positional command-line arguments.
@@ -15,6 +16,7 @@ The `@Argument` annotation defines positional command-line arguments.
 | `defaultValue` | `String[]` | `{}` | Default values |
 | `askIfNotSet` | `boolean` | `false` | Prompt user if not set |
 | `overrideRequired` | `boolean` | `false` | Override required validation |
+| `inherited` | `boolean` | `false` | Make argument available to subcommands in sub-command mode |
 | `converter` | `Class<? extends Converter>` | `NullConverter.class` | Custom value converter |
 | `completer` | `Class<? extends OptionCompleter>` | `NullOptionCompleter.class` | Custom completer |
 | `validator` | `Class<? extends OptionValidator>` | `NullValidator.class` | Custom validator |
@@ -103,3 +105,52 @@ public class CopyCommand implements Command<CommandInvocation> {
 ```
 
 Usage: `copy myfile.txt -d /tmp -v`
+
+## Inherited Arguments
+
+Inherited arguments are automatically available to all subcommands when using [sub-command mode](/docs/aesh/sub-command-mode). Mark an argument with `inherited = true` on a group command, and subcommands with matching field names will have the value auto-populated.
+
+```java
+@GroupCommandDefinition(
+    name = "project",
+    groupCommands = {BuildCommand.class, TestCommand.class}
+)
+public class ProjectCommand implements Command<CommandInvocation> {
+
+    @Argument(description = "Project name", inherited = true)
+    private String projectName;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.enterSubCommandMode(this);
+        return CommandResult.SUCCESS;
+    }
+}
+
+@CommandDefinition(name = "build")
+public class BuildCommand implements Command<CommandInvocation> {
+
+    // This field is auto-populated from parent's inherited argument
+    @Argument(description = "Project name")
+    private String projectName;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Building " + projectName);
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+You can also access inherited values programmatically:
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) {
+    String name = invocation.getInheritedValue("projectName", String.class);
+    invocation.println("Project: " + name);
+    return CommandResult.SUCCESS;
+}
+```
+
+See [Sub-Command Mode](/docs/aesh/sub-command-mode) for complete documentation on inherited options and arguments.

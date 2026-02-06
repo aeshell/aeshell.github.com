@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Converters'
+weight: 10
 ---
 
 Converters transform string input into custom types.

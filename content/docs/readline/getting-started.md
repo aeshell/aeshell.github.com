@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Getting Started with Æsh Readline'
+weight: 2
 ---
 
 This guide will help you get started with Æsh Readline quickly.
@@ -14,7 +15,7 @@ Add the following dependency to your Maven project:
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>readline</artifactId>
-  <version>3.5</version>
+  <version>2.6</version>
 </dependency>
 ```
 
@@ -22,7 +23,7 @@ For Gradle:
 
 ```groovy
 dependencies {
-    implementation 'org.aesh:readline:3.5'
+    implementation 'org.aesh:readline:2.6'
 }
 ```
 
@@ -148,3 +149,24 @@ public class CompletionExample {
     }
 }
 ```
+
+## Next Steps
+
+Now that you understand the basics:
+
+- Learn about the [Readline API](../readline-api) for advanced features
+- Explore [Edit Modes](../edit-modes) for Emacs and Vi key bindings
+- Discover [Completion](../completion) strategies for tab completion
+- Check out [Remote Connectivity](../connectivity) for SSH, Telnet, and WebSocket support
+- Browse complete working code in [Examples and Tutorials](../examples)
+
+## Working Examples
+
+The [aesh-examples repository](https://github.com/aeshell/aesh-examples) contains several readline examples:
+
+- **[getting-started](https://github.com/aeshell/aesh-examples/tree/master/readline/getting-started)** - Simple readline example
+- **[getting-started-ext](https://github.com/aeshell/aesh-examples/tree/master/readline/getting-started-ext)** - Extended example with more features
+- **[shell](https://github.com/aeshell/aesh-examples/tree/master/readline/shell)** - Simple shell implementation
+- **[snake](https://github.com/aeshell/aesh-examples/tree/master/readline/snake)** - Snake game demonstrating terminal control
+
+See the [Examples and Tutorials](../examples) page for detailed information about all available examples.

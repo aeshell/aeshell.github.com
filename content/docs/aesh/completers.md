@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Completers'
+weight: 8
 ---
 
 Completers provide tab-completion suggestions for options and arguments.
@@ -21,24 +22,30 @@ public interface OptionCompleter<T extends CompleterInvocation> {
 - `DefaultValueOptionCompleter` - Uses defined default values
 - `FileOptionCompleter` - Completes file paths
 
-## Custom File Completer
+## Custom Color Completer
 
 ```java
-public class JavaFileCompleter implements OptionCompleter<CompleterInvocation> {
+public class ColorCompleter implements OptionCompleter<CompleterInvocation> {
+
+    private static final List<String> COLORS = Arrays.asList(
+            "red", "green", "blue", "yellow", "orange", "purple",
+            "cyan", "magenta", "white", "black", "gray", "pink"
+    );
 
     @Override
     public void complete(CompleterInvocation invocation) {
-        String base = invocation.getGivenCompleteValue();
-        File dir = base == null ? new File(".") : new File(base).getParentFile();
-        String prefix = base == null ? "" : new File(base).getName();
-
-        File[] files = dir.listFiles((d, name) -> 
-            name.startsWith(prefix) && name.endsWith(".java")
-        );
-
-        if (files != null) {
-            for (File f : files) {
-                invocation.addCompleterValue(f.getName());
+        String input = invocation.getGivenCompleteValue();
+        
+        if (input == null || input.isEmpty()) {
+            // No input yet, show all colors
+            invocation.addAllCompleterValues(COLORS);
+        } else {
+            // Filter colors that start with the input
+            String lowerInput = input.toLowerCase();
+            for (String color : COLORS) {
+                if (color.startsWith(lowerInput)) {
+                    invocation.addCompleterValue(color);
+                }
             }
         }
     }
@@ -48,22 +55,44 @@ public class JavaFileCompleter implements OptionCompleter<CompleterInvocation> {
 Usage:
 
 ```java
-@CommandDefinition(name = "compile")
-public class CompileCommand implements Command<CommandInvocation> {
+@CommandDefinition(name = "theme", description = "Set application theme")
+public class ThemeCommand implements Command<CommandInvocation> {
 
     @Option(
-        name = "file",
-        completer = JavaFileCompleter.class,
-        description = "Java file to compile"
+        shortName = 'b',
+        name = "background",
+        completer = ColorCompleter.class,
+        description = "Background color"
     )
-    private String file;
+    private String backgroundColor;
+
+    @Option(
+        shortName = 'f',
+        name = "foreground",
+        completer = ColorCompleter.class,
+        description = "Foreground/text color"
+    )
+    private String foregroundColor;
 
     @Override
     public CommandResult execute(CommandInvocation invocation) {
-        invocation.println("Compiling: " + file);
+        invocation.println("Setting theme: " + foregroundColor + " on " + backgroundColor);
         return CommandResult.SUCCESS;
     }
 }
+```
+
+When users press Tab:
+```
+[myapp]$ theme --background <TAB>
+red     green   blue    yellow  orange  purple
+cyan    magenta white   black   gray    pink
+
+[myapp]$ theme --background gr<TAB>
+gray    green
+
+[myapp]$ theme --background green --foreground wh<TAB>
+white
 ```
 
 ## CompleterInvocation

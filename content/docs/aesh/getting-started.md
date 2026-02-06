@@ -2,6 +2,7 @@
 date: '2026-01-11T15:00:00+01:00'
 draft: false
 title: 'Getting Started with Æsh'
+weight: 2
 ---
 
 This guide will help you get started with Æsh quickly.
@@ -47,7 +48,7 @@ public class HelloCommand implements Command<CommandInvocation> {
 }
 ```
 
-## Running the Console
+## Running your first Command
 
 Use the `AeshConsoleRunner` to start an interactive console:
 
@@ -98,3 +99,22 @@ AeshConsoleRunner.builder()
         .addExitCommand()
         .start();
 ```
+
+## Next Steps
+
+Now that you understand the basics:
+
+- Learn about [Command Definitions](../command-definition) to create more complex commands
+- Explore [Options](../options) and [Arguments](../arguments) for powerful command-line interfaces
+- Check out the [Console and Runtime Runners](../runners) for different execution modes
+- Browse complete working code in [Examples and Tutorials](../examples)
+
+## Working Examples
+
+The [aesh-examples repository](https://github.com/aeshell/aesh-examples) contains several getting-started examples:
+
+- **[getting-started](https://github.com/aeshell/aesh-examples/tree/master/aesh/getting-started)** - Complete CLI example with multiple commands
+- **[getting-started-input](https://github.com/aeshell/aesh-examples/tree/master/aesh/getting-started-input)** - Examples showing how to handle different types of input
+- **[getting-started-runtime](https://github.com/aeshell/aesh-examples/tree/master/aesh/getting-started-runtime)** - Single command execution for CLI tools
+
+See the [Examples and Tutorials](../examples) page for detailed information about all available examples.
