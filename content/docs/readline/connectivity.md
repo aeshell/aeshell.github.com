@@ -381,50 +381,48 @@ public class TelnetShell {
 
 ## HTTP/WebSocket Connectivity
 
-WebSocket terminals enable browser-based terminal access, perfect for web applications.
+WebSocket terminals enable browser-based terminal access, perfect for web applications. The terminal-http module uses Netty for high-performance WebSocket handling and includes a default web page using [xterm.js](https://github.com/xtermjs/xterm.js).
 
 ### Maven Dependency
 
 ```xml
 <dependency>
     <groupId>org.aesh</groupId>
-    <artifactId>aesh-terminal-http</artifactId>
-    <version>2.6</version>
+    <artifactId>terminal-http</artifactId>
+    <version>3.0</version>
 </dependency>
 ```
 
 ### Basic WebSocket Server
 
 ```java
-import org.aesh.terminal.http.HttpTerminal;
+import org.aesh.terminal.http.netty.NettyWebsocketTtyBootstrap;
 import org.aesh.readline.Readline;
 import org.aesh.readline.ReadlineBuilder;
 import org.aesh.terminal.Connection;
 
+import java.util.concurrent.TimeUnit;
+
 public class WebTerminal {
-    
-    public static void main(String[] args) throws Exception {
-        HttpTerminal http = HttpTerminal.builder()
-                .host("0.0.0.0")
-                .port(8080)
-                .webSocketPath("/terminal")
-                .connectionHandler(WebTerminal::handleConnection)
-                .build();
-        
-        System.out.println("WebSocket terminal started");
-        System.out.println("Open browser to: http://localhost:8080/terminal");
-        
-        http.start();
-        Thread.currentThread().join();
+
+    public static synchronized void main(String[] args) throws Exception {
+        NettyWebsocketTtyBootstrap bootstrap = new NettyWebsocketTtyBootstrap()
+                .setHost("localhost")
+                .setPort(8080);
+
+        bootstrap.start(WebTerminal::handleConnection).get(10, TimeUnit.SECONDS);
+
+        System.out.println("WebSocket terminal started on http://localhost:8080");
+        WebTerminal.class.wait();
     }
-    
+
     private static void handleConnection(Connection connection) {
         Readline readline = ReadlineBuilder.builder().build();
-        
+
         connection.write("Welcome to Web Terminal!\r\n");
         read(connection, readline);
     }
-    
+
     private static void read(Connection connection, Readline readline) {
         readline.readline(connection, "[web]$ ", input -> {
             if (input == null || input.equals("exit")) {
@@ -432,7 +430,7 @@ public class WebTerminal {
                 connection.close();
                 return;
             }
-            
+
             connection.write("You entered: " + input + "\r\n");
             read(connection, readline);
         });
@@ -440,82 +438,189 @@ public class WebTerminal {
 }
 ```
 
-### WebSocket Builder Options
+### WebSocket Bootstrap Options
 
 | Method | Type | Description |
 |--------|------|-------------|
-| `host(String)` | `String` | Bind address (default: "0.0.0.0") |
-| `port(int)` | `int` | HTTP port (default: 8080) |
-| `webSocketPath(String)` | `String` | WebSocket endpoint path |
-| `connectionHandler(Consumer<Connection>)` | `Consumer` | Handler for new connections |
-| `staticFilesPath(String)` | `String` | Path to serve static files |
-| `idleTimeout(long)` | `long` | Connection idle timeout (ms) |
+| `setHost(String)` | `String` | Bind address (default: "localhost") |
+| `setPort(int)` | `int` | HTTP port (default: 8080) |
+| `setResourcePath(String)` | `String` | Classpath path for static files (default: "/org/aesh/terminal/http") |
+| `setServeStaticFiles(boolean)` | `boolean` | Enable/disable static file serving (default: true) |
+
+The WebSocket endpoint is always available at `/ws`.
+
+### Custom Web Page
+
+By default, terminal-http serves a built-in HTML page with xterm.js. To use your own web page:
+
+```java
+// Use custom resources from your classpath
+NettyWebsocketTtyBootstrap bootstrap = new NettyWebsocketTtyBootstrap()
+        .setHost("localhost")
+        .setPort(8080)
+        .setResourcePath("/com/myapp/web");  // Your classpath location
+```
+
+Place your `index.html` at `src/main/resources/com/myapp/web/index.html`.
+
+### WebSocket-Only Mode
+
+For applications that serve HTML from a separate web server:
+
+```java
+// Disable static file serving - only handle WebSocket at /ws
+NettyWebsocketTtyBootstrap bootstrap = new NettyWebsocketTtyBootstrap()
+        .setHost("localhost")
+        .setPort(8080)
+        .setServeStaticFiles(false);
+```
 
 ### Browser Client with xterm.js
 
-Create an HTML client using xterm.js:
+Create an HTML client using xterm.js from CDN:
 
 ```html
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Terminal</title>
-    <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
-    <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
-    <script src="https://unpkg.com/xterm-addon-attach/lib/xterm-addon-attach.js"></script>
-    <script src="https://unpkg.com/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css" />
     <style>
-        body { margin: 0; padding: 20px; background: #1e1e1e; }
-        #terminal { width: 100%; height: calc(100vh - 40px); }
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #1e1e1e;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+        }
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            color: #f0f0f0;
+        }
+        #terminal-container {
+            border: 2px solid #444;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            background: #000;
+        }
+        .connection-status {
+            margin-bottom: 15px;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .status-connected { background: #1a472a; color: #4ade80; }
+        .status-disconnected { background: #4a1a1a; color: #f87171; }
+        .status-connecting { background: #4a3a1a; color: #fbbf24; }
     </style>
 </head>
 <body>
-    <div id="terminal"></div>
+    <div class="wrapper">
+        <h1>Web Terminal</h1>
+        <div id="status" class="connection-status status-connecting">Connecting...</div>
+        <div id="terminal-container"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.js"></script>
     <script>
-        const term = new Terminal({
-            cursorBlink: true,
-            fontSize: 14,
-            fontFamily: 'Menlo, Monaco, "Courier New", monospace'
-        });
-        
-        const fitAddon = new FitAddon.FitAddon();
-        term.loadAddon(fitAddon);
-        
-        term.open(document.getElementById('terminal'));
-        fitAddon.fit();
-        
-        // Connect to WebSocket
-        const socket = new WebSocket('ws://localhost:8080/terminal');
-        const attachAddon = new AttachAddon.AttachAddon(socket);
-        term.loadAddon(attachAddon);
-        
-        // Handle window resize
-        window.addEventListener('resize', () => fitAddon.fit());
-        
-        // Handle disconnection
-        socket.onclose = () => {
-            term.write('\r\n\x1b[31mConnection closed\x1b[0m\r\n');
-        };
-        
-        socket.onerror = (error) => {
-            term.write('\r\n\x1b[31mConnection error\x1b[0m\r\n');
-        };
+        (function() {
+            'use strict';
+
+            var statusEl = document.getElementById('status');
+
+            function setStatus(status, message) {
+                statusEl.className = 'connection-status status-' + status;
+                statusEl.textContent = message;
+            }
+
+            function connect() {
+                var wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                var wsHost = window.location.host || 'localhost:8080';
+                var wsUrl = wsProtocol + '//' + wsHost + '/ws';
+
+                setStatus('connecting', 'Connecting to ' + wsUrl + '...');
+
+                var socket = new WebSocket(wsUrl);
+
+                socket.onopen = function() {
+                    setStatus('connected', 'Connected');
+
+                    var term = new Terminal({
+                        cols: 120,
+                        rows: 40,
+                        cursorBlink: true,
+                        cursorStyle: 'block',
+                        fontFamily: '"DejaVu Sans Mono", "Liberation Mono", "Courier New", monospace',
+                        fontSize: 14,
+                        theme: {
+                            background: '#000000',
+                            foreground: '#f0f0f0',
+                            cursor: '#f0f0f0'
+                        }
+                    });
+
+                    term.open(document.getElementById('terminal-container'));
+
+                    socket.onmessage = function(event) {
+                        if (event.type === 'message') {
+                            term.write(event.data);
+                        }
+                    };
+
+                    term.onData(function(data) {
+                        socket.send(JSON.stringify({action: 'read', data: data}));
+                    });
+
+                    socket.onclose = function(event) {
+                        setStatus('disconnected', 'Disconnected (code: ' + event.code + ')');
+                        term.write('\r\n\x1b[31mConnection closed.\x1b[0m\r\n');
+                    };
+
+                    socket.onerror = function(error) {
+                        setStatus('disconnected', 'Connection error');
+                        console.error('WebSocket error:', error);
+                    };
+
+                    term.focus();
+                };
+
+                socket.onerror = function(error) {
+                    setStatus('disconnected', 'Failed to connect');
+                    console.error('WebSocket connection error:', error);
+                };
+            }
+
+            window.addEventListener('load', connect);
+        })();
     </script>
 </body>
 </html>
 ```
 
-### Serving Static Files
+### Message Protocol
 
-```java
-HttpTerminal http = HttpTerminal.builder()
-        .host("0.0.0.0")
-        .port(8080)
-        .webSocketPath("/terminal")
-        .staticFilesPath("src/main/resources/static")  // Serve HTML/JS/CSS
-        .connectionHandler(this::handleConnection)
-        .build();
+The WebSocket uses JSON messages for communication:
+
+**Client to Server (input):**
+```json
+{"action": "read", "data": "user input here"}
 ```
+
+**Server to Client (output):**
+Plain text with ANSI escape sequences for terminal rendering.
 
 ## Connection Management
 
@@ -611,21 +716,18 @@ public class MultiProtocolServer {
                 .build();
         
         // WebSocket on port 8080
-        HttpTerminal http = HttpTerminal.builder()
-                .port(8080)
-                .webSocketPath("/terminal")
-                .connectionHandler(MultiProtocolServer::handleConnection)
-                .build();
-        
+        NettyWebsocketTtyBootstrap http = new NettyWebsocketTtyBootstrap()
+                .setPort(8080);
+
         // Start all servers
         ssh.start();
         telnet.start();
-        http.start();
-        
+        http.start(MultiProtocolServer::handleConnection);
+
         System.out.println("Servers started:");
         System.out.println("  SSH:       ssh -p 2222 user@localhost");
         System.out.println("  Telnet:    telnet localhost 2323");
-        System.out.println("  WebSocket: http://localhost:8080/terminal");
+        System.out.println("  WebSocket: http://localhost:8080");
         
         Thread.currentThread().join();
     }
@@ -656,15 +758,10 @@ public class MultiProtocolServer {
 ### Starting and Stopping
 
 ```java
-// Start server
+// Start servers
 ssh.start();
 telnet.start();
-http.start();
-
-// Check if running
-if (ssh.isRunning()) {
-    System.out.println("SSH server is running");
-}
+http.start(connectionHandler);  // WebSocket requires handler
 
 // Stop server (closes all connections)
 ssh.stop();
@@ -677,11 +774,15 @@ http.stop();
 ```java
 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
     System.out.println("Shutting down servers...");
-    
+
     ssh.stop();
     telnet.stop();
-    http.stop();
-    
+    try {
+        http.stop().get(5, TimeUnit.SECONDS);
+    } catch (Exception e) {
+        // Handle timeout
+    }
+
     System.out.println("Servers stopped");
 }));
 ```
