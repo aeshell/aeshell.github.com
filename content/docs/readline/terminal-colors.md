@@ -121,6 +121,24 @@ HSL (Hue, Saturation, Lightness) is often more intuitive than RGB for color sele
 - **Generate harmonious colors** by rotating hue
 - **Control color intensity** via saturation
 
+### HSL Value Ranges
+
+| Parameter | Range | Description |
+|-----------|-------|-------------|
+| **Hue** | 0-360 | Degrees on the color wheel |
+| **Saturation** | 0-100 | Percentage (0 = gray, 100 = vivid) |
+| **Lightness** | 0-100 | Percentage (0 = black, 50 = pure color, 100 = white) |
+
+**Important:** HSL values use **percentages (0-100)**, not decimal fractions (0-1). For example, use `80` for 80% lightness, not `0.8`.
+
+```java
+// Correct - using percentages
+TerminalColor.fromHSL(120, 80, 65);  // H=120°, S=80%, L=65%
+
+// Wrong - using decimals will produce nearly black colors
+TerminalColor.fromHSL(120, 0.8f, 0.65f);  // S=0.8%, L=0.65% ≈ black
+```
+
 ### HSL Color Wheel
 
 | Hue (degrees) | Color |
@@ -135,9 +153,11 @@ HSL (Hue, Saturation, Lightness) is often more intuitive than RGB for color sele
 
 ### From HSL Values
 
+**Remember:** Use percentages (0-100) for saturation and lightness, not decimals (0-1).
+
 ```java
 // Foreground only - pure red at full saturation
-TerminalColor red = TerminalColor.fromHSL(0, 100, 50);
+TerminalColor red = TerminalColor.fromHSL(0, 100, 50);  // H=0°, S=100%, L=50%
 
 // Both foreground and background
 TerminalColor custom = TerminalColor.fromHSL(
@@ -148,8 +168,8 @@ TerminalColor custom = TerminalColor.fromHSL(
 // Optimal lightness for different backgrounds:
 // - Dark terminals: use lightness 60-75 for visible colors
 // - Light terminals: use lightness 25-40 for visible colors
-int darkL = 65;  // For dark backgrounds
-int lightL = 35; // For light backgrounds
+int darkL = 65;  // 65% lightness for dark backgrounds
+int lightL = 35; // 35% lightness for light backgrounds
 ```
 
 ### HSL Conversion Utilities
@@ -595,7 +615,9 @@ builder.bgHex("#1E1E1E").append("Dark background");
 
 #### HSL Colors
 
-HSL is ideal for generating readable colors that adapt to terminal themes:
+HSL is ideal for generating readable colors that adapt to terminal themes.
+
+**Value ranges:** Hue is 0-360 degrees, Saturation and Lightness are 0-100 percentages (not 0-1 decimals).
 
 ```java
 // HSL foreground (hue 0-360, saturation 0-100, lightness 0-100)
@@ -612,7 +634,13 @@ builder.hsl(180, 80, 65, "Cyan text");
 boolean isDark = cap.getTheme() == TerminalTheme.DARK;
 int lightness = isDark ? 65 : 35;
 builder.hsl(0, 80, lightness).append("Theme-adaptive red");
+
+// Override semantic colors with HSL
+builder.timestampHsl(200, 30, 70)   // Light blue-gray for timestamps
+       .messageHsl(280, 60, 65);    // Light purple for messages
 ```
+
+**Common mistake:** Using decimal values like `0.8` instead of `80` will produce nearly black colors since `0.8%` lightness is almost black.
 
 #### Bright Colors
 
