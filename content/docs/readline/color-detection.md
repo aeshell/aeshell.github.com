@@ -76,9 +76,23 @@ boolean has256 = depth.supports256Colors();
 boolean hasTrueColor = depth.supportsTrueColor();
 
 // Actual RGB colors (may be null if not detectable)
-int[] bgRGB = cap.getBackgroundRGB();  // [r, g, b] or null
-int[] fgRGB = cap.getForegroundRGB();  // [r, g, b] or null
+int[] fgRGB = cap.getForegroundRGB();     // [r, g, b] or null
+int[] bgRGB = cap.getBackgroundRGB();     // [r, g, b] or null
+int[] cursorRGB = cap.getCursorRGB();     // [r, g, b] or null
+
+// Palette colors (ANSI 16 colors, indices 0-15)
+if (cap.hasPaletteColors()) {
+    Map<Integer, int[]> palette = cap.getPaletteColors();
+    int[] red = cap.getPaletteColor(1);   // Standard red
+    int[] brightRed = cap.getPaletteColor(9);  // Bright red
+}
 ```
+
+The `detect()` method queries:
+- Foreground color (OSC 10)
+- Background color (OSC 11)
+- Cursor color (OSC 12) - if supported
+- ANSI 16 palette colors (OSC 4, indices 0-15) - if supported
 
 ### Suggested Color Codes
 
@@ -255,6 +269,62 @@ int[] cursor = connection.queryCursorColor(500);
 
 // Generic OSC query for any code
 String result = connection.queryOsc(oscCode, "?", 500, responseParser);
+```
+
+#### Batch Color Queries
+
+For better performance when querying multiple colors, use batch queries. This reduces latency from O(n × timeout) to O(timeout) by sending all queries at once:
+
+```java
+import org.aesh.terminal.tty.TerminalColorDetector;
+import org.aesh.terminal.utils.ANSI;
+
+// Query foreground, background, and cursor in one operation (~50-100ms vs ~600ms)
+Map<Integer, int[]> colors = TerminalColorDetector.queryColors(connection, 500);
+
+int[] fg = colors.get(ANSI.OSC_FOREGROUND);   // OSC 10
+int[] bg = colors.get(ANSI.OSC_BACKGROUND);   // OSC 11
+int[] cursor = colors.get(ANSI.OSC_CURSOR_COLOR);  // OSC 12
+
+// Query multiple palette colors at once
+Map<Integer, int[]> palette = TerminalColorDetector.queryPaletteColors(
+    connection, 500, 0, 1, 2, 3, 4, 5, 6, 7);
+
+// Query all 16 ANSI colors
+Map<Integer, int[]> ansi16 = TerminalColorDetector.queryAnsi16Colors(connection, 500);
+```
+
+#### Fallback When OSC Not Supported
+
+Not all terminals support OSC queries. Use `queryColorsWithFallback()` for graceful degradation:
+
+```java
+// Always returns colors - actual or estimated based on environment
+Map<Integer, int[]> colors = TerminalColorDetector.queryColorsWithFallback(connection, 500);
+
+int[] bg = colors.get(ANSI.OSC_BACKGROUND);
+// bg is never null - will be estimated if OSC queries failed
+
+// Check if it's a dark theme
+boolean isDark = TerminalColorDetector.isDarkColor(bg);
+```
+
+You can also check support before querying:
+
+```java
+// Check if OSC queries are supported
+if (TerminalColorDetector.isOscColorQuerySupported(connection)) {
+    // OSC queries will work
+    Map<Integer, int[]> colors = TerminalColorDetector.queryColors(connection, 500);
+} else {
+    // Use environment-based detection
+    TerminalTheme theme = TerminalColorDetector.detectThemeFromEnvironment();
+}
+
+// Check palette query support specifically
+if (connection.supportsPaletteQuery()) {
+    Map<Integer, int[]> palette = TerminalColorDetector.queryAnsi16Colors(connection, 500);
+}
 ```
 
 #### OSC Support Detection with Device Attributes

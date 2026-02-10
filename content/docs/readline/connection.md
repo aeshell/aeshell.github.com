@@ -35,6 +35,22 @@ connection.openNonBlocking();
 
 Reads input in a separate thread, allowing the current thread to continue.
 
+#### Checking Reading State
+
+```java
+// Check if connection is actively reading
+if (connection.reading()) {
+    // Handler-based queries work (setStdinHandler)
+} else {
+    // Use synchronous methods like queryColorCapability()
+}
+```
+
+The `reading()` method returns `true` after `openBlocking()` or `openNonBlocking()` is called
+and before `close()` is called. This is useful for determining which query methods to use:
+- When `reading()` is true: Handler-based methods like `queryTerminal()` work
+- When `reading()` is false: Use synchronous methods like `queryColorCapability()`
+
 ## Handlers
 
 ### Standard Input Handler
@@ -282,6 +298,39 @@ Known terminal limitations:
 - **Linux console**: No OSC query support
 - **Alacritty**: No OSC 52 (clipboard) support
 
+### Batch OSC Queries
+
+For better performance when querying multiple colors, use batch queries. This sends all queries at once and collects responses together, reducing latency from O(n × timeout) to O(timeout):
+
+```java
+// Query foreground, background, and cursor colors in one operation
+// Takes ~50-100ms instead of ~300-400ms for individual queries
+Map<Integer, int[]> colors = connection.queryColors(500);
+
+int[] fg = colors.get(ANSI.OSC_FOREGROUND);   // OSC 10
+int[] bg = colors.get(ANSI.OSC_BACKGROUND);   // OSC 11
+int[] cursor = colors.get(ANSI.OSC_CURSOR_COLOR);  // OSC 12
+
+// Query multiple palette colors at once
+Map<Integer, int[]> palette = connection.queryPaletteColors(500, 0, 1, 2, 3, 4, 5, 6, 7);
+
+// Query all 16 ANSI colors
+Map<Integer, int[]> ansi16 = connection.queryAnsi16Colors(500);
+
+// Generic batch query for any OSC codes
+Map<Integer, int[]> results = connection.queryBatchOsc(500, 10, 11, 12);
+```
+
+For higher-level access with automatic fallbacks, use `TerminalColorDetector`:
+
+```java
+import org.aesh.terminal.tty.TerminalColorDetector;
+
+// Query with automatic fallback to environment-based detection
+Map<Integer, int[]> colors = TerminalColorDetector.queryColorsWithFallback(connection, 500);
+// Always returns colors - actual if OSC works, estimated if not
+```
+
 ## Device Attributes (DA1/DA2)
 
 Device Attributes queries allow you to detect terminal capabilities that cannot be determined from terminfo alone.
@@ -407,7 +456,17 @@ if (depth.supportsTrueColor()) {
     // Use 256-color palette
 }
 
-// Get full color capability info
-TerminalColorCapability cap = connection.getColorCapability();
-TerminalTheme theme = cap.getTheme();
+// Query terminal for full color capability (uses synchronous I/O)
+// This can be called BEFORE openBlocking/openNonBlocking
+TerminalColorCapability cap = connection.queryColorCapability(500);
+if (cap != null) {
+    TerminalTheme theme = cap.getTheme();
+    int[] fg = cap.getForegroundRGB();
+    int[] bg = cap.getBackgroundRGB();
+    int[] cursor = cap.getCursorRGB();
+    Map<Integer, int[]> palette = cap.getPaletteColors();
+}
+
+// Or use TerminalColorDetector for comprehensive detection with fallbacks
+TerminalColorCapability cap = TerminalColorDetector.detect(connection);
 ```

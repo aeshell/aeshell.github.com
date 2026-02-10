@@ -444,6 +444,80 @@ if (rgb != null) {
 }
 ```
 
+### Batch OSC Queries for Performance
+
+When querying multiple colors, use batch queries to avoid the latency of sequential round-trips. Querying 10 colors individually might take 600-700ms, while batch querying takes under 100ms.
+
+Use `TerminalColorDetector` for batch color queries:
+
+```java
+import org.aesh.terminal.tty.TerminalColorDetector;
+import org.aesh.terminal.utils.ANSI;
+
+// Query foreground, background, and cursor colors in one operation
+Map<Integer, int[]> colors = TerminalColorDetector.queryColors(connection, 500);
+
+int[] fg = colors.get(ANSI.OSC_FOREGROUND);   // OSC 10
+int[] bg = colors.get(ANSI.OSC_BACKGROUND);   // OSC 11
+int[] cursor = colors.get(ANSI.OSC_CURSOR_COLOR);  // OSC 12
+
+if (bg != null) {
+    // Check theme using the utility method
+    boolean isDark = TerminalColorDetector.isDarkColor(bg);
+    System.out.println("Theme: " + (isDark ? "dark" : "light"));
+}
+```
+
+For palette colors, use `queryPaletteColors()`:
+
+```java
+// Query multiple palette colors at once
+Map<Integer, int[]> palette = TerminalColorDetector.queryPaletteColors(
+    connection, 500, 0, 1, 2, 3, 4, 5, 6, 7);
+
+// Iterate over results
+for (Map.Entry<Integer, int[]> entry : palette.entrySet()) {
+    int index = entry.getKey();
+    int[] rgb = entry.getValue();
+    System.out.println("Color " + index + ": RGB(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")");
+}
+
+// Query all 16 ANSI colors at once
+Map<Integer, int[]> ansi16 = TerminalColorDetector.queryAnsi16Colors(connection, 500);
+```
+
+### Fallback for Unsupported Terminals
+
+Not all terminals support OSC color queries. Use `queryColorsWithFallback()` for graceful degradation:
+
+```java
+// Always returns colors - actual or estimated based on environment
+Map<Integer, int[]> colors = TerminalColorDetector.queryColorsWithFallback(connection, 500);
+
+int[] bg = colors.get(ANSI.OSC_BACKGROUND);
+// bg is never null - will be estimated if OSC queries failed
+```
+
+You can also check support before querying:
+
+```java
+// Check if OSC queries are supported
+if (TerminalColorDetector.isOscColorQuerySupported(connection)) {
+    Map<Integer, int[]> colors = TerminalColorDetector.queryColors(connection, 500);
+    // Use actual queried colors
+} else {
+    // Use environment-based detection
+    TerminalTheme theme = TerminalColorDetector.detectThemeFromEnvironment();
+}
+```
+
+For low-level access, you can also use `Connection` directly:
+
+```java
+// Query arbitrary OSC codes at once
+Map<Integer, int[]> results = connection.queryBatchOsc(500, 10, 11, 12);
+```
+
 ## Using with TerminalString
 
 `TerminalColor` is typically used with `TerminalString` for styled output:

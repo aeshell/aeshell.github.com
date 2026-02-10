@@ -55,14 +55,14 @@ SSH (Secure Shell) provides encrypted, authenticated terminal access. This is th
 <dependency>
     <groupId>org.aesh</groupId>
     <artifactId>aesh-terminal-ssh</artifactId>
-    <version>2.6</version>
+    <version>3.1</version>
 </dependency>
 ```
 
 ### Gradle Dependency
 
 ```groovy
-implementation 'org.aesh:aesh-terminal-ssh:2.6'
+implementation 'org.aesh:aesh-terminal-ssh:3.1'
 ```
 
 ### Basic SSH Server
@@ -318,7 +318,7 @@ Telnet provides simple, unencrypted terminal access. **Use only for development 
 <dependency>
     <groupId>org.aesh</groupId>
     <artifactId>aesh-terminal-telnet</artifactId>
-    <version>2.6</version>
+    <version>3.1</version>
 </dependency>
 ```
 
@@ -398,7 +398,7 @@ The terminal-http module provides:
 <dependency>
     <groupId>org.aesh</groupId>
     <artifactId>terminal-http</artifactId>
-    <version>3.0</version>
+    <version>3.1</version>
 </dependency>
 ```
 
@@ -751,31 +751,57 @@ All remote terminals provide a `Connection` object with the same interface:
 
 ```java
 public interface Connection {
-    
+
     // Write to terminal
     void write(String text);
     void write(byte[] bytes);
     void write(int[] codepoints);
-    
+
     // Close connection
     void close();
-    
+
     // Terminal size
     Size size();
     void setSizeHandler(Consumer<Size> handler);
-    
+
     // Signal handling
     void setSignalHandler(Consumer<Signal> handler);
-    
+
     // Input handling
     void setStdinHandler(Consumer<int[]> handler);
-    
+
     // Connection state
-    boolean isOpen();
-    
+    boolean reading();  // true when actively reading input
+
     // Session information (SSH)
     Session getSession();
 }
+```
+
+### Connection Reading State
+
+The `reading()` method indicates whether the connection is actively reading input:
+
+```java
+private void handleConnection(Connection connection) {
+    // For remote connections, reading() is true once accepted
+    if (connection.reading()) {
+        // Handler-based queries work (setStdinHandler)
+        connection.setStdinHandler(input -> {
+            // Process input...
+        });
+    }
+
+    // Continue with readline...
+}
+```
+
+For remote connections:
+- **SSH**: `reading()` returns `true` after the connection handler is invoked
+- **Telnet**: `reading()` returns `true` after binary mode negotiation completes
+- **WebSocket**: `reading()` returns `true` after `openBlocking()` or `openNonBlocking()` is called
+
+When `close()` is called, `reading()` returns `false`.
 ```
 
 ### Handling Terminal Resize

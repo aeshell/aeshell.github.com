@@ -15,7 +15,7 @@ Add the following dependency to your Maven project:
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>readline</artifactId>
-  <version>2.6</version>
+  <version>3.1</version>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ For Gradle:
 
 ```groovy
 dependencies {
-    implementation 'org.aesh:readline:2.6'
+    implementation 'org.aesh:readline:3.1'
 }
 ```
 
