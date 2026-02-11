@@ -257,13 +257,14 @@ This wraps each border character with the ANSI color prefix and `ANSI.RESET` suf
 
 ## Using Tables in Commands
 
-A complete command that renders tabular output:
+Inside a command's `execute()` method, the `CommandInvocation` gives you access to the `Shell` object via `getShell()`. From the `Shell` you can get the current terminal dimensions with `size()` and write output with `write()` or `writeln()`. This makes it straightforward to render tables that adapt to the user's terminal:
 
 ```java
 import org.aesh.command.Command;
 import org.aesh.command.CommandDefinition;
 import org.aesh.command.CommandResult;
 import org.aesh.command.invocation.CommandInvocation;
+import org.aesh.command.shell.Shell;
 import org.aesh.util.table.Table;
 import org.aesh.util.table.TableStyle;
 
@@ -273,9 +274,10 @@ public class ListUsersCommand implements Command<CommandInvocation> {
     @Override
     public CommandResult execute(CommandInvocation invocation) {
         List<User> users = loadUsers();
+        Shell shell = invocation.getShell();
 
         String table = Table.<User>builder()
-                .maxWidth(invocation.getShell().size().getWidth())
+                .maxWidth(shell.size().getWidth())
                 .style(TableStyle.DUCKDB)
                 .column("Name", u -> u.getName())
                 .column("Email", u -> u.getEmail())
@@ -283,13 +285,22 @@ public class ListUsersCommand implements Command<CommandInvocation> {
                 .build()
                 .render(users);
 
-        invocation.getShell().writeln(table);
+        shell.writeln(table);
         return CommandResult.SUCCESS;
     }
 }
 ```
 
-Using `invocation.getShell().size().getWidth()` adapts the table to the current terminal width.
+The key calls in the chain:
+
+| Call | Returns | Purpose |
+|------|---------|---------|
+| `invocation.getShell()` | `Shell` | Access the terminal |
+| `shell.size()` | `Size` | Get terminal dimensions |
+| `size.getWidth()` | `int` | Terminal width in columns |
+| `shell.writeln(text)` | `void` | Write output to the terminal |
+
+This ensures the table fits the user's terminal regardless of window size. See the [CommandInvocation API](command-invocation) documentation for the full set of `Shell` methods available.
 
 ## Validation Helpers
 
