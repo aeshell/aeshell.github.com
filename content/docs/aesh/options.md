@@ -454,3 +454,207 @@ private boolean verbose;
 ```
 
 Both `--verbose` and `-v` work.
+
+## Ask If Not Set
+
+The `askIfNotSet` property causes Æsh to interactively prompt the user for a value when the option was not provided on the command line. This works with `@Option`, `@Argument`, and `@Arguments`.
+
+### Basic Usage
+
+```java
+@CommandDefinition(name = "connect", description = "Connect to server")
+public class ConnectCommand implements Command<CommandInvocation> {
+
+    @Option(required = true, description = "Server hostname")
+    private String host;
+
+    @Option(askIfNotSet = true, description = "Username")
+    private String username;
+
+    @Option(askIfNotSet = true, description = "Password")
+    private String password;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Connecting as " + username + "@" + host);
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+If the user runs `connect --host myserver` without `--username` or `--password`, Æsh prompts for each missing value before executing:
+
+```
+$ connect --host myserver
+Option username, is not set, please provide a value: alice
+Option password, is not set, please provide a value: secret123
+Connecting as alice@myserver
+```
+
+For `@Argument` and `@Arguments`, the prompt reads: `Argument(s) is not set, please provide a value:`.
+
+### Interaction with defaultValue
+
+If a `defaultValue` is set, `askIfNotSet` is ignored -- the default is used instead of prompting. This is by design: if you have a sensible default, there is no need to interrupt the user.
+
+```java
+// Will NOT prompt -- the default "8080" is used instead
+@Option(askIfNotSet = true, defaultValue = "8080", description = "Port")
+private int port;
+
+// WILL prompt -- no default value
+@Option(askIfNotSet = true, description = "API key")
+private String apiKey;
+```
+
+### Interaction with Selectors
+
+When an option has both `askIfNotSet = true` and a `selector` type, the selector UI is used instead of a plain text prompt. See [Selectors](/docs/aesh/selectors) for details.
+
+### Interaction with Help
+
+When `generateHelp = true` and the user runs `command --help`, `askIfNotSet` prompts are skipped. Help output is shown without interruption.
+
+## Override Required
+
+The `overrideRequired` property allows a single option to bypass validation of **all** other required options when it is used. The typical use case is `--help` or `--version` flags that should work without requiring the user to provide all mandatory options.
+
+### Basic Usage
+
+```java
+@CommandDefinition(name = "deploy", description = "Deploy application",
+                   validator = DeployValidator.class)
+public class DeployCommand implements Command<CommandInvocation> {
+
+    @Option(required = true, description = "Target environment")
+    private String environment;
+
+    @Option(required = true, description = "Application version")
+    private String version;
+
+    @Option(shortName = 'h', hasValue = false, overrideRequired = true,
+            description = "Show help")
+    private boolean help;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        if (help) {
+            invocation.println(invocation.getHelpInfo("deploy"));
+            return CommandResult.SUCCESS;
+        }
+        invocation.println("Deploying " + version + " to " + environment);
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Without `overrideRequired`, running `deploy -h` would fail because `--environment` and `--version` are required. With `overrideRequired = true` on the `--help` flag, the required checks are skipped when `-h` is used:
+
+```bash
+# Works -- overrideRequired bypasses required checks
+$ deploy -h
+Usage: deploy [options]
+  ...
+
+# Still validates normally when -h is NOT used
+$ deploy
+Error: Option: --environment is required for this command
+```
+
+### What Gets Bypassed
+
+When any option with `overrideRequired = true` is set by the user:
+
+1. **Required option checks** are skipped for all options
+2. **Command validator** (`CommandValidator`) is not called
+3. **Selector prompts** are skipped
+
+This is an all-or-nothing mechanism: if any `overrideRequired` option is active, all required checks are bypassed.
+
+## Accept Name Without Dashes
+
+The `acceptNameWithoutDashes` property allows users to specify the long option name without the `--` prefix. This only applies to long option names, not short names.
+
+### Basic Usage
+
+```java
+@CommandDefinition(name = "test", description = "Run tests")
+public class TestCommand implements Command<CommandInvocation> {
+
+    @Option(name = "verbose", acceptNameWithoutDashes = true,
+            hasValue = false, description = "Verbose output")
+    private boolean verbose;
+
+    @Option(name = "output", acceptNameWithoutDashes = true,
+            description = "Output file")
+    private String output;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("verbose=" + verbose + ", output=" + output);
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+All of these are equivalent:
+
+```bash
+# Standard form
+$ test --verbose --output results.txt
+
+# Without dashes
+$ test verbose output results.txt
+
+# Mixed
+$ test verbose --output results.txt
+```
+
+### Tab Completion
+
+When `acceptNameWithoutDashes = true`, tab completion shows the option name without `--`:
+
+```
+$ test <TAB>
+verbose    output
+```
+
+When `acceptNameWithoutDashes = false` (the default), completion shows the standard form:
+
+```
+$ test <TAB>
+--verbose    --output
+```
+
+### Use Cases
+
+This feature is useful for building CLIs where the sub-command style is preferred over traditional option syntax:
+
+```java
+@CommandDefinition(name = "config", description = "Configuration manager")
+public class ConfigCommand implements Command<CommandInvocation> {
+
+    @Option(name = "key", acceptNameWithoutDashes = true,
+            required = true, description = "Configuration key")
+    private String key;
+
+    @Option(name = "value", acceptNameWithoutDashes = true,
+            description = "Value to set")
+    private String value;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        if (value != null) {
+            invocation.println("Set " + key + " = " + value);
+        } else {
+            invocation.println("Get " + key);
+        }
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+```bash
+$ config key database.host value localhost
+Set database.host = localhost
+```

@@ -9,92 +9,9 @@ This section covers advanced Æsh features including piping, redirection, aliase
 
 ## Piping and Redirection
 
-Æsh supports Unix-style command operators for piping output between commands and redirecting to files.
+Æsh supports Unix-style command operators for piping output between commands, redirecting to files, and conditional execution (`&&`, `||`, `;`).
 
-### Supported Operators
-
-| Operator | Symbol | Description |
-|----------|--------|-------------|
-| Pipe | `\|` | Pass output of one command to input of another |
-| Redirect Out | `>` | Write output to file (overwrite) |
-| Redirect Append | `>>` | Append output to file |
-| Redirect In | `<` | Read input from file |
-| AND | `&&` | Execute next command if current succeeds |
-| OR | `\|\|` | Execute next command if current fails |
-| Sequence | `;` | Execute next command unconditionally |
-
-### Enabling Operators
-
-Operators are enabled by default. To configure:
-
-```java
-Settings settings = SettingsBuilder.builder()
-        .enableOperatorParser(true)  // Enable operator parsing
-        .setPipe(true)               // Enable pipe operator
-        .setRedirection(true)        // Enable redirection operators
-        .build();
-```
-
-### Implementing Pipeable Commands
-
-Commands that receive piped input should read from `getInputLine()`:
-
-```java
-@CommandDefinition(name = "grep", description = "Filter lines matching pattern")
-public class GrepCommand implements Command<CommandInvocation> {
-    
-    @Argument(description = "Pattern to match")
-    private String pattern;
-    
-    @Override
-    public CommandResult execute(CommandInvocation invocation) throws InterruptedException {
-        String line;
-        while ((line = invocation.getInputLine()) != null) {
-            if (line.contains(pattern)) {
-                invocation.println(line);
-            }
-        }
-        return CommandResult.SUCCESS;
-    }
-}
-```
-
-### Example: Command Pipeline
-
-```bash
-# List files, filter for .java, count lines
-ls | grep ".java" | wc -l
-
-# Process file and save output
-cat data.txt | transform | sort > output.txt
-
-# Conditional execution
-build && test && deploy
-
-# Execute regardless of result
-cleanup ; exit
-```
-
-### Checking the Current Operator
-
-Commands can check which operator is in effect:
-
-```java
-@Override
-public CommandResult execute(CommandInvocation invocation) {
-    Operator operator = invocation.getOperator();
-    
-    if (operator == Operator.PIPE) {
-        // Output will be piped to another command
-        // Avoid formatting, output raw data
-    } else {
-        // Output is going to terminal
-        // Use formatting and colors
-    }
-    
-    return CommandResult.SUCCESS;
-}
-```
+See [Operators](/docs/aesh/operators) for full documentation including all operator types, examples, and how to write operator-aware commands.
 
 ## Command Aliases
 
@@ -573,30 +490,102 @@ Settings settings = SettingsBuilder.builder()
 # Set an environment variable
 export MY_VAR=value
 
-# Use in commands
+# Use in commands (variable references are expanded)
 echo $MY_VAR
 
-# List exports
+# Chain variables
+export BASE=/opt/app
+export CONFIG=$BASE/config
+
+# List all exports
 export
 
 # Remove export
 unset MY_VAR
 ```
 
-### Accessing Exports Programmatically
+### Accessing Exports in Commands
+
+Commands can read exported variables through `AeshContext`:
 
 ```java
 @Override
 public CommandResult execute(CommandInvocation invocation) {
-    // Access exported variables through configuration
-    CommandInvocationConfiguration config = invocation.getConfiguration();
-    
-    // Environment-aware processing
-    // ...
-    
+    AeshContext ctx = invocation.getConfiguration().getAeshContext();
+
+    // Read a specific variable
+    String dbHost = ctx.exportedVariable("DB_HOST");
+
+    // List all exported variable names
+    Set<String> names = ctx.exportedVariableNames();
+
     return CommandResult.SUCCESS;
 }
 ```
+
+### Listening for Export Changes
+
+The `ExportChangeListener` interface lets your application react when users set or change exported variables. This is useful for reconfiguring services, updating prompts, or logging configuration changes.
+
+```java
+import org.aesh.command.export.ExportChangeListener;
+
+ExportChangeListener listener = (name, value) -> {
+    System.out.println("Variable changed: " + name + "=" + value);
+    // Reconfigure services, update state, etc.
+};
+```
+
+Register the listener through `SettingsBuilder`:
+
+```java
+Settings settings = SettingsBuilder.builder()
+        .enableExport(true)
+        .exportFile(new File(System.getProperty("user.home"), ".myapp_exports"))
+        .exportListener(listener)
+        .build();
+```
+
+The listener fires whenever `export NAME=value` is executed successfully. It receives the variable name and its resolved value (with any `$VAR` references expanded).
+
+#### Example: Dynamic Configuration
+
+```java
+ExportChangeListener configListener = (name, value) -> {
+    switch (name) {
+        case "LOG_LEVEL":
+            Logger.getGlobal().setLevel(Level.parse(value));
+            break;
+        case "OUTPUT_FORMAT":
+            outputFormatter.setFormat(value);
+            break;
+    }
+};
+
+Settings settings = SettingsBuilder.builder()
+        .enableExport(true)
+        .exportListener(configListener)
+        .build();
+```
+
+```bash
+# User changes log level at runtime
+$ export LOG_LEVEL=FINE
+# Listener fires, log level is updated immediately
+```
+
+### System Environment Integration
+
+By default, exports are isolated to the Æsh session. To include the host system's environment variables (read-only) alongside session exports:
+
+```java
+SettingsBuilder.builder()
+        .enableExport(true)
+        .exportUsesSystemEnvironment(true)
+        .build();
+```
+
+With this enabled, `$HOME`, `$PATH`, and other system variables are accessible in addition to user-defined exports.
 
 ## Input Validation
 
