@@ -1,6 +1,6 @@
-baseURL: https://example.org/
+baseURL: https://aeshell.github.io/
 languageCode: en-us
-title: Æsh, Another Extenable SHell
+title: Æsh, Another Extensible SHell
 
 module:
   imports:
