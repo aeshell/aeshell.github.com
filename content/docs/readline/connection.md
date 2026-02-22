@@ -113,6 +113,24 @@ connection.setCloseHandler(ignored -> {
 Consumer<Void> closeHandler = connection.getCloseHandler();
 ```
 
+### Theme Change Handler
+
+Called when the terminal's theme changes (dark/light mode switch). Requires subscribing to theme change notifications with `enableThemeChangeNotification()`:
+
+```java
+import org.aesh.terminal.utils.TerminalTheme;
+
+// Set handler for theme changes
+connection.setThemeChangeHandler(theme -> {
+    System.out.println("Theme changed to: " + theme);
+    // Re-detect colors or update cached capability
+});
+
+Consumer<TerminalTheme> themeHandler = connection.getThemeChangeHandler();
+```
+
+When a handler is registered, the `EventDecoder` in the input pipeline intercepts unsolicited `CSI ? 997 ; Ps n` responses and routes them to this handler, preventing them from appearing as input. See [Theme Mode Queries](#theme-mode-queries) for the full API.
+
 ## Terminal Properties
 
 ```java
@@ -329,6 +347,109 @@ import org.aesh.terminal.tty.TerminalColorDetector;
 // Query with automatic fallback to environment-based detection
 Map<Integer, int[]> colors = TerminalColorDetector.queryColorsWithFallback(connection, 500);
 // Always returns colors - actual if OSC works, estimated if not
+```
+
+## Theme Mode Queries
+
+The `Connection` interface provides methods for querying and subscribing to terminal theme changes using the `CSI ? 996 n` protocol. This is simpler and faster than OSC 10/11 RGB queries — it returns a direct `DARK` or `LIGHT` answer.
+
+See [Color Detection](color-detection#1-theme-mode-query-csi--996-n--fastest--simplest) for background on the protocol.
+
+### One-Shot Query
+
+Query the current theme mode:
+
+```java
+// Returns DARK, LIGHT, or null (unsupported/timeout)
+TerminalTheme theme = connection.queryThemeMode(500);
+
+if (theme != null) {
+    System.out.println("Terminal theme: " + theme);
+}
+```
+
+### Checking Support
+
+```java
+// Check if the terminal supports theme queries (avoids timeout)
+if (connection.supportsThemeQuery()) {
+    TerminalTheme theme = connection.queryThemeMode(500);
+}
+```
+
+Support is determined by the `Device.TerminalType` enum — terminals like Kitty, Ghostty, Foot, Contour, GNOME Terminal, and tmux report `supportsThemeDsr() == true`.
+
+### Subscribing to Live Theme Changes
+
+Enable real-time notifications when the user switches dark/light mode:
+
+```java
+// One-call setup: register handler and enable notifications
+connection.enableThemeChangeNotification(theme -> {
+    System.out.println("Theme changed to: " + theme);
+    // Update cached colors
+    capability = new TerminalColorCapability(capability.getColorDepth(), theme);
+});
+```
+
+Or step by step:
+
+```java
+// 1. Register the handler
+connection.setThemeChangeHandler(theme -> {
+    System.out.println("Theme changed to: " + theme);
+});
+
+// 2. Tell the terminal to send notifications (CSI ? 2031 h)
+connection.enableThemeChangeNotification();
+```
+
+### Unsubscribing
+
+```java
+// Tell the terminal to stop sending notifications (CSI ? 2031 l)
+connection.disableThemeChangeNotification();
+
+// Optionally remove the handler
+connection.setThemeChangeHandler(null);
+```
+
+### Supported Terminals
+
+| Terminal | Version | Theme DSR |
+|----------|---------|-----------|
+| Contour | 0.4.0+ | Yes |
+| Ghostty | 1.0.0+ | Yes |
+| Kitty | 0.38.1+ | Yes |
+| Foot | — | Yes |
+| VTE / GNOME Terminal | 0.82.0+ | Yes |
+| tmux | — | Yes (passthrough) |
+
+### Complete Example
+
+```java
+import org.aesh.readline.tty.terminal.TerminalConnection;
+import org.aesh.terminal.utils.TerminalTheme;
+
+TerminalConnection connection = new TerminalConnection();
+
+// Query current theme
+if (connection.supportsThemeQuery()) {
+    TerminalTheme theme = connection.queryThemeMode(500);
+    System.out.println("Current theme: " + theme);
+
+    // Subscribe to changes
+    connection.enableThemeChangeNotification(newTheme -> {
+        System.out.println("Theme switched to: " + newTheme);
+    });
+}
+
+// ... application runs ...
+
+// Clean up before exit
+connection.disableThemeChangeNotification();
+connection.setThemeChangeHandler(null);
+connection.close();
 ```
 
 ## Device Attributes (DA1/DA2)

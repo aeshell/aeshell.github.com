@@ -47,6 +47,10 @@ connection.setSizeHandler(size -> { /* handle resize */ });
 Consumer<Signal> signalHandler = connection.getSignalHandler();
 connection.setSignalHandler(signal -> { /* handle signals */ });
 
+// Theme change handler (CSI ? 997 DSR notifications)
+Consumer<TerminalTheme> themeHandler = connection.getThemeChangeHandler();
+connection.setThemeChangeHandler(theme -> { /* handle dark/light switch */ });
+
 // Close
 connection.close();
 connection.close(exitCode);
@@ -316,3 +320,27 @@ if (connection.supportsOscQueries(da)) {
     // DA1 indicates modern terminal features
 }
 ```
+
+## Theme Mode Detection
+
+Modern terminals can report whether they are using a dark or light color scheme using the `CSI ? 996 n` protocol. This is faster and simpler than parsing OSC 10/11 RGB responses.
+
+```java
+// One-shot query
+if (connection.supportsThemeQuery()) {
+    TerminalTheme theme = connection.queryThemeMode(500);
+    // DARK, LIGHT, or null
+}
+
+// Subscribe to real-time dark/light mode changes
+connection.enableThemeChangeNotification(theme -> {
+    System.out.println("Theme changed to: " + theme);
+});
+
+// Unsubscribe
+connection.disableThemeChangeNotification();
+```
+
+Supported terminals include Kitty (0.38.1+), Ghostty (1.0.0+), Contour (0.4.0+), Foot, VTE/GNOME Terminal (0.82.0+), and tmux.
+
+See [Color Detection](color-detection#1-theme-mode-query-csi--996-n--fastest--simplest) for protocol details and [Connection](connection#theme-mode-queries) for the full API reference.

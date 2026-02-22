@@ -88,7 +88,8 @@ if (cap.hasPaletteColors()) {
 }
 ```
 
-The `detect()` method queries:
+The `detect()` method queries (in priority order):
+- Theme mode (CSI ? 996 n) - if supported by the terminal
 - Foreground color (OSC 10)
 - Background color (OSC 11)
 - Cursor color (OSC 12) - if supported
@@ -233,9 +234,55 @@ if (theme.isDark()) {
 
 ## Detection Methods
 
-The detector uses multiple strategies to determine the terminal theme:
+The detector uses multiple strategies to determine the terminal theme, in priority order:
 
-### 1. OSC Color Queries (Most Accurate)
+### 1. Theme Mode Query (CSI ? 996 n) — Fastest & Simplest
+
+The preferred method on supporting terminals. Sends a single escape sequence and gets back a direct dark/light answer — no RGB parsing or luminance calculation needed.
+
+```
+CSI ? 996 n  →  CSI ? 997 ; 1 n  (dark)
+                CSI ? 997 ; 2 n  (light)
+```
+
+This is based on the [Contour VT extension](https://contour-terminal.org/vt-extensions/color-palette-update-notifications/) for color palette update notifications.
+
+#### Using via Connection
+
+```java
+// One-shot query: returns DARK, LIGHT, or null (unsupported/timeout)
+TerminalTheme theme = connection.queryThemeMode(500);
+
+if (theme != null) {
+    System.out.println("Theme: " + theme);
+} else {
+    // Fall back to OSC 10/11 or environment detection
+}
+```
+
+#### Checking Support
+
+```java
+// Check before querying (avoids timeout on unsupported terminals)
+if (connection.supportsThemeQuery()) {
+    TerminalTheme theme = connection.queryThemeMode(500);
+}
+```
+
+#### Supported Terminals
+
+| Terminal | Version | Notes |
+|----------|---------|-------|
+| Contour | 0.4.0+ | Origin of the protocol |
+| Ghostty | 1.0.0+ | Full support |
+| Kitty | 0.38.1+ | Full support |
+| tmux | — | Passes through to underlying terminal |
+| VTE / GNOME Terminal | 0.82.0+ | Full support |
+| Foot | — | Full support |
+
+The `TerminalColorDetector` tries this method first when the terminal supports it, then falls back to OSC queries and environment detection.
+
+### 2. OSC Color Queries (Most Accurate Fallback)
 
 Queries the terminal directly for its background color using OSC 10/11 escape sequences:
 
@@ -373,7 +420,7 @@ if (bgColor != null) {
 
 See [Terminal Colors](terminal-colors#ansi-color-utilities) for complete documentation of RGB/ANSI conversion utilities.
 
-### 2. Environment Variables
+### 3. Environment Variables
 
 Checks standard environment variables via [`TerminalEnvironment`](terminal-environment):
 
@@ -390,7 +437,7 @@ Checks standard environment variables via [`TerminalEnvironment`](terminal-envir
 
 The `TerminalEnvironment` class parses these once and caches the results. See [Terminal Environment](terminal-environment) for details on all supported environment variables and terminal types.
 
-### 3. Terminal-Specific Detection
+### 4. Terminal-Specific Detection
 
 For terminals that don't support OSC queries, the detector reads configuration files:
 
@@ -468,6 +515,63 @@ set -g allow-passthrough on
 tmux set -g allow-passthrough on
 ```
 
+## Real-Time Theme Change Notifications
+
+Terminals that support the CSI ? 996 n protocol can also send **unsolicited** notifications when the user switches between dark and light mode. This allows your application to adapt its colors in real time without polling.
+
+### How It Works
+
+1. Your application sends `CSI ? 2031 h` to **subscribe** to theme change notifications
+2. The terminal sends `CSI ? 997 ; 1 n` (dark) or `CSI ? 997 ; 2 n` (light) whenever the theme changes
+3. Your application sends `CSI ? 2031 l` to **unsubscribe**
+
+The `EventDecoder` in the input pipeline automatically intercepts these unsolicited DSR sequences and routes them to a registered handler, preventing them from appearing as garbage in the readline buffer.
+
+### Subscribing to Theme Changes
+
+```java
+import org.aesh.terminal.utils.TerminalTheme;
+
+// One-call setup: register handler and enable notifications
+connection.enableThemeChangeNotification(theme -> {
+    System.out.println("Theme changed to: " + theme);
+    // Update your cached color capability
+    capability = new TerminalColorCapability(capability.getColorDepth(), theme);
+});
+```
+
+Or separately:
+
+```java
+// Register handler first
+connection.setThemeChangeHandler(theme -> {
+    System.out.println("Theme changed to: " + theme);
+});
+
+// Then enable notifications
+connection.enableThemeChangeNotification();
+```
+
+### Unsubscribing
+
+```java
+// Stop the terminal from sending notifications
+connection.disableThemeChangeNotification();
+
+// Optionally remove the handler
+connection.setThemeChangeHandler(null);
+```
+
+### Performance
+
+When no theme change handler is registered, the DSR filtering in `EventDecoder` has **zero overhead** — a single null check on the fast path. When a handler is registered but the input contains no ESC bytes, the overhead is a single linear scan with no allocation. The state machine only activates when an ESC byte is found in the input.
+
+### Supported Terminals
+
+Theme change notifications use the same terminal support as the CSI ? 996 n query. See the [Theme Mode Query](#1-theme-mode-query-csi--996-n--fastest--simplest) section above for the full compatibility table.
+
+See the [Connection](connection#theme-mode-queries) documentation for the complete API reference.
+
 ## Example Application
 
 Here's a complete example that adapts colors based on detection:
@@ -543,21 +647,23 @@ public class MyApp {
 
 The following terminals have been tested with full detection support:
 
-| Terminal | OSC Query | Config File | Notes |
-|----------|-----------|-------------|-------|
-| iTerm2 | Yes | - | Full support |
-| Kitty | Yes | - | Full support |
-| WezTerm | Yes | - | Full support |
-| Alacritty | Yes | Yes | Both methods work |
-| Ghostty | Yes | - | Full support |
-| GNOME Terminal | Yes | - | Full support |
-| Konsole | Yes | - | Full support |
-| Windows Terminal | Yes | Yes | Both methods work |
-| VS Code Terminal | Limited | Yes | Config file preferred |
-| JetBrains IDEs | No | Yes | Config file only |
-| tmux | Yes* | - | *Requires 3.3+ or passthrough |
-| ConEmu/Cmder | No | Yes | Config file only |
-| Apple Terminal | Limited | - | Basic support |
+| Terminal | OSC Query | Theme DSR | Config File | Notes |
+|----------|-----------|-----------|-------------|-------|
+| iTerm2 | Yes | No | - | Full OSC support |
+| Kitty | Yes | Yes (0.38.1+) | - | Full support |
+| WezTerm | Yes | No | - | Full OSC support |
+| Alacritty | Yes | No | Yes | Both methods work |
+| Ghostty | Yes | Yes (1.0.0+) | - | Full support |
+| GNOME Terminal | Yes | Yes (VTE 0.82.0+) | - | Full support |
+| Konsole | Yes | No | - | Full OSC support |
+| Windows Terminal | Yes | No | Yes | Both methods work |
+| Foot | Limited | Yes | - | Theme DSR preferred |
+| Contour | Yes | Yes (0.4.0+) | - | Origin of Theme DSR protocol |
+| VS Code Terminal | Limited | No | Yes | Config file preferred |
+| JetBrains IDEs | No | No | Yes | Config file only |
+| tmux | Yes* | Yes* | - | *Requires 3.3+ or passthrough |
+| ConEmu/Cmder | No | No | Yes | Config file only |
+| Apple Terminal | Limited | No | - | Basic support |
 
 ## Troubleshooting
 
