@@ -452,6 +452,25 @@ connection.setThemeChangeHandler(null);
 connection.close();
 ```
 
+## Synchronized Output (Mode 2026)
+
+Synchronized output prevents screen tearing by telling the terminal to buffer all output until the frame is complete. See [Synchronized Output](synchronized-output) for full documentation.
+
+```java
+// Check support (heuristic, no query sent)
+if (connection.supportsSynchronizedOutput()) {
+    connection.enableSynchronizedOutput();
+    // ... render frame ...
+    connection.disableSynchronizedOutput();
+}
+
+// Runtime query via DECRPM (authoritative)
+Boolean supported = connection.querySynchronizedOutput(500);
+// true = supported, false = not supported, null = timeout
+```
+
+Synchronized output is automatically managed by `Readline` for supporting terminals. Use the `ReadlineFlag.NO_SYNCHRONIZED_OUTPUT` flag to opt out.
+
 ## Device Attributes (DA1/DA2)
 
 Device Attributes queries allow you to detect terminal capabilities that cannot be determined from terminfo alone.
