@@ -34,6 +34,7 @@ Think of it this way: Æsh is built **on top of** Æsh Readline. Æsh provides t
 - **Line Editing** - Undo/redo support with customizable key bindings
 - **History Management** - Search, persistence, and navigation
 - **Tab Completion** - Extensible completion system
+- **Ghost Text Suggestions** - Inline suggestion display via `SuggestionProvider`
 - **Input Masking** - Password and sensitive input handling
 - **Paste Buffer** - Copy/paste operations
 - **Edit Modes** - Both Emacs and Vi editing modes

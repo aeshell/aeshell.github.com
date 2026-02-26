@@ -65,6 +65,7 @@ That's it! Æsh automatically:
 ### User Experience
 - **Tab completion** - Built-in completers for files, booleans, and enums
 - **Custom completers** - Add domain-specific completions
+- **[Ghost text suggestions](ghost-text-suggestions)** - Inline suggestions for commands, subcommands, and options as you type
 - **Auto-generated help** - `--help` automatically generated from your metadata
 - **Input validation** - Built-in and custom validators for options and arguments
 - **Error messages** - Clear, helpful error messages for users
@@ -73,6 +74,7 @@ That's it! Æsh automatically:
 - **Validators** - Ensure option values meet your requirements
 - **Converters** - Convert string input to custom types
 - **Completers** - Provide tab completion suggestions
+- **Suggestion providers** - Inline ghost text suggestions
 - **Activators** - Conditionally enable/disable options
 - **Renderers** - Customize help output format
 - **Custom parsers** - Override default parsing behavior

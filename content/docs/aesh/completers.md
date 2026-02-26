@@ -7,6 +7,10 @@ weight: 8
 
 Completers provide tab-completion suggestions for options and arguments.
 
+{{< callout type="info" >}}
+Looking for inline ghost text suggestions instead of tab completion? See [Ghost Text Suggestions](../ghost-text-suggestions) for automatic command, subcommand, and option suggestions as you type.
+{{< /callout >}}
+
 ## OptionCompleter Interface
 
 ```java

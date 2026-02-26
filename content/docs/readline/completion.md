@@ -5,7 +5,7 @@ title: 'Completion'
 weight: 6
 ---
 
-Æsh Readline supports tab completion for commands and options.
+Æsh Readline supports tab completion for commands and options, as well as inline ghost text suggestions via `SuggestionProvider`.
 
 ## Completion Class
 
@@ -181,3 +181,47 @@ Completion colored = new Completion(
     TerminalColor.RED
 );
 ```
+
+## Ghost Text Suggestions
+
+In addition to tab completion, Æsh Readline supports inline ghost text suggestions that appear automatically as the user types. Ghost text is rendered as dimmed text after the cursor and can be accepted with the right arrow key.
+
+### SuggestionProvider Interface
+
+```java
+import org.aesh.readline.SuggestionProvider;
+
+SuggestionProvider provider = buffer -> {
+    // Return the suffix to display as ghost text, or null for no suggestion
+    if (buffer.startsWith("hel")) {
+        return "lo";
+    }
+    return null;
+};
+```
+
+### Setting Up Suggestions
+
+```java
+Readline readline = ReadlineBuilder.builder().build();
+readline.setSuggestionProvider(provider);
+```
+
+### CompositeSuggestionProvider
+
+Chain multiple providers together. The first provider that returns a non-null result wins:
+
+```java
+import org.aesh.readline.CompositeSuggestionProvider;
+
+CompositeSuggestionProvider composite = new CompositeSuggestionProvider(
+    historyProvider,   // checked first
+    commandProvider    // fallback
+);
+
+readline.setSuggestionProvider(composite);
+```
+
+{{< callout type="info" >}}
+If you're using the Æsh command framework, see [Ghost Text Suggestions](/docs/aesh/ghost-text-suggestions) for the built-in `CommandSuggestionProvider` that automatically suggests command names, subcommands, and options from your command registry.
+{{< /callout >}}
