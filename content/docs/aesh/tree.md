@@ -246,5 +246,6 @@ public class TreeCommand implements Command<CommandInvocation> {
 
 ## See Also
 
+- [Graph Display]({{< relref "graph" >}}) — DAG rendering for shared dependencies
 - [Table Display]({{< relref "table" >}}) — Tabular data rendering
 - [Progress Bar]({{< relref "progress-bar" >}}) — Progress feedback for long-running operations
