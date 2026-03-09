@@ -181,11 +181,12 @@ GraphNode root = GraphNode.of("Root").child(a).child(b);
  Root
  ┌─┴┐
  A  B
-┌┴─┬┴─┐
+┌┴─┐│
+│  ├┴─┐
 C  D  E
 ```
 
-Here D is shared between A and B — it appears once with edges from both parents.
+Here D is shared between A and B — it appears once with edges from both parents. Each parent's edges are drawn on separate routing rows to avoid visual ambiguity.
 
 ## Using in Commands
 
