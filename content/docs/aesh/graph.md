@@ -61,6 +61,12 @@ String output = Graph.render(root);
 
 // Custom style
 String output = Graph.render(root, GraphStyle.ASCII);
+
+// With max width (wraps wide layers)
+String output = Graph.render(root, 25);
+
+// Custom style + max width
+String output = Graph.render(root, GraphStyle.ASCII, 25);
 ```
 
 ## Builder API
@@ -75,6 +81,7 @@ String output = Graph.<Task>builder()
         .label(Task::getName)
         .children(Task::getDependencies)
         .style(GraphStyle.UNICODE)
+        .maxWidth(40)
         .build()
         .render(rootTask);
 ```
@@ -84,6 +91,7 @@ String output = Graph.<Task>builder()
 | `label(Function<T, String>)`     | *required* | Extracts display text from each node  |
 | `children(Function<T, List<T>>)` | *required* | Extracts children (null/empty = leaf) |
 | `style(GraphStyle)`              | `UNICODE`  | Visual style for connectors           |
+| `maxWidth(int)`                  | `0`        | Max output width (0 = no limit)       |
 
 Calling `build()` throws `IllegalStateException` if `label` or `children` are not set.
 
@@ -188,6 +196,46 @@ C  D  E
 
 Here D is shared between A and B — it appears once with edges from both parents. Each parent's edges are drawn on separate routing rows to avoid visual ambiguity.
 
+## Width Limiting
+
+When a node has many children, the graph can grow very wide. The `maxWidth` parameter constrains the output by wrapping wide layers onto multiple rows. Children that don't fit are moved to additional rows, with vertical connectors routing edges through the intermediate layers automatically.
+
+```java
+GraphNode root = GraphNode.of("Pipeline")
+        .child("Compile")
+        .child("Test")
+        .child("Lint")
+        .child("Package")
+        .child("Deploy")
+        .child("Notify");
+
+// Without maxWidth — all children on one wide row:
+Graph.render(root);
+```
+
+```
+                  Pipeline
+   ┌───────┬─────┬────┴─┬────────┬───────┐
+Compile  Test  Lint  Package  Deploy  Notify
+```
+
+```java
+// With maxWidth=25 — children wrap to fit:
+Graph.render(root, 25);
+```
+
+```
+          Pipeline
+   ┌─────┬──┬─┴──┬───┬────┐
+Compile  │  │  Test  │  Lint
+     ┌───┘  │        │
+     │      └─┐      │
+     │        │      └┐
+  Package  Deploy  Notify
+```
+
+A `maxWidth` of `0` (the default) means no limit. The wrapping applies to the node label layers; routing lines between layers may extend slightly beyond `maxWidth` when connecting nodes across split rows.
+
 ## Using in Commands
 
 Here is a complete command example that displays a build dependency graph:
@@ -266,11 +314,13 @@ Use `Tree` for simple hierarchies (file systems, org charts). Use `Graph` when n
 
 ### Graph (static)
 
-| Method                          | Returns    | Description                  |
-|---------------------------------|------------|------------------------------|
-| `render(GraphNode)`             | `String`   | Render with UNICODE style    |
-| `render(GraphNode, GraphStyle)` | `String`   | Render with specified style  |
-| `builder()`                     | `Builder`  | Create a generic builder     |
+| Method                                    | Returns    | Description                              |
+|-------------------------------------------|------------|------------------------------------------|
+| `render(GraphNode)`                       | `String`   | Render with UNICODE style                |
+| `render(GraphNode, int)`                  | `String`   | Render with UNICODE style + max width    |
+| `render(GraphNode, GraphStyle)`           | `String`   | Render with specified style              |
+| `render(GraphNode, GraphStyle, int)`      | `String`   | Render with specified style + max width  |
+| `builder()`                               | `Builder`  | Create a generic builder                 |
 
 ### GraphStyle
 
