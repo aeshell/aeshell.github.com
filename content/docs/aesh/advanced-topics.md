@@ -203,6 +203,8 @@ class ParameterizedCommandTest {
 
 Æsh applications can be compiled to native executables using GraalVM, providing fast startup and low memory footprint.
 
+> **Tip:** Adding the [Annotation Processor](../annotation-processor) (`aesh-processor`) significantly simplifies GraalVM native images. The generated metadata uses direct `new` calls instead of reflection, reducing the amount of reflection configuration you need to maintain.
+
 ### Adding GraalVM Support
 
 Add the GraalVM native-image Maven plugin:
@@ -233,7 +235,9 @@ Add the GraalVM native-image Maven plugin:
 
 ### Reflection Configuration
 
-Æsh uses reflection for command discovery. Create a reflection configuration file at `src/main/resources/META-INF/native-image/reflect-config.json`:
+Æsh uses reflection for command discovery by default. If you are using the [Annotation Processor](../annotation-processor), most of this reflection is eliminated and you may need significantly fewer entries here (primarily just for field injection, which still uses reflection).
+
+Without the annotation processor, create a reflection configuration file at `src/main/resources/META-INF/native-image/reflect-config.json`:
 
 ```json
 [

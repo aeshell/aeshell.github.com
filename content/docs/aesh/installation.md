@@ -27,6 +27,32 @@ dependencies {
 }
 ```
 
+## Annotation Processor (Optional)
+
+To generate command metadata at compile time (faster startup, less reflection, GraalVM-friendly), add the `aesh-processor` dependency. See [Annotation Processor](../annotation-processor) for details.
+
+### Maven
+
+```xml
+<dependency>
+  <groupId>org.aesh</groupId>
+  <artifactId>aesh-processor</artifactId>
+  <version>1.7</version>
+  <scope>provided</scope>
+</dependency>
+```
+
+### Gradle
+
+```groovy
+dependencies {
+    annotationProcessor 'org.aesh:aesh-processor:1.7'
+    compileOnly 'org.aesh:aesh-processor:1.7'
+}
+```
+
+No code changes are required -- Aesh automatically detects and uses the generated metadata when available.
+
 ## Build from Source
 
 Clone the repository and build with Maven:

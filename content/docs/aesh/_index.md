@@ -79,6 +79,11 @@ That's it! Æsh automatically:
 - **Renderers** - Customize help output format
 - **Custom parsers** - Override default parsing behavior
 
+### Performance & Native Images
+- **[Compile-time annotation processor](annotation-processor)** - Optional `aesh-processor` module generates command metadata at build time, eliminating runtime reflection
+- **GraalVM native-image friendly** - Generated metadata uses direct `new` calls instead of reflection
+- **Dual-mode** - Falls back to reflection automatically if the processor is not used
+
 ### Execution Modes
 - **Console mode** - Interactive shell with command history and editing (via `AeshConsoleRunner`)
 - **Runtime mode** - Single command execution for CLI tools (via `AeshRuntimeRunner`)
