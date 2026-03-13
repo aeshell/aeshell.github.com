@@ -191,6 +191,10 @@ Control readline behavior with flags:
 | Flag | Description |
 |------|-------------|
 | `NO_PROMPT_REDRAW_ON_INTR` | Don't redraw prompt after interrupt (Ctrl-C) |
+| `NO_SYNCHRONIZED_OUTPUT` | Disable automatic synchronized output (Mode 2026) |
+| `NO_GRAPHEME_CLUSTER_MODE` | Disable automatic grapheme cluster segmentation (Mode 2027) |
+| `NO_SHELL_INTEGRATION` | Disable OSC 133 shell integration sequences |
+| `NO_CLIPBOARD` | Disable automatic clipboard writes via OSC 52 |
 
 ```java
 EnumMap<ReadlineFlag, Integer> flags = new EnumMap<>(ReadlineFlag.class);

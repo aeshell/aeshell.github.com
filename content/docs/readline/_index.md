@@ -49,6 +49,7 @@ Think of it this way: Æsh is built **on top of** Æsh Readline. Æsh provides t
 - **[Device Attributes](device-attributes)** - DA1/DA2 terminal capability queries
 - **[Terminal Images](terminal-images)** - Sixel, Kitty, and iTerm2 inline image support
 - **[Hyperlinks](hyperlinks)** - Clickable OSC 8 hyperlinks in terminal output
+- **[Clipboard](clipboard)** - Automatic system clipboard integration via OSC 52
 
 ## Architecture
 

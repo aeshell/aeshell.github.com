@@ -582,6 +582,19 @@ Device device = connection.device();
 ImageProtocol protocol = device.getImageProtocol();
 ```
 
+## Clipboard (OSC 52)
+
+Copy text to the system clipboard using OSC 52. This is a write-only operation. See [Clipboard](clipboard) for full documentation.
+
+```java
+// Check support (heuristic, no query sent)
+if (connection.supportsClipboard()) {
+    connection.writeClipboard("text to copy");
+}
+```
+
+Clipboard writing is automatically managed by `Readline` for supporting terminals. Use the `ReadlineFlag.NO_CLIPBOARD` flag to opt out.
+
 ## Color Capabilities
 
 Get terminal color information:
