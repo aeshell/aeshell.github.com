@@ -140,6 +140,20 @@ readline.readline(connection, new Prompt("$ "), input -> {
 }, null, null, null, null, flags);
 ```
 
+Or more concisely with `ReadlineRequest` and `ReadlineFlags`:
+
+```java
+import org.aesh.readline.ReadlineRequest;
+import org.aesh.readline.ReadlineFlags;
+
+readline.readline(ReadlineRequest.builder()
+        .connection(connection)
+        .prompt("$ ")
+        .requestHandler(input -> { /* handle input */ })
+        .flags(ReadlineFlags.of(ReadlineFlag.NO_SYNCHRONIZED_OUTPUT))
+        .build());
+```
+
 ## Manual Usage
 
 For applications that manage their own rendering loop (outside of `Readline`), use

@@ -83,14 +83,16 @@ Prompt prompt = new Prompt(parts);
 
 ## Methods
 
-### getPromptAsString()
+### getPromptCharacters()
 
 Returns the prompt text without ANSI codes:
 
 ```java
 Prompt prompt = new Prompt("[user]$ ");
-String text = prompt.getPromptAsString(); // "[user]$ "
+String text = prompt.getPromptCharacters(); // "[user]$ "
 ```
+
+> **Note:** `getPromptAsString()` is deprecated — use `getPromptCharacters()` instead.
 
 ### getMask()
 
@@ -127,6 +129,49 @@ Creates a copy of the prompt:
 Prompt original = new Prompt("$ ");
 Prompt copy = original.copy();
 ```
+
+## Prompt Builder
+
+`Prompt.builder()` provides a fluent API for constructing prompts, as an alternative to the telescoping constructors:
+
+```java
+// Simple text prompt
+Prompt prompt = Prompt.builder()
+        .message("$ ")
+        .build();
+
+// Password prompt with mask
+Prompt prompt = Prompt.builder()
+        .message("Password: ")
+        .mask('*')
+        .build();
+
+// Styled prompt with TerminalString
+Prompt prompt = Prompt.builder()
+        .terminalString(new TerminalString("[admin]# ",
+                new TerminalColor(Color.RED, Color.DEFAULT),
+                CharacterType.BOLD))
+        .build();
+
+// Prompt with ANSI string
+Prompt prompt = Prompt.builder()
+        .message("$ ")
+        .ansi("\u001B[32m$ \u001B[0m")
+        .build();
+```
+
+### Builder Methods
+
+| Method | Type | Description |
+|--------|------|-------------|
+| `message(String)` | `String` | Set the prompt text |
+| `ansi(String)` | `String` | Set the ANSI-formatted display string |
+| `mask(char)` | `char` | Set mask character for hidden input |
+| `promptCodePoints(int[])` | `int[]` | Set prompt as Unicode code points |
+| `terminalString(TerminalString)` | `TerminalString` | Set a styled prompt |
+| `characters(List<TerminalCharacter>)` | `List` | Set individually formatted characters |
+
+When multiple sources are set, the builder uses this precedence (highest first): `characters`, `terminalString`, `promptCodePoints`, `message`.
 
 ## Using Prompts
 

@@ -14,12 +14,12 @@ import org.aesh.readline.editing.EditMode;
 import org.aesh.readline.editing.EditModeBuilder;
 
 // Create default edit mode (Emacs)
-EditMode editMode = EditModeBuilder.builder().create();
+EditMode editMode = EditModeBuilder.builder().build();
 
 // Create Vi mode
 EditMode viMode = EditModeBuilder.builder()
         .mode(EditMode.Mode.VI)
-        .create();
+        .build();
 ```
 
 ## Emacs Mode
@@ -34,7 +34,7 @@ import org.aesh.readline.ReadlineBuilder;
 Readline readline = ReadlineBuilder.builder()
         .editMode(EditModeBuilder.builder()
                 .mode(EditMode.Mode.EMACS)
-                .create())
+                .build())
         .build();
 ```
 
@@ -75,7 +75,7 @@ import org.aesh.readline.ReadlineBuilder;
 Readline readline = ReadlineBuilder.builder()
         .editMode(EditModeBuilder.builder()
                 .mode(EditMode.Mode.VI)
-                .create())
+                .build())
         .build();
 ```
 

@@ -144,6 +144,20 @@ readline.readline(connection, new Prompt("$ "), input -> {
 }, null, null, null, null, flags);
 ```
 
+Or more concisely with `ReadlineRequest` and `ReadlineFlags`:
+
+```java
+import org.aesh.readline.ReadlineRequest;
+import org.aesh.readline.ReadlineFlags;
+
+readline.readline(ReadlineRequest.builder()
+        .connection(connection)
+        .prompt("$ ")
+        .requestHandler(input -> { /* handle input */ })
+        .flags(ReadlineFlags.of(ReadlineFlag.NO_CLIPBOARD))
+        .build());
+```
+
 ## Manual Usage
 
 For applications that manage their own rendering (outside of `Readline`), use the `Connection` method directly:

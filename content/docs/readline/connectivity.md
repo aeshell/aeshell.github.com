@@ -416,8 +416,8 @@ public class WebTerminal {
 
     public static synchronized void main(String[] args) throws Exception {
         NettyWebsocketTtyBootstrap bootstrap = new NettyWebsocketTtyBootstrap()
-                .setHost("localhost")
-                .setPort(8080);
+                .host("localhost")
+                .port(8080);
 
         bootstrap.start(WebTerminal::handleConnection).get(10, TimeUnit.SECONDS);
 
@@ -451,10 +451,10 @@ public class WebTerminal {
 
 | Method | Type | Description |
 |--------|------|-------------|
-| `setHost(String)` | `String` | Bind address (default: "localhost") |
-| `setPort(int)` | `int` | HTTP port (default: 8080) |
-| `setResourcePath(String)` | `String` | Classpath path for static files (default: "/org/aesh/terminal/http") |
-| `setServeStaticFiles(boolean)` | `boolean` | Enable/disable static file serving (default: true) |
+| `host(String)` | `String` | Bind address (default: "localhost") |
+| `port(int)` | `int` | HTTP port (default: 8080) |
+| `resourcePath(String)` | `String` | Classpath path for static files (default: "/org/aesh/terminal/http") |
+| `serveStaticFiles(boolean)` | `boolean` | Enable/disable static file serving (default: true) |
 
 The WebSocket endpoint is always available at `/ws`.
 
@@ -465,9 +465,9 @@ By default, terminal-http serves a built-in HTML page with xterm.js. To use your
 ```java
 // Use custom resources from your classpath
 NettyWebsocketTtyBootstrap bootstrap = new NettyWebsocketTtyBootstrap()
-        .setHost("localhost")
-        .setPort(8080)
-        .setResourcePath("/com/myapp/web");  // Your classpath location
+        .host("localhost")
+        .port(8080)
+        .resourcePath("/com/myapp/web");  // Your classpath location
 ```
 
 Place your `index.html` at `src/main/resources/com/myapp/web/index.html`.
@@ -510,9 +510,9 @@ For applications that serve HTML from a separate web server:
 ```java
 // Disable static file serving - only handle WebSocket at /ws
 NettyWebsocketTtyBootstrap bootstrap = new NettyWebsocketTtyBootstrap()
-        .setHost("localhost")
-        .setPort(8080)
-        .setServeStaticFiles(false);
+        .host("localhost")
+        .port(8080)
+        .serveStaticFiles(false);
 ```
 
 ### Browser Client with xterm.js
@@ -864,7 +864,7 @@ public class MultiProtocolServer {
         
         // WebSocket on port 8080
         NettyWebsocketTtyBootstrap http = new NettyWebsocketTtyBootstrap()
-                .setPort(8080);
+                .port(8080);
 
         // Start all servers
         ssh.start();

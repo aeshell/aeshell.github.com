@@ -51,7 +51,7 @@ Readline readline = ReadlineBuilder.builder().build();
 Readline readline = ReadlineBuilder.builder()
         .editMode(EditModeBuilder.builder()
                 .mode(EditMode.Mode.EMACS)
-                .create())
+                .build())
         .history(new FileHistory(new File(".history"), 500, true))
         .enableHistory(true)
         .historySize(1000)
@@ -203,6 +203,61 @@ flags.put(ReadlineFlag.NO_PROMPT_REDRAW_ON_INTR, 1);
 readline.readline(connection, prompt, handler, completions, 
         preProcessors, history, listener, flags);
 ```
+
+### ReadlineFlags Helper
+
+The `ReadlineFlags` utility class provides a concise way to create flag sets without manual `EnumMap` construction:
+
+```java
+import org.aesh.readline.ReadlineFlags;
+
+// No flags
+ReadlineFlags.none();
+
+// Specific flags
+ReadlineFlags.of(ReadlineFlag.NO_SYNCHRONIZED_OUTPUT);
+ReadlineFlags.of(ReadlineFlag.NO_CLIPBOARD, ReadlineFlag.NO_SHELL_INTEGRATION);
+
+// All flags
+ReadlineFlags.all();
+```
+
+> **Note:** `ReadlineFlags` produces `EnumSet<ReadlineFlag>` values. These are accepted by the `ReadlineRequest` builder's `flags()` method and the `readline()` overloads.
+
+### ReadlineRequest Builder
+
+For calls that use several optional parameters, `ReadlineRequest` provides a builder pattern that avoids passing `null` for unused fields:
+
+```java
+import org.aesh.readline.ReadlineRequest;
+
+ReadlineRequest request = ReadlineRequest.builder()
+        .connection(connection)
+        .prompt(new Prompt("$ "))
+        .requestHandler(input -> processInput(input))
+        .completions(myCompletions)
+        .history(customHistory)
+        .cursorListener(listener)
+        .build();
+
+readline.readline(request);
+```
+
+**Required fields:** `connection`, `prompt`, `requestHandler`.
+
+| Builder Method | Type | Description |
+|----------------|------|-------------|
+| `connection(Connection)` | `Connection` | Terminal connection (required) |
+| `prompt(Prompt)` | `Prompt` | Prompt to display (required) |
+| `prompt(String)` | `String` | Prompt string (convenience, creates a Prompt) |
+| `requestHandler(Consumer<String>)` | `Consumer` | Input handler callback (required) |
+| `completions(List<Completion>)` | `List` | Tab completions |
+| `preProcessors(List<Function<String, Optional<String>>>)` | `List` | Input transformers |
+| `history(History)` | `History` | Custom history for this read |
+| `cursorListener(CursorListener)` | `CursorListener` | Cursor movement events |
+| `flags(EnumMap<ReadlineFlag, Integer>)` | `EnumMap` | Behavior flags |
+
+> **Note:** The existing `readline()` overloads with positional parameters are deprecated in favor of `ReadlineRequest`. They continue to work but new code should prefer the builder.
 
 ## Completion
 
@@ -378,7 +433,7 @@ public enum Mode {
 ```java
 EditMode editMode = EditModeBuilder.builder()
         .mode(EditMode.Mode.EMACS)
-        .create();
+        .build();
 
 Readline readline = ReadlineBuilder.builder()
         .editMode(editMode)
@@ -478,7 +533,7 @@ public class InteractiveShell {
         this.readline = ReadlineBuilder.builder()
                 .editMode(EditModeBuilder.builder()
                         .mode(EditMode.Mode.EMACS)
-                        .create())
+                        .build())
                 .history(new FileHistory(new File(".myshell_history"), 1000, true))
                 .enableHistory(true)
                 .historySize(1000)
