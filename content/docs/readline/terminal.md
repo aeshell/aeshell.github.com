@@ -38,17 +38,17 @@ boolean supportsAnsi = connection.supportsAnsi();
 connection.write("Hello, World!\n");
 
 // Handlers
-Consumer<int[]> stdinHandler = connection.getStdinHandler();
+Consumer<int[]> stdinHandler = connection.stdinHandler();
 connection.setStdinHandler(handler -> { /* process input */ });
 
-Consumer<Size> sizeHandler = connection.getSizeHandler();
+Consumer<Size> sizeHandler = connection.sizeHandler();
 connection.setSizeHandler(size -> { /* handle resize */ });
 
-Consumer<Signal> signalHandler = connection.getSignalHandler();
+Consumer<Signal> signalHandler = connection.signalHandler();
 connection.setSignalHandler(signal -> { /* handle signals */ });
 
 // Theme change handler (CSI ? 997 DSR notifications)
-Consumer<TerminalTheme> themeHandler = connection.getThemeChangeHandler();
+Consumer<TerminalTheme> themeHandler = connection.themeChangeHandler();
 connection.setThemeChangeHandler(theme -> { /* handle dark/light switch */ });
 
 // Close
@@ -71,7 +71,7 @@ connection.setAttributes(previousAttributes);
 Control terminal behavior:
 
 ```java
-Attributes attrs = connection.getAttributes();
+Attributes attrs = connection.attributes();
 
 // Local flags
 attrs.setLocalFlag(Attributes.LocalFlag.ICANON, false);  // Disable canonical mode
@@ -149,7 +149,7 @@ connection.setSignalHandler(signal -> {
 Get current cursor position:
 
 ```java
-Point position = connection.getCursorPosition();
+Point position = connection.terminal().getCursorPosition();
 int row = position.getRow();
 int col = position.getColumn();
 ```
@@ -160,7 +160,7 @@ Query the terminal for its capabilities using DA1/DA2 escape sequences:
 
 ```java
 // Query primary device attributes (DA1)
-DeviceAttributes da = connection.queryPrimaryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryPrimaryDeviceAttributes(500);
 
 if (da != null) {
     // Check device class (conformance level)
@@ -179,7 +179,7 @@ if (da != null) {
 }
 
 // Query both DA1 and DA2
-DeviceAttributes full = connection.queryDeviceAttributes(500);
+DeviceAttributes full = connection.terminal().queryDeviceAttributes(500);
 if (full != null && full.hasDA2()) {
     System.out.println("Terminal type: " + full.getTerminalType().getName());
     System.out.println("Firmware version: " + full.getFirmwareVersion());
@@ -198,7 +198,7 @@ The `DeviceAttributes` class provides:
 ```java
 // Check if OSC queries are likely supported based on DA1 features
 if (da.likelySupportsOscQueries()) {
-    int[] bgColor = connection.queryBackgroundColor(500);
+    int[] bgColor = connection.terminal().queryBackgroundColor(500);
 }
 ```
 
@@ -261,7 +261,7 @@ Device device = connection.device();
 ImageProtocol protocol = device.getImageProtocol();
 
 // Query-based detection (accurate, uses DA1)
-ImageProtocol protocol = connection.queryImageProtocol(500);
+ImageProtocol protocol = connection.terminal().queryImageProtocol(500);
 
 switch (protocol) {
     case KITTY:
@@ -290,17 +290,17 @@ Query the terminal using OSC (Operating System Command) sequences:
 
 ```java
 // Query background color
-int[] bgColor = connection.queryBackgroundColor(500);
+int[] bgColor = connection.terminal().queryBackgroundColor(500);
 if (bgColor != null) {
     int r = bgColor[0], g = bgColor[1], b = bgColor[2];
     boolean isDark = (r + g + b) / 3 < 128;
 }
 
 // Query foreground color
-int[] fgColor = connection.queryForegroundColor(500);
+int[] fgColor = connection.terminal().queryForegroundColor(500);
 
 // Generic OSC query with custom parser
-String result = connection.queryOsc(oscCode, "?", 500, input -> {
+String result = connection.terminal().queryOsc(oscCode, "?", 500, input -> {
     // Parse the response
     return parseResponse(input);
 });
@@ -310,13 +310,13 @@ String result = connection.queryOsc(oscCode, "?", 500, input -> {
 
 ```java
 // Check if OSC queries are supported
-if (connection.supportsOscQueries()) {
+if (connection.terminal().supportsOscQueries()) {
     // Safe to use OSC queries
 }
 
 // More accurate check using DA1 attributes
-DeviceAttributes da = connection.queryPrimaryDeviceAttributes(500);
-if (connection.supportsOscQueries(da)) {
+DeviceAttributes da = connection.terminal().queryPrimaryDeviceAttributes(500);
+if (connection.terminal().supportsOscQueries(da)) {
     // DA1 indicates modern terminal features
 }
 ```
@@ -327,18 +327,18 @@ Modern terminals can report whether they are using a dark or light color scheme 
 
 ```java
 // One-shot query
-if (connection.supportsThemeQuery()) {
-    TerminalTheme theme = connection.queryThemeMode(500);
+if (connection.terminal().supportsThemeQuery()) {
+    TerminalTheme theme = connection.terminal().queryThemeMode(500);
     // DARK, LIGHT, or null
 }
 
 // Subscribe to real-time dark/light mode changes
-connection.enableThemeChangeNotification(theme -> {
+connection.terminal().enableThemeChangeNotification(theme -> {
     System.out.println("Theme changed to: " + theme);
 });
 
 // Unsubscribe
-connection.disableThemeChangeNotification();
+connection.terminal().disableThemeChangeNotification();
 ```
 
 Supported terminals include Kitty (0.38.1+), Ghostty (1.0.0+), Contour (0.4.0+), Foot, VTE/GNOME Terminal (0.82.0+), and tmux.

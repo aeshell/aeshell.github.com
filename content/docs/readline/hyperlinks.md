@@ -29,9 +29,9 @@ import org.aesh.terminal.utils.ANSI;
 TerminalConnection conn = new TerminalConnection();
 
 // Check if terminal supports hyperlinks
-if (conn.supportsHyperlinks()) {
+if (conn.terminal().supportsHyperlinks()) {
     // Write a clickable link
-    conn.writeHyperlink("https://aeshell.github.io", "Æsh Documentation");
+    conn.terminal().writeHyperlink("https://aeshell.github.io", "Æsh Documentation");
     conn.write("\n");
 }
 ```
@@ -71,13 +71,13 @@ On unsupported terminals the OSC 8 sequences are silently ignored, so it is alwa
 
 ## Connection API
 
-The `Connection` interface provides methods for writing hyperlinks:
+Hyperlink methods are on `TerminalFeatures`, accessed via `connection.terminal()`:
 
 ### Checking Support
 
 ```java
 // Heuristic check based on terminal type detection
-boolean supported = connection.supportsHyperlinks();
+boolean supported = connection.terminal().supportsHyperlinks();
 ```
 
 This uses environment-based terminal detection via `TerminalEnvironment` and the `Device.TerminalType` enum. No terminal query is sent.
@@ -85,21 +85,13 @@ This uses environment-based terminal detection via `TerminalEnvironment` and the
 ### Writing Hyperlinks
 
 ```java
+TerminalFeatures terminal = connection.terminal();
+
 // Simple hyperlink
-connection.writeHyperlink("https://example.com", "Click here");
+terminal.writeHyperlink("https://example.com", "Click here");
 
 // Hyperlink with grouping ID (for links that span multiple lines)
-connection.writeHyperlink("https://example.com", "Click here", "link1");
-```
-
-Both methods return the `Connection` for chaining:
-
-```java
-connection
-    .writeHyperlink("https://example.com", "Example")
-    .write(" | ")
-    .writeHyperlink("https://aeshell.github.io", "Æsh Docs")
-    .write("\n");
+terminal.writeHyperlink("https://example.com", "Click here", "link1");
 ```
 
 ## ANSI Utility Methods
@@ -184,29 +176,29 @@ public class HyperlinkDemo {
     public static void main(String[] args) throws Exception {
         TerminalConnection conn = new TerminalConnection();
 
-        if (conn.supportsHyperlinks()) {
+        if (conn.terminal().supportsHyperlinks()) {
             conn.write("Terminal supports hyperlinks!\n\n");
 
             // Simple link
             conn.write("Visit: ");
-            conn.writeHyperlink("https://aeshell.github.io", "Æsh Documentation");
+            conn.terminal().writeHyperlink("https://aeshell.github.io", "Æsh Documentation");
             conn.write("\n");
 
             // Link with styled text (combine with ANSI formatting)
             conn.write("Source: ");
             conn.write(ANSI.BOLD);
-            conn.writeHyperlink("https://github.com/aeshell", "GitHub");
+            conn.terminal().writeHyperlink("https://github.com/aeshell", "GitHub");
             conn.write(ANSI.RESET);
             conn.write("\n");
 
             // Multiple links on one line
             conn.write("\nLinks: ");
-            conn.writeHyperlink("https://example.com/one", "One")
-                .write(" | ")
-                .writeHyperlink("https://example.com/two", "Two")
-                .write(" | ")
-                .writeHyperlink("https://example.com/three", "Three")
-                .write("\n");
+            conn.terminal().writeHyperlink("https://example.com/one", "One");
+            conn.write(" | ");
+            conn.terminal().writeHyperlink("https://example.com/two", "Two");
+            conn.write(" | ");
+            conn.terminal().writeHyperlink("https://example.com/three", "Three");
+            conn.write("\n");
         } else {
             conn.write("This terminal does not support hyperlinks.\n");
             conn.write("Try running in: Kitty, iTerm2, WezTerm, or VS Code\n");

@@ -29,15 +29,15 @@ import org.aesh.terminal.utils.ANSI;
 TerminalConnection conn = new TerminalConnection();
 
 // Check if terminal supports synchronized output
-if (conn.supportsSynchronizedOutput()) {
-    conn.enableSynchronizedOutput();
+if (conn.terminal().supportsSynchronizedOutput()) {
+    conn.terminal().enableSynchronizedOutput();
 
     // All writes here are buffered by the terminal
     conn.write("Line 1\n");
     conn.write("Line 2\n");
     conn.write("Line 3\n");
 
-    conn.disableSynchronizedOutput();
+    conn.terminal().disableSynchronizedOutput();
     // Terminal paints all three lines at once
 }
 ```
@@ -65,13 +65,13 @@ can always send them without feature detection.
 
 ## Connection API
 
-The `Connection` interface provides four methods for synchronized output:
+Synchronized output methods are on `TerminalFeatures`, accessed via `connection.terminal()`:
 
 ### Checking Support
 
 ```java
 // Heuristic check based on terminal type detection
-boolean supported = connection.supportsSynchronizedOutput();
+boolean supported = connection.terminal().supportsSynchronizedOutput();
 ```
 
 This uses environment-based terminal detection via `TerminalEnvironment` and the
@@ -84,7 +84,7 @@ For authoritative detection, query the terminal directly using DECRQM/DECRPM:
 ```java
 // Send CSI ? 2026 $ p and parse the DECRPM response
 // Returns true (supported), false (not supported), or null (timeout)
-Boolean result = connection.querySynchronizedOutput(500);
+Boolean result = connection.terminal().querySynchronizedOutput(500);
 
 if (Boolean.TRUE.equals(result)) {
     // Terminal definitively supports Mode 2026
@@ -104,11 +104,9 @@ The DECRPM response `CSI ? 2026 ; Ps $ y` uses these Ps values:
 ### Enable / Disable
 
 ```java
-connection.enableSynchronizedOutput();   // Send ESC[?2026h
-connection.disableSynchronizedOutput();  // Send ESC[?2026l
+connection.terminal().enableSynchronizedOutput();   // Send ESC[?2026h
+connection.terminal().disableSynchronizedOutput();  // Send ESC[?2026l
 ```
-
-Both methods return the `Connection` for chaining.
 
 ## Automatic Readline Integration
 
@@ -161,7 +159,7 @@ the `Connection` methods directly or the ANSI constants:
 
 ```java
 // Begin synchronized update — terminal starts buffering
-connection.enableSynchronizedOutput();
+connection.terminal().enableSynchronizedOutput();
 
 // Each write is buffered by the terminal, not painted yet
 connection.write("\u001B[2J");           // Clear screen
@@ -172,7 +170,7 @@ connection.write("Content line");
 // ... more rendering ...
 
 // End synchronized update — terminal paints everything at once
-connection.disableSynchronizedOutput();
+connection.terminal().disableSynchronizedOutput();
 ```
 
 There is no need to batch writes into a `StringBuilder` — the terminal itself

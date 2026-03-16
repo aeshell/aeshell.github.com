@@ -9,48 +9,40 @@ The `Connection` interface represents a connection to a terminal (local, direct,
 
 ## Interface Structure
 
-`Connection` extends three focused sub-interfaces, each covering a distinct area of responsibility:
+`Connection` provides ~20 core methods for I/O, handlers, and terminal state. Advanced terminal features — queries, capability detection, semantic output, and mode management — are accessed through a `TerminalFeatures` delegate via `conn.terminal()`:
 
 ```
 ┌─────────────────────────────────────────────┐
 │                 Connection                  │
-│         (Core I/O, handlers, write)         │
+│    Core I/O, handlers, lifecycle, state     │
 │                                             │
-│  extends ┌────────────────────────────────┐ │
-│          │      TerminalQueryable         │ │
-│          │  queryTerminal(), queryOsc(),   │ │
-│          │  queryColors(), DA1/DA2, ...   │ │
-│          └────────────────────────────────┘ │
+│  terminal() ──► TerminalFeatures            │
+│                   Queries (OSC, DA1/DA2)    │
+│                   Capability detection      │
+│                   Semantic output           │
+│                   Mode management           │
 │                                             │
-│  extends ┌────────────────────────────────┐ │
-│          │    TerminalCapabilities        │ │
-│          │  supports*(), getColorDepth(), │ │
-│          │  getTerminalType(), ...        │ │
-│          └────────────────────────────────┘ │
-│                                             │
-│  extends ┌────────────────────────────────┐ │
-│          │       TerminalWriter           │ │
-│          │  writePrompt*(), writeHyper-   │ │
-│          │  link(), writeClipboard(),     │ │
-│          │  enable/disable modes, ...    │ │
-│          └────────────────────────────────┘ │
+│  asWriter() ──► java.io.Writer adapter      │
+│  asPrintWriter() ──► java.io.PrintWriter    │
 └─────────────────────────────────────────────┘
 ```
 
-| Sub-Interface | Responsibility | Methods |
-|---------------|---------------|---------|
-| `TerminalQueryable` | Terminal queries (OSC, DA1/DA2, DECRQM, batch queries) | `queryTerminal()`, `queryOsc()`, `queryColors()`, `queryThemeMode()`, `getCursorPosition()`, ... |
-| `TerminalCapabilities` | Heuristic capability detection (no queries sent) | `supports*()`, `getTerminalType()`, `getColorDepth()`, `getColorCapability()` |
-| `TerminalWriter` | Semantic output and mode management | `writePromptStart()`, `writeHyperlink()`, `writeClipboard()`, `enableSynchronizedOutput()`, ... |
-
-All methods remain accessible through `Connection` — the sub-interfaces simply provide clearer organization. Existing code that uses `Connection` does not need to change.
+| Area | Location | Examples |
+|------|----------|---------|
+| Core I/O | `Connection` | `write()`, `stdinHandler()`, `stdoutHandler()` |
+| Handlers | `Connection` | `setSignalHandler()`, `setSizeHandler()`, `setCloseHandler()`, `setThemeChangeHandler()` |
+| Terminal state | `Connection` | `attributes()`, `enterRawMode()`, `supportsAnsi()`, `size()`, `device()` |
+| Lifecycle | `Connection` | `openBlocking()`, `openNonBlocking()`, `close()`, `reading()` |
+| Queries | `conn.terminal()` | `queryTerminal()`, `queryColors()`, `queryDeviceAttributes()` |
+| Capabilities | `conn.terminal()` | `supportsClipboard()`, `colorDepth()`, `supportsSynchronizedOutput()` |
+| Semantic output | `conn.terminal()` | `writeClipboard()`, `writeHyperlink()`, `writePromptStart()`, `enableSynchronizedOutput()` |
 
 ## Creating Connections
 
 ### Local Terminal Connection
 
 ```java
-import org.aesh.tty.terminal.TerminalConnection;
+import org.aesh.terminal.tty.TerminalConnection;
 
 Connection connection = new TerminalConnection();
 ```
@@ -80,14 +72,14 @@ Reads input in a separate thread, allowing the current thread to continue.
 if (connection.reading()) {
     // Handler-based queries work (setStdinHandler)
 } else {
-    // Use synchronous methods like queryColorCapability()
+    // Use synchronous methods like TerminalColorDetector.queryColorCapability()
 }
 ```
 
 The `reading()` method returns `true` after `openBlocking()` or `openNonBlocking()` is called
 and before `close()` is called. This is useful for determining which query methods to use:
-- When `reading()` is true: Handler-based methods like `queryTerminal()` work
-- When `reading()` is false: Use synchronous methods like `queryColorCapability()`
+- When `reading()` is true: Handler-based methods like `terminal().queryTerminal()` work
+- When `reading()` is false: Use synchronous methods like `TerminalColorDetector.queryColorCapability()`
 
 ## Handlers
 
@@ -100,7 +92,7 @@ connection.setStdinHandler(input -> {
     }
 });
 
-Consumer<int[]> handler = connection.getStdinHandler();
+Consumer<int[]> handler = connection.stdinHandler();
 ```
 
 ### Standard Output Handler
@@ -124,7 +116,7 @@ connection.setSizeHandler(size -> {
     System.out.println("Terminal resized: " + width + "x" + height);
 });
 
-Consumer<Size> sizeHandler = connection.getSizeHandler();
+Consumer<Size> sizeHandler = connection.sizeHandler();
 ```
 
 ### Signal Handler
@@ -136,7 +128,7 @@ connection.setSignalHandler(signal -> {
     System.out.println("Signal: " + signal);
 });
 
-Consumer<Signal> signalHandler = connection.getSignalHandler();
+Consumer<Signal> signalHandler = connection.signalHandler();
 ```
 
 ### Close Handler
@@ -148,12 +140,12 @@ connection.setCloseHandler(ignored -> {
     System.out.println("Connection closed");
 });
 
-Consumer<Void> closeHandler = connection.getCloseHandler();
+Consumer<Void> closeHandler = connection.closeHandler();
 ```
 
 ### Theme Change Handler
 
-Called when the terminal's theme changes (dark/light mode switch). Requires subscribing to theme change notifications with `enableThemeChangeNotification()`:
+Called when the terminal's theme changes (dark/light mode switch). Requires subscribing to theme change notifications with `terminal().enableThemeChangeNotification()`:
 
 ```java
 import org.aesh.terminal.utils.TerminalTheme;
@@ -164,7 +156,7 @@ connection.setThemeChangeHandler(theme -> {
     // Re-detect colors or update cached capability
 });
 
-Consumer<TerminalTheme> themeHandler = connection.getThemeChangeHandler();
+Consumer<TerminalTheme> themeHandler = connection.themeChangeHandler();
 ```
 
 When a handler is registered, the `EventDecoder` in the input pipeline intercepts unsolicited `CSI ? 997 ; Ps n` responses and routes them to this handler, preventing them from appearing as input. See [Theme Mode Queries](#theme-mode-queries) for the full API.
@@ -186,8 +178,8 @@ boolean supportsAnsi = connection.supportsAnsi();
 ## Attributes
 
 ```java
-Attributes attributes = connection.getAttributes();
-connection.setAttributes(new Attributes);
+Attributes attributes = connection.attributes();
+connection.setAttributes(new Attributes());
 ```
 
 ## Capabilities
@@ -214,6 +206,21 @@ connection.write("Hello");
 connection.write("Line 1\nLine 2\n");
 ```
 
+## Writer Adapters
+
+Get a `java.io.Writer` or `PrintWriter` view of the connection:
+
+```java
+// Writer adapter
+Writer writer = connection.asWriter();
+writer.write("Hello from Writer\n");
+
+// PrintWriter adapter (auto-flushing)
+PrintWriter pw = connection.asPrintWriter();
+pw.println("Hello from PrintWriter");
+pw.printf("Formatted: %d items%n", 42);
+```
+
 ## Raw Mode
 
 Enter raw mode for character-by-character input:
@@ -224,19 +231,48 @@ Attributes previous = connection.enterRawMode();
 connection.setAttributes(previous);
 ```
 
+## Terminal Features
+
+Advanced terminal features are accessed via `connection.terminal()`, which returns a `TerminalFeatures` object:
+
+```java
+TerminalFeatures terminal = connection.terminal();
+
+// Queries
+int[] bg = terminal.queryBackgroundColor(500);
+DeviceAttributes da = terminal.queryDeviceAttributes(500);
+
+// Capability detection
+ColorDepth depth = terminal.colorDepth();
+boolean hasClipboard = terminal.supportsClipboard();
+
+// Semantic output
+terminal.writeClipboard("copied text");
+terminal.writeHyperlink("https://example.com", "Click here");
+terminal.enableSynchronizedOutput();
+```
+
+The `TerminalFeatures` object is cached — calling `connection.terminal()` multiple times returns the same instance.
+
+You can also navigate back from `TerminalFeatures` to the underlying `Connection`:
+
+```java
+Connection conn = terminal.connection();
+```
+
 ## Cursor Position
 
 Get cursor position:
 
 ```java
-Point position = connection.getCursorPosition();
+Point position = connection.terminal().getCursorPosition();
 int row = position.getRow();
 int col = position.getColumn();
 ```
 
-## OSC Queries (`TerminalQueryable`)
+## OSC Queries
 
-OSC (Operating System Command) queries allow you to interrogate the terminal for information like colors, clipboard content, and more. These methods are defined in the `TerminalQueryable` sub-interface.
+OSC (Operating System Command) queries allow you to interrogate the terminal for information like colors, clipboard content, and more.
 
 ### Generic OSC Query
 
@@ -244,7 +280,7 @@ Send any OSC query with a custom response parser:
 
 ```java
 // Query palette color 4 with custom parser
-String result = connection.queryOsc(4, "?", 500, input -> {
+String result = connection.terminal().queryOsc(4, "?", 500, input -> {
     // Custom parsing logic
     return parseColorResponse(input);
 });
@@ -255,20 +291,22 @@ String result = connection.queryOsc(4, "?", 500, input -> {
 Query the terminal's current colors:
 
 ```java
+TerminalFeatures terminal = connection.terminal();
+
 // Query foreground color (OSC 10)
-int[] fg = connection.queryForegroundColor(500);
+int[] fg = terminal.queryForegroundColor(500);
 if (fg != null) {
     System.out.println("Foreground: RGB(" + fg[0] + "," + fg[1] + "," + fg[2] + ")");
 }
 
 // Query background color (OSC 11)
-int[] bg = connection.queryBackgroundColor(500);
+int[] bg = terminal.queryBackgroundColor(500);
 if (bg != null) {
     System.out.println("Background: RGB(" + bg[0] + "," + bg[1] + "," + bg[2] + ")");
 }
 
 // Query cursor color (OSC 12)
-int[] cursor = connection.queryCursorColor(500);
+int[] cursor = terminal.queryCursorColor(500);
 ```
 
 ### Palette Color Queries
@@ -276,8 +314,10 @@ int[] cursor = connection.queryCursorColor(500);
 Query colors from the 256-color palette using OSC 4:
 
 ```java
+TerminalFeatures terminal = connection.terminal();
+
 // Query palette color by index (0-255)
-int[] color = connection.queryPaletteColor(1, 500);
+int[] color = terminal.queryPaletteColor(1, 500);
 if (color != null) {
     System.out.println("Palette 1: RGB(" + color[0] + "," + color[1] + "," + color[2] + ")");
 
@@ -301,11 +341,11 @@ For OSC codes that require an index (like OSC 4), use the indexed query method:
 
 ```java
 // Query OSC 4 with index parameter
-int[] rgb = connection.queryOsc(4, 1, "?", 500,
+int[] rgb = connection.terminal().queryOsc(4, 1, "?", 500,
         input -> ANSI.parseOscColorResponse(input, 4, 1));
 ```
 
-### OSC Support Detection (`TerminalCapabilities`)
+### OSC Support Detection
 
 Not all terminals support all OSC queries. For example, JetBrains IDE terminals
 don't support OSC 4 (palette queries). Use the `Device` enums to check
@@ -315,26 +355,28 @@ terminal capabilities before querying:
 import org.aesh.terminal.Device.TerminalType;
 import org.aesh.terminal.Device.OscCode;
 
+TerminalFeatures terminal = connection.terminal();
+
 // Detect terminal type from environment
-TerminalType termType = connection.getTerminalType();
+TerminalType termType = terminal.getTerminalType();
 System.out.println("Terminal: " + termType.getIdentifier());
 
 // Check specific OSC support
-if (connection.supportsPaletteQuery()) {
-    int[] color = connection.queryPaletteColor(1, 500);
+if (terminal.supportsPaletteQuery()) {
+    int[] color = terminal.queryPaletteColor(1, 500);
     // Use color...
 }
 
 // Or use the convenience method that checks support first
-int[] color = connection.queryPaletteColorIfSupported(1, 500);
+int[] color = terminal.queryPaletteColorIfSupported(1, 500);
 if (color != null) {
     // Terminal supports OSC 4 and returned a color
 }
 
 // Check for OSC 10/11 support
-if (connection.supportsColorQuery()) {
-    int[] fg = connection.queryForegroundColor(500);
-    int[] bg = connection.queryBackgroundColor(500);
+if (terminal.supportsColorQuery()) {
+    int[] fg = terminal.queryForegroundColor(500);
+    int[] bg = terminal.queryBackgroundColor(500);
 }
 
 // Check if running in JetBrains IDE
@@ -344,7 +386,7 @@ if (device != null && device.isJetBrainsTerminal()) {
 }
 
 // Check for any OSC code support
-if (connection.supportsOscCode(OscCode.CLIPBOARD)) {
+if (terminal.supportsOscCode(OscCode.CLIPBOARD)) {
     // Terminal supports clipboard access via OSC 52
 }
 ```
@@ -359,22 +401,24 @@ Known terminal limitations:
 For better performance when querying multiple colors, use batch queries. This sends all queries at once and collects responses together, reducing latency from O(n × timeout) to O(timeout):
 
 ```java
+TerminalFeatures terminal = connection.terminal();
+
 // Query foreground, background, and cursor colors in one operation
 // Takes ~50-100ms instead of ~300-400ms for individual queries
-Map<Integer, int[]> colors = connection.queryColors(500);
+Map<Integer, int[]> colors = terminal.queryColors(500);
 
 int[] fg = colors.get(ANSI.OSC_FOREGROUND);   // OSC 10
 int[] bg = colors.get(ANSI.OSC_BACKGROUND);   // OSC 11
 int[] cursor = colors.get(ANSI.OSC_CURSOR_COLOR);  // OSC 12
 
 // Query multiple palette colors at once
-Map<Integer, int[]> palette = connection.queryPaletteColors(500, 0, 1, 2, 3, 4, 5, 6, 7);
+Map<Integer, int[]> palette = terminal.queryPaletteColors(500, 0, 1, 2, 3, 4, 5, 6, 7);
 
 // Query all 16 ANSI colors
-Map<Integer, int[]> ansi16 = connection.queryAnsi16Colors(500);
+Map<Integer, int[]> ansi16 = terminal.queryAnsi16Colors(500);
 
 // Generic batch query for any OSC codes
-Map<Integer, int[]> results = connection.queryBatchOsc(500, 10, 11, 12);
+Map<Integer, int[]> results = terminal.queryBatchOsc(500, 10, 11, 12);
 ```
 
 For higher-level access with automatic fallbacks, use `TerminalColorDetector`:
@@ -383,13 +427,14 @@ For higher-level access with automatic fallbacks, use `TerminalColorDetector`:
 import org.aesh.terminal.tty.TerminalColorDetector;
 
 // Query with automatic fallback to environment-based detection
-Map<Integer, int[]> colors = TerminalColorDetector.queryColorsWithFallback(connection, 500);
+Map<Integer, int[]> colors = TerminalColorDetector.queryColorsWithFallback(
+    connection.terminal(), 500);
 // Always returns colors - actual if OSC works, estimated if not
 ```
 
-## Theme Mode Queries (`TerminalQueryable` + `TerminalWriter`)
+## Theme Mode Queries
 
-The `Connection` interface provides methods for querying and subscribing to terminal theme changes using the `CSI ? 996 n` protocol. This is simpler and faster than OSC 10/11 RGB queries — it returns a direct `DARK` or `LIGHT` answer.
+The `TerminalFeatures` class provides methods for querying and subscribing to terminal theme changes using the `CSI ? 996 n` protocol. This is simpler and faster than OSC 10/11 RGB queries — it returns a direct `DARK` or `LIGHT` answer.
 
 See [Color Detection](color-detection#1-theme-mode-query-csi--996-n--fastest--simplest) for background on the protocol.
 
@@ -399,7 +444,7 @@ Query the current theme mode:
 
 ```java
 // Returns DARK, LIGHT, or null (unsupported/timeout)
-TerminalTheme theme = connection.queryThemeMode(500);
+TerminalTheme theme = connection.terminal().queryThemeMode(500);
 
 if (theme != null) {
     System.out.println("Terminal theme: " + theme);
@@ -410,8 +455,8 @@ if (theme != null) {
 
 ```java
 // Check if the terminal supports theme queries (avoids timeout)
-if (connection.supportsThemeQuery()) {
-    TerminalTheme theme = connection.queryThemeMode(500);
+if (connection.terminal().supportsThemeQuery()) {
+    TerminalTheme theme = connection.terminal().queryThemeMode(500);
 }
 ```
 
@@ -423,7 +468,7 @@ Enable real-time notifications when the user switches dark/light mode:
 
 ```java
 // One-call setup: register handler and enable notifications
-connection.enableThemeChangeNotification(theme -> {
+connection.terminal().enableThemeChangeNotification(theme -> {
     System.out.println("Theme changed to: " + theme);
     // Update cached colors
     capability = new TerminalColorCapability(capability.getColorDepth(), theme);
@@ -439,14 +484,14 @@ connection.setThemeChangeHandler(theme -> {
 });
 
 // 2. Tell the terminal to send notifications (CSI ? 2031 h)
-connection.enableThemeChangeNotification();
+connection.terminal().enableThemeChangeNotification();
 ```
 
 ### Unsubscribing
 
 ```java
 // Tell the terminal to stop sending notifications (CSI ? 2031 l)
-connection.disableThemeChangeNotification();
+connection.terminal().disableThemeChangeNotification();
 
 // Optionally remove the handler
 connection.setThemeChangeHandler(null);
@@ -466,18 +511,18 @@ connection.setThemeChangeHandler(null);
 ### Complete Example
 
 ```java
-import org.aesh.readline.tty.terminal.TerminalConnection;
+import org.aesh.terminal.tty.TerminalConnection;
 import org.aesh.terminal.utils.TerminalTheme;
 
 TerminalConnection connection = new TerminalConnection();
 
 // Query current theme
-if (connection.supportsThemeQuery()) {
-    TerminalTheme theme = connection.queryThemeMode(500);
+if (connection.terminal().supportsThemeQuery()) {
+    TerminalTheme theme = connection.terminal().queryThemeMode(500);
     System.out.println("Current theme: " + theme);
 
     // Subscribe to changes
-    connection.enableThemeChangeNotification(newTheme -> {
+    connection.terminal().enableThemeChangeNotification(newTheme -> {
         System.out.println("Theme switched to: " + newTheme);
     });
 }
@@ -485,31 +530,33 @@ if (connection.supportsThemeQuery()) {
 // ... application runs ...
 
 // Clean up before exit
-connection.disableThemeChangeNotification();
+connection.terminal().disableThemeChangeNotification();
 connection.setThemeChangeHandler(null);
 connection.close();
 ```
 
-## Synchronized Output (`TerminalWriter` + `TerminalCapabilities`)
+## Synchronized Output
 
 Synchronized output prevents screen tearing by telling the terminal to buffer all output until the frame is complete. See [Synchronized Output](synchronized-output) for full documentation.
 
 ```java
+TerminalFeatures terminal = connection.terminal();
+
 // Check support (heuristic, no query sent)
-if (connection.supportsSynchronizedOutput()) {
-    connection.enableSynchronizedOutput();
+if (terminal.supportsSynchronizedOutput()) {
+    terminal.enableSynchronizedOutput();
     // ... render frame ...
-    connection.disableSynchronizedOutput();
+    terminal.disableSynchronizedOutput();
 }
 
 // Runtime query via DECRPM (authoritative)
-Boolean supported = connection.querySynchronizedOutput(500);
+Boolean supported = terminal.querySynchronizedOutput(500);
 // true = supported, false = not supported, null = timeout
 ```
 
 Synchronized output is automatically managed by `Readline` for supporting terminals. Use the `ReadlineFlag.NO_SYNCHRONIZED_OUTPUT` flag to opt out.
 
-## Device Attributes (`TerminalQueryable`)
+## Device Attributes
 
 Device Attributes queries allow you to detect terminal capabilities that cannot be determined from terminfo alone.
 
@@ -518,7 +565,7 @@ Device Attributes queries allow you to detect terminal capabilities that cannot 
 Query the terminal's conformance level and supported features:
 
 ```java
-DeviceAttributes da = connection.queryPrimaryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryPrimaryDeviceAttributes(500);
 
 if (da != null) {
     // Device class (1=VT100, 62=VT220, 64=VT420, etc.)
@@ -542,7 +589,7 @@ if (da != null) {
 Query terminal identification and version information:
 
 ```java
-DeviceAttributes da = connection.querySecondaryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().querySecondaryDeviceAttributes(500);
 
 if (da != null) {
     // Terminal type (VT100, VT220, VT420, etc.)
@@ -560,7 +607,7 @@ if (da != null) {
 Query both DA1 and DA2 and merge the results:
 
 ```java
-DeviceAttributes da = connection.queryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryDeviceAttributes(500);
 
 if (da != null) {
     // Has both DA1 and DA2 data
@@ -589,13 +636,13 @@ The `DeviceAttributes.Feature` enum includes:
 | `RECTANGULAR_EDITING` | 28 | Rectangular editing |
 | `ANSI_TEXT_LOCATOR` | 29 | ANSI text locator (mouse) |
 
-## Image Protocol Detection (`TerminalQueryable`)
+## Image Protocol Detection
 
 Detect the terminal's image protocol support using DA1 attributes:
 
 ```java
 // Query-based detection (most accurate)
-ImageProtocol protocol = connection.queryImageProtocol(500);
+ImageProtocol protocol = connection.terminal().queryImageProtocol(500);
 
 switch (protocol) {
     case KITTY:
@@ -620,26 +667,30 @@ Device device = connection.device();
 ImageProtocol protocol = device.getImageProtocol();
 ```
 
-## Clipboard (`TerminalWriter` + `TerminalCapabilities`)
+## Clipboard
 
 Copy text to the system clipboard using OSC 52. This is a write-only operation. See [Clipboard](clipboard) for full documentation.
 
 ```java
+TerminalFeatures terminal = connection.terminal();
+
 // Check support (heuristic, no query sent)
-if (connection.supportsClipboard()) {
-    connection.writeClipboard("text to copy");
+if (terminal.supportsClipboard()) {
+    terminal.writeClipboard("text to copy");
 }
 ```
 
 Clipboard writing is automatically managed by `Readline` for supporting terminals. Use the `ReadlineFlag.NO_CLIPBOARD` flag to opt out.
 
-## Color Capabilities (`TerminalCapabilities` + `TerminalQueryable`)
+## Color Capabilities
 
 Get terminal color information:
 
 ```java
+TerminalFeatures terminal = connection.terminal();
+
 // Get color depth from terminfo or environment
-ColorDepth depth = connection.getColorDepth();
+ColorDepth depth = terminal.colorDepth();
 
 if (depth.supportsTrueColor()) {
     // Use 24-bit RGB colors
@@ -647,17 +698,6 @@ if (depth.supportsTrueColor()) {
     // Use 256-color palette
 }
 
-// Query terminal for full color capability (uses synchronous I/O)
-// This can be called BEFORE openBlocking/openNonBlocking
-TerminalColorCapability cap = connection.queryColorCapability(500);
-if (cap != null) {
-    TerminalTheme theme = cap.getTheme();
-    int[] fg = cap.getForegroundRGB();
-    int[] bg = cap.getBackgroundRGB();
-    int[] cursor = cap.getCursorRGB();
-    Map<Integer, int[]> palette = cap.getPaletteColors();
-}
-
-// Or use TerminalColorDetector for comprehensive detection with fallbacks
-TerminalColorCapability cap = TerminalColorDetector.detect(connection);
+// Use TerminalColorDetector for comprehensive detection with fallbacks
+TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal());
 ```

@@ -65,13 +65,13 @@ On unsupported terminals the OSC 52 sequence is never sent — the `supportsClip
 
 ## Connection API
 
-The `Connection` interface provides methods for clipboard access:
+Clipboard methods are on the `TerminalFeatures` delegate, accessed via `connection.terminal()`:
 
 ### Checking Support
 
 ```java
 // Heuristic check based on terminal type detection
-boolean supported = connection.supportsClipboard();
+boolean supported = connection.terminal().supportsClipboard();
 ```
 
 This uses environment-based terminal detection via `TerminalEnvironment` and the `Device.TerminalType` enum. No terminal query is sent.
@@ -80,16 +80,10 @@ This uses environment-based terminal detection via `TerminalEnvironment` and the
 
 ```java
 // Copy text to the system clipboard
-connection.writeClipboard("Hello, clipboard!");
+connection.terminal().writeClipboard("Hello, clipboard!");
 ```
 
-The method is a no-op if the text is null/empty or the terminal doesn't support OSC 52. It returns the `Connection` for chaining:
-
-```java
-connection
-    .writeClipboard("copied text")
-    .write("Text copied to clipboard!\n");
-```
+The method is a no-op if the text is null/empty or the terminal doesn't support OSC 52.
 
 ## ANSI Utility Methods
 
@@ -164,8 +158,8 @@ For applications that manage their own rendering (outside of `Readline`), use th
 
 ```java
 // Copy selected text to the system clipboard
-if (connection.supportsClipboard()) {
-    connection.writeClipboard(selectedText);
+if (connection.terminal().supportsClipboard()) {
+    connection.terminal().writeClipboard(selectedText);
 }
 ```
 

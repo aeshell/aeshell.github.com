@@ -33,7 +33,7 @@ TerminalConnection connection = new TerminalConnection();
 connection.openNonBlocking();
 
 // Query device attributes (500ms timeout)
-DeviceAttributes da = connection.queryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryDeviceAttributes(500);
 
 if (da != null) {
     System.out.println("Device class: " + da.getDeviceClass());
@@ -52,7 +52,7 @@ connection.close();
 DA1 returns the device conformance level and supported features:
 
 ```java
-DeviceAttributes da = connection.queryPrimaryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryPrimaryDeviceAttributes(500);
 
 if (da != null && da.hasDA1()) {
     // Device class indicates conformance level
@@ -79,7 +79,7 @@ if (da != null && da.hasDA1()) {
 DA2 returns terminal identification and version information:
 
 ```java
-DeviceAttributes da = connection.querySecondaryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().querySecondaryDeviceAttributes(500);
 
 if (da != null && da.hasDA2()) {
     // Terminal type
@@ -100,7 +100,7 @@ if (da != null && da.hasDA2()) {
 Query both DA1 and DA2 and merge the results:
 
 ```java
-DeviceAttributes da = connection.queryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryDeviceAttributes(500);
 
 if (da != null) {
     // Has data from both queries
@@ -190,14 +190,14 @@ System.out.println("Type code: " + type.getCode());
 Combine DA1 and DA2 results:
 
 ```java
-DeviceAttributes da1 = connection.queryPrimaryDeviceAttributes(500);
-DeviceAttributes da2 = connection.querySecondaryDeviceAttributes(500);
+DeviceAttributes da1 = connection.terminal().queryPrimaryDeviceAttributes(500);
+DeviceAttributes da2 = connection.terminal().querySecondaryDeviceAttributes(500);
 
 // Merge the results
 DeviceAttributes merged = da1.merge(da2);
 
 // Or use the combined query method
-DeviceAttributes combined = connection.queryDeviceAttributes(500);
+DeviceAttributes combined = connection.terminal().queryDeviceAttributes(500);
 ```
 
 ## Use Cases
@@ -207,7 +207,7 @@ DeviceAttributes combined = connection.queryDeviceAttributes(500);
 Use DA1 for authoritative Sixel support detection:
 
 ```java
-DeviceAttributes da = connection.queryPrimaryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryPrimaryDeviceAttributes(500);
 
 if (da != null && da.supportsSixel()) {
     // Terminal definitively supports Sixel
@@ -223,18 +223,18 @@ if (da != null && da.supportsSixel()) {
 Infer OSC query support from DA1 features:
 
 ```java
-DeviceAttributes da = connection.queryPrimaryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryPrimaryDeviceAttributes(500);
 
 if (da != null && da.likelySupportsOscQueries()) {
     // Terminal likely supports OSC 10/11 color queries
-    int[] bgColor = connection.queryBackgroundColor(500);
+    int[] bgColor = connection.terminal().queryBackgroundColor(500);
     if (bgColor != null) {
         boolean isDark = (bgColor[0] + bgColor[1] + bgColor[2]) / 3 < 128;
     }
 }
 
 // Or use the convenience method
-if (connection.supportsOscQueries(da)) {
+if (connection.terminal().supportsOscQueries(da)) {
     // Safe to use OSC queries
 }
 ```
@@ -245,7 +245,7 @@ Combine DA1 with heuristic detection for best results:
 
 ```java
 // Query-based detection uses DA1 for Sixel
-ImageProtocol protocol = connection.queryImageProtocol(500);
+ImageProtocol protocol = connection.terminal().queryImageProtocol(500);
 
 // The ImageProtocolDetector combines:
 // 1. Environment variables (for Kitty/iTerm2)
@@ -258,7 +258,7 @@ ImageProtocol protocol = connection.queryImageProtocol(500);
 Generate a report of terminal capabilities:
 
 ```java
-DeviceAttributes da = connection.queryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryDeviceAttributes(500);
 
 if (da != null) {
     StringBuilder report = new StringBuilder();
@@ -296,7 +296,7 @@ import org.aesh.terminal.utils.TerminalEnvironment;
 Device.TerminalType heuristicType = TerminalEnvironment.detectTerminalType();
 
 // Authoritative detection from DA1/DA2
-DeviceAttributes da = connection.queryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryDeviceAttributes(500);
 if (da != null) {
     Device.TerminalType authType = da.inferTerminalType();
     System.out.println("Inferred type: " + authType.getIdentifier());
@@ -309,7 +309,7 @@ Verify that heuristic detection matches actual capabilities:
 
 ```java
 Device.TerminalType envType = TerminalEnvironment.detectTerminalType();
-DeviceAttributes da = connection.queryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryDeviceAttributes(500);
 
 if (da != null && !da.matchesTerminalType(envType)) {
     System.out.println("Warning: Terminal capabilities differ from expected for " +
@@ -322,7 +322,7 @@ if (da != null && !da.matchesTerminalType(envType)) {
 Get authoritative color depth from DA1:
 
 ```java
-DeviceAttributes da = connection.queryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryDeviceAttributes(500);
 if (da != null) {
     ColorDepth depth = da.inferColorDepth();
     System.out.println("Color depth: " + depth);
@@ -335,7 +335,7 @@ Generate a comprehensive capabilities report:
 
 ```java
 Device.TerminalType envType = TerminalEnvironment.detectTerminalType();
-DeviceAttributes da = connection.queryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryDeviceAttributes(500);
 
 if (da != null) {
     String summary = da.getCapabilitySummary(envType);
@@ -387,7 +387,7 @@ Different terminals return different DA1 responses:
 Device attribute queries may fail or timeout:
 
 ```java
-DeviceAttributes da = connection.queryPrimaryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryPrimaryDeviceAttributes(500);
 
 if (da == null) {
     // Query failed or timed out
@@ -417,7 +417,7 @@ public class MyApp {
         conn.openNonBlocking();
 
         // Query once
-        terminalCapabilities = conn.queryDeviceAttributes(500);
+        terminalCapabilities = conn.terminal().queryDeviceAttributes(500);
 
         // Use throughout application
         if (terminalCapabilities != null && terminalCapabilities.supportsSixel()) {

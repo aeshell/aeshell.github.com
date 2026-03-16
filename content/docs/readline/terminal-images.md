@@ -330,7 +330,7 @@ Query the terminal's device attributes for authoritative Sixel detection:
 
 ```java
 // Use DA1 query for accurate Sixel detection
-ImageProtocol protocol = connection.queryImageProtocol(500);
+ImageProtocol protocol = connection.terminal().queryImageProtocol(500);
 
 switch (protocol) {
     case KITTY:
@@ -381,7 +381,7 @@ ImageProtocol protocol = device.getImageProtocol();
 
 // Query-based detection (accurate, queries terminal)
 // Uses DA1 for authoritative Sixel detection
-ImageProtocol protocol = connection.queryImageProtocol(500);
+ImageProtocol protocol = connection.terminal().queryImageProtocol(500);
 ```
 
 Use heuristic detection when you need immediate results. Use query-based detection when accuracy is important and you can wait for the terminal response.

@@ -399,7 +399,7 @@ public class AdaptiveApp {
 Device.TerminalType heuristicType = TerminalEnvironment.detectTerminalType();
 
 // Authoritative detection (accurate, requires terminal query)
-DeviceAttributes da = connection.queryDeviceAttributes(500);
+DeviceAttributes da = connection.terminal().queryDeviceAttributes(500);
 Device.TerminalType authoritativeType = da.inferTerminalType();
 
 // Validate heuristic against authoritative
