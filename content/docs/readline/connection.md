@@ -7,6 +7,44 @@ weight: 9
 
 The `Connection` interface represents a connection to a terminal (local, direct, or remote).
 
+## Interface Structure
+
+`Connection` extends three focused sub-interfaces, each covering a distinct area of responsibility:
+
+```
+┌─────────────────────────────────────────────┐
+│                 Connection                  │
+│         (Core I/O, handlers, write)         │
+│                                             │
+│  extends ┌────────────────────────────────┐ │
+│          │      TerminalQueryable         │ │
+│          │  queryTerminal(), queryOsc(),   │ │
+│          │  queryColors(), DA1/DA2, ...   │ │
+│          └────────────────────────────────┘ │
+│                                             │
+│  extends ┌────────────────────────────────┐ │
+│          │    TerminalCapabilities        │ │
+│          │  supports*(), getColorDepth(), │ │
+│          │  getTerminalType(), ...        │ │
+│          └────────────────────────────────┘ │
+│                                             │
+│  extends ┌────────────────────────────────┐ │
+│          │       TerminalWriter           │ │
+│          │  writePrompt*(), writeHyper-   │ │
+│          │  link(), writeClipboard(),     │ │
+│          │  enable/disable modes, ...    │ │
+│          └────────────────────────────────┘ │
+└─────────────────────────────────────────────┘
+```
+
+| Sub-Interface | Responsibility | Methods |
+|---------------|---------------|---------|
+| `TerminalQueryable` | Terminal queries (OSC, DA1/DA2, DECRQM, batch queries) | `queryTerminal()`, `queryOsc()`, `queryColors()`, `queryThemeMode()`, `getCursorPosition()`, ... |
+| `TerminalCapabilities` | Heuristic capability detection (no queries sent) | `supports*()`, `getTerminalType()`, `getColorDepth()`, `getColorCapability()` |
+| `TerminalWriter` | Semantic output and mode management | `writePromptStart()`, `writeHyperlink()`, `writeClipboard()`, `enableSynchronizedOutput()`, ... |
+
+All methods remain accessible through `Connection` — the sub-interfaces simply provide clearer organization. Existing code that uses `Connection` does not need to change.
+
 ## Creating Connections
 
 ### Local Terminal Connection
@@ -196,9 +234,9 @@ int row = position.getRow();
 int col = position.getColumn();
 ```
 
-## OSC Queries
+## OSC Queries (`TerminalQueryable`)
 
-OSC (Operating System Command) queries allow you to interrogate the terminal for information like colors, clipboard content, and more.
+OSC (Operating System Command) queries allow you to interrogate the terminal for information like colors, clipboard content, and more. These methods are defined in the `TerminalQueryable` sub-interface.
 
 ### Generic OSC Query
 
@@ -267,7 +305,7 @@ int[] rgb = connection.queryOsc(4, 1, "?", 500,
         input -> ANSI.parseOscColorResponse(input, 4, 1));
 ```
 
-### OSC Support Detection
+### OSC Support Detection (`TerminalCapabilities`)
 
 Not all terminals support all OSC queries. For example, JetBrains IDE terminals
 don't support OSC 4 (palette queries). Use the `Device` enums to check
@@ -349,7 +387,7 @@ Map<Integer, int[]> colors = TerminalColorDetector.queryColorsWithFallback(conne
 // Always returns colors - actual if OSC works, estimated if not
 ```
 
-## Theme Mode Queries
+## Theme Mode Queries (`TerminalQueryable` + `TerminalWriter`)
 
 The `Connection` interface provides methods for querying and subscribing to terminal theme changes using the `CSI ? 996 n` protocol. This is simpler and faster than OSC 10/11 RGB queries — it returns a direct `DARK` or `LIGHT` answer.
 
@@ -452,7 +490,7 @@ connection.setThemeChangeHandler(null);
 connection.close();
 ```
 
-## Synchronized Output (Mode 2026)
+## Synchronized Output (`TerminalWriter` + `TerminalCapabilities`)
 
 Synchronized output prevents screen tearing by telling the terminal to buffer all output until the frame is complete. See [Synchronized Output](synchronized-output) for full documentation.
 
@@ -471,7 +509,7 @@ Boolean supported = connection.querySynchronizedOutput(500);
 
 Synchronized output is automatically managed by `Readline` for supporting terminals. Use the `ReadlineFlag.NO_SYNCHRONIZED_OUTPUT` flag to opt out.
 
-## Device Attributes (DA1/DA2)
+## Device Attributes (`TerminalQueryable`)
 
 Device Attributes queries allow you to detect terminal capabilities that cannot be determined from terminfo alone.
 
@@ -551,7 +589,7 @@ The `DeviceAttributes.Feature` enum includes:
 | `RECTANGULAR_EDITING` | 28 | Rectangular editing |
 | `ANSI_TEXT_LOCATOR` | 29 | ANSI text locator (mouse) |
 
-## Image Protocol Detection
+## Image Protocol Detection (`TerminalQueryable`)
 
 Detect the terminal's image protocol support using DA1 attributes:
 
@@ -582,7 +620,7 @@ Device device = connection.device();
 ImageProtocol protocol = device.getImageProtocol();
 ```
 
-## Clipboard (OSC 52)
+## Clipboard (`TerminalWriter` + `TerminalCapabilities`)
 
 Copy text to the system clipboard using OSC 52. This is a write-only operation. See [Clipboard](clipboard) for full documentation.
 
@@ -595,7 +633,7 @@ if (connection.supportsClipboard()) {
 
 Clipboard writing is automatically managed by `Readline` for supporting terminals. Use the `ReadlineFlag.NO_CLIPBOARD` flag to opt out.
 
-## Color Capabilities
+## Color Capabilities (`TerminalCapabilities` + `TerminalQueryable`)
 
 Get terminal color information:
 
