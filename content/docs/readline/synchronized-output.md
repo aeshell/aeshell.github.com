@@ -128,20 +128,8 @@ readline.readline(connection, new Prompt("$ "), input -> {
 To disable automatic synchronized output, set the `NO_SYNCHRONIZED_OUTPUT` flag:
 
 ```java
-import org.aesh.readline.ReadlineFlag;
-
-EnumMap<ReadlineFlag, Integer> flags = new EnumMap<>(ReadlineFlag.class);
-flags.put(ReadlineFlag.NO_SYNCHRONIZED_OUTPUT, 0);
-
-readline.readline(connection, new Prompt("$ "), input -> {
-    // handle input
-}, null, null, null, null, flags);
-```
-
-Or more concisely with `ReadlineRequest` and `ReadlineFlags`:
-
-```java
 import org.aesh.readline.ReadlineRequest;
+import org.aesh.readline.ReadlineFlag;
 import org.aesh.readline.ReadlineFlags;
 
 readline.readline(ReadlineRequest.builder()

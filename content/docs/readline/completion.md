@@ -66,7 +66,7 @@ public class BasicCompletion {
 
     private static void read(TerminalConnection connection, Readline readline, 
                             String prompt, List<Completion> completions) {
-        readline.readline(connection, prompt, completions, input -> {
+        readline.readline(connection, prompt, input -> {
             if (input != null) {
                 if (input.equals("exit")) {
                     connection.close();
@@ -76,7 +76,7 @@ public class BasicCompletion {
                     read(connection, readline, prompt, completions);
                 }
             }
-        });
+        }, completions);
     }
 }
 ```
@@ -88,7 +88,7 @@ Update completions based on context:
 ```java
 List<Completion> completions = new ArrayList<>();
 
-readline.readline(connection, prompt, completions, input -> {
+readline.readline(connection, prompt, input -> {
     if (input != null) {
         // Update completions based on context
         completions.clear();
@@ -98,7 +98,7 @@ readline.readline(connection, prompt, completions, input -> {
         // ...
         read(connection, readline, prompt, completions);
     }
-});
+}, completions);
 ```
 
 ## CompletionHandler

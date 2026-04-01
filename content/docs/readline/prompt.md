@@ -92,7 +92,7 @@ Prompt prompt = new Prompt("[user]$ ");
 String text = prompt.getPromptCharacters(); // "[user]$ "
 ```
 
-> **Note:** `getPromptAsString()` is deprecated — use `getPromptCharacters()` instead.
+> **Note:** `getPromptAsString()` has been removed — use `getPromptCharacters()` instead.
 
 ### getMask()
 

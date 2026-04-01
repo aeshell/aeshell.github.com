@@ -219,7 +219,7 @@ List<Completion> completions = Arrays.asList(
         new Completion("option2")
 );
 
-readline.readline(connection, "$ ", completions, input -> { });
+readline.readline(connection, "$ ", input -> { }, completions);
 ```
 
 2. **Completer is registered:**

@@ -102,87 +102,40 @@ List<Completion> completions = Arrays.asList(
         new Completion("list", "List items")
 );
 
-readline.readline(connection, prompt, completions, input -> {
+readline.readline(connection, "prompt> ", input -> {
     // Handle input
-});
+}, completions);
 ```
 
-### readline() - With Pre-processors
+### ReadlineRequest - Advanced Options
 
-Add input pre-processors that can transform input before it's returned:
+For pre-processors, custom history, cursor listeners, or flags, use the `ReadlineRequest` builder:
 
 ```java
+import org.aesh.readline.ReadlineRequest;
+
+// With pre-processors (e.g. alias expansion)
 List<Function<String, Optional<String>>> preProcessors = Arrays.asList(
-        // Trim whitespace
-        input -> Optional.of(input.trim()),
-        
-        // Expand aliases
         input -> {
             if (input.equals("ll")) {
                 return Optional.of("ls -l");
             }
             return Optional.of(input);
-        },
-        
-        // Handle empty input
-        input -> input.isEmpty() ? Optional.empty() : Optional.of(input)
+        }
 );
 
-readline.readline(connection, prompt, completions, preProcessors, input -> {
-    // input has been processed by all pre-processors
-});
+readline.readline(ReadlineRequest.builder()
+        .connection(connection)
+        .prompt(new Prompt("$ "))
+        .requestHandler(input -> processInput(input))
+        .completions(completions)
+        .preProcessors(preProcessors)
+        .history(customHistory)
+        .cursorListener(listener)
+        .build());
 ```
 
-### readline() - With Custom History
-
-Override the default history for this read operation:
-
-```java
-History customHistory = new InMemoryHistory(100);
-
-readline.readline(connection, prompt, completions, preProcessors, customHistory, input -> {
-    // This read uses customHistory instead of the default
-});
-```
-
-### readline() - With Cursor Listener
-
-Get callbacks when the cursor position changes:
-
-```java
-CursorListener listener = new CursorListener() {
-    @Override
-    public void cursorMoved(int oldPos, int newPos) {
-        // Cursor moved from oldPos to newPos
-    }
-    
-    @Override
-    public void inputChanged(String buffer) {
-        // Input buffer content changed
-    }
-};
-
-readline.readline(connection, prompt, completions, preProcessors, history, listener, input -> {
-    // Handle input
-});
-```
-
-### readline() - Full Signature
-
-The complete signature with all options:
-
-```java
-readline.readline(
-        Connection conn,           // Terminal connection
-        Prompt prompt,             // Prompt to display
-        Consumer<String> handler,  // Input handler callback
-        List<Completion> completions,  // Tab completions
-        List<Function<String, Optional<String>>> preProcessors,  // Input transformers
-        History history,           // Custom history
-        CursorListener listener,   // Cursor events
-        EnumMap<ReadlineFlag, Integer> flags  // Behavior flags
-);
-```
+See the [ReadlineRequest Builder](#readlinerequest-builder) section below for the full list of builder methods.
 
 ### ReadlineFlag
 
@@ -197,11 +150,12 @@ Control readline behavior with flags:
 | `NO_CLIPBOARD` | Disable automatic clipboard writes via OSC 52 |
 
 ```java
-EnumMap<ReadlineFlag, Integer> flags = new EnumMap<>(ReadlineFlag.class);
-flags.put(ReadlineFlag.NO_PROMPT_REDRAW_ON_INTR, 1);
-
-readline.readline(connection, prompt, handler, completions, 
-        preProcessors, history, listener, flags);
+readline.readline(ReadlineRequest.builder()
+        .connection(connection)
+        .prompt(prompt)
+        .requestHandler(handler)
+        .flags(ReadlineFlags.of(ReadlineFlag.NO_PROMPT_REDRAW_ON_INTR))
+        .build());
 ```
 
 ### ReadlineFlags Helper
@@ -222,11 +176,11 @@ ReadlineFlags.of(ReadlineFlag.NO_CLIPBOARD, ReadlineFlag.NO_SHELL_INTEGRATION);
 ReadlineFlags.all();
 ```
 
-> **Note:** `ReadlineFlags` produces `EnumSet<ReadlineFlag>` values. These are accepted by the `ReadlineRequest` builder's `flags()` method and the `readline()` overloads.
+> **Note:** `ReadlineFlags` produces `EnumMap<ReadlineFlag, Integer>` values accepted by the `ReadlineRequest` builder's `flags()` method.
 
 ### ReadlineRequest Builder
 
-For calls that use several optional parameters, `ReadlineRequest` provides a builder pattern that avoids passing `null` for unused fields:
+`ReadlineRequest` provides a builder pattern for calls that need optional parameters like pre-processors, custom history, cursor listeners, or flags:
 
 ```java
 import org.aesh.readline.ReadlineRequest;
@@ -257,7 +211,7 @@ readline.readline(request);
 | `cursorListener(CursorListener)` | `CursorListener` | Cursor movement events |
 | `flags(EnumMap<ReadlineFlag, Integer>)` | `EnumMap` | Behavior flags |
 
-> **Note:** The existing `readline()` overloads with positional parameters are deprecated in favor of `ReadlineRequest`. They continue to work but new code should prefer the builder.
+> **Tip:** For simple cases, use the convenience methods (`readline(conn, prompt, handler)` or `readline(conn, prompt, handler, completions)`). For anything more complex, use `ReadlineRequest`.
 
 ## Completion
 
@@ -564,17 +518,17 @@ public class InteractiveShell {
         
         List<Completion> completions = getCompletions();
         
-        readline.readline(connection, createPrompt(), completions, input -> {
+        readline.readline(connection, createPrompt(), input -> {
             if (input == null) {
                 // EOF (Ctrl-D)
                 running = false;
             } else if (!input.trim().isEmpty()) {
                 processCommand(connection, input.trim());
             }
-            
+
             // Continue reading
             read(connection);
-        });
+        }, completions);
     }
     
     private Prompt createPrompt() {

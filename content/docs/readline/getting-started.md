@@ -132,7 +132,7 @@ public class CompletionExample {
 
     private static void read(TerminalConnection connection, Readline readline, 
                             String prompt, List<Completion> completions) {
-        readline.readline(connection, prompt, completions, input -> {
+        readline.readline(connection, prompt, input -> {
             if (input != null) {
                 if (input.equals("exit")) {
                     connection.close();
@@ -145,7 +145,7 @@ public class CompletionExample {
                 }
                 read(connection, readline, prompt, completions);
             }
-        });
+        }, completions);
     }
 }
 ```
