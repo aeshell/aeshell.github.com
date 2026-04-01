@@ -24,6 +24,7 @@ The `Connection` interface represents a connection to a terminal (local, direct,
 │                                             │
 │  asWriter() ──► java.io.Writer adapter      │
 │  asPrintWriter() ──► java.io.PrintWriter    │
+│  InputReader.asReader(conn) ──► Reader      │
 └─────────────────────────────────────────────┘
 ```
 
@@ -206,9 +207,11 @@ connection.write("Hello");
 connection.write("Line 1\nLine 2\n");
 ```
 
-## Writer Adapters
+## I/O Adapters
 
-Get a `java.io.Writer` or `PrintWriter` view of the connection:
+### Writer Adapters
+
+Get a `java.io.Writer` or `PrintWriter` view of the connection's output:
 
 ```java
 // Writer adapter
@@ -220,6 +223,29 @@ PrintWriter pw = connection.asPrintWriter();
 pw.println("Hello from PrintWriter");
 pw.printf("Formatted: %d items%n", 42);
 ```
+
+### Reader Adapter
+
+Get a `java.io.Reader` view of the connection's input using `InputReader`:
+
+```java
+import org.aesh.terminal.utils.InputReader;
+
+// One-step: creates reader and wires it to the connection's stdin handler
+InputReader reader = InputReader.asReader(connection);
+
+// Standard Reader methods work
+char[] buf = new char[256];
+int n = reader.read(buf, 0, buf.length);
+
+// Timeout-aware read (useful for game loops)
+int ch = reader.read(50);  // 50ms timeout
+if (ch != InputReader.TIMEOUT) {
+    // process character
+}
+```
+
+See [InputReader](input-reader) for full documentation including code point reading, bounded queue configuration, and complete examples.
 
 ## Raw Mode
 
