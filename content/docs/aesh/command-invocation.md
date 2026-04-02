@@ -842,8 +842,7 @@ public class MyApplication {
                         .create();
         
         // Configure settings with the custom invocation provider
-        Settings<MyCommandInvocation, CommandInvocation, 
-                 CommandInputProcessor, CommandProcessorContext, CommandOutput> settings = 
+        Settings<MyCommandInvocation> settings = 
                 SettingsBuilder.<MyCommandInvocation>builder()
                         .commandRegistry(registry)
                         .commandInvocationProvider(invocationProvider)

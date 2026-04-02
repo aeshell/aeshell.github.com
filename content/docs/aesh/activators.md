@@ -5,20 +5,33 @@ title: 'Activators'
 weight: 11
 ---
 
-Activators control whether options, arguments, or entire commands are available/enabled.
+Activators control whether options or entire commands are available. Deactivated options are hidden from tab completion and help, and deactivated commands are invisible to the user.
 
 ## OptionActivator
 
-Enable or disable an option based on conditions:
+Enable or disable an option based on conditions. The `ParsedCommand` gives you access to the current command and the values of other options that have been parsed so far:
 
 ```java
+public interface OptionActivator {
+    boolean isActivated(ParsedCommand parsedCommand);
+}
+```
+
+### Example: Conditional Options
+
+SSL-related options should only appear when `--secure` is used:
+
+```java
+import org.aesh.command.activator.OptionActivator;
+import org.aesh.command.impl.internal.ParsedCommand;
+
 public class SslOptionActivator implements OptionActivator {
 
     @Override
-    public boolean isActivated(CompleterInvocation invocation) {
-        MyCommand cmd = (MyCommand) invocation.getCommand();
-        // SSL options only active if secure mode is enabled
-        return cmd.secureMode;
+    public boolean isActivated(ParsedCommand parsedCommand) {
+        // SSL options only active if --secure has been specified
+        return parsedCommand.findLongOptionNoActivatorCheck("secure")
+                .getValue() != null;
     }
 }
 ```
@@ -26,7 +39,7 @@ public class SslOptionActivator implements OptionActivator {
 Usage:
 
 ```java
-@CommandDefinition(name = "server")
+@CommandDefinition(name = "server", description = "Start the server")
 public class ServerCommand implements Command<CommandInvocation> {
 
     @Option(name = "secure", hasValue = false, description = "Enable secure mode")
@@ -48,33 +61,42 @@ public class ServerCommand implements Command<CommandInvocation> {
 
     @Override
     public CommandResult execute(CommandInvocation invocation) {
+        if (secureMode) {
+            invocation.println("Starting HTTPS with cert=" + certPath);
+        } else {
+            invocation.println("Starting HTTP server");
+        }
         return CommandResult.SUCCESS;
     }
 }
 ```
 
+When `--secure` is not set, `--cert` and `--key` are hidden from tab completion and `--help` output.
+
 ## CommandActivator
 
-Control whether a command is visible/available:
+Control whether an entire command is visible and available:
 
 ```java
-public class AdminCommandActivator implements CommandActivator {
-
-    @Override
-    public boolean isActivated(CommandInvocation invocation) {
-        // Only show admin commands if user is admin
-        return isAdmin(invocation);
-    }
-
-    private boolean isAdmin(CommandInvocation invocation) {
-        // Check if user has admin privileges
-        // This could check environment variables, config files, etc.
-        return System.getProperty("user.role", "user").equals("admin");
-    }
+public interface CommandActivator {
+    boolean isActivated(ParsedCommand command);
 }
 ```
 
-Usage:
+### Example: Admin-Only Commands
+
+```java
+import org.aesh.command.activator.CommandActivator;
+import org.aesh.command.impl.internal.ParsedCommand;
+
+public class AdminCommandActivator implements CommandActivator {
+
+    @Override
+    public boolean isActivated(ParsedCommand command) {
+        return "admin".equals(System.getProperty("user.role", "user"));
+    }
+}
+```
 
 ```java
 @CommandDefinition(
@@ -92,56 +114,47 @@ public class ShutdownCommand implements Command<CommandInvocation> {
 }
 ```
 
-## Conditional Validation
+The `shutdown` command only appears in tab completion and help when `user.role` is `admin`. Users without admin role cannot discover or execute it.
 
-Use activators to conditionally require options:
+## Conditional Required Options
+
+Combine activators with `required = true` to make options conditionally required:
 
 ```java
 public class OutputFileActivator implements OptionActivator {
 
     @Override
-    public boolean isActivated(CompleterInvocation invocation) {
-        MyCommand cmd = (MyCommand) invocation.getCommand();
-        // Output file option only active when not verbose
-        return !cmd.verbose;
+    public boolean isActivated(ParsedCommand parsedCommand) {
+        // Output file only required when not in verbose mode
+        return parsedCommand.findLongOptionNoActivatorCheck("verbose")
+                .getValue() == null;
     }
 }
 
-@CommandDefinition(name = "process")
+@CommandDefinition(name = "process", description = "Process data")
 public class ProcessCommand implements Command<CommandInvocation> {
 
-    @Option(name = "verbose", hasValue = false, description = "Verbose output")
+    @Option(name = "verbose", hasValue = false, description = "Verbose output to console")
     private boolean verbose = false;
 
     @Option(
         name = "output",
         activator = OutputFileActivator.class,
         required = true,
-        description = "Output file (required unless verbose)"
+        description = "Output file (required unless --verbose)"
     )
     private String outputFile;
 
     @Override
     public CommandResult execute(CommandInvocation invocation) {
+        if (verbose) {
+            invocation.println("Processing... (verbose output)");
+        } else {
+            invocation.println("Writing output to " + outputFile);
+        }
         return CommandResult.SUCCESS;
     }
 }
 ```
 
-When `--verbose` is used, the `--output` option is hidden and not required.
-
-## Accessing Runtime Context
-
-Activators can access the Aesh context:
-
-```java
-public class ContextAwareActivator implements OptionActivator {
-
-    @Override
-    public boolean isActivated(CompleterInvocation invocation) {
-        AeshContext context = invocation.getAeshContext();
-        // Access runtime context for more complex conditions
-        return context.someCondition();
-    }
-}
-```
+When `--verbose` is used, `--output` is deactivated and not required. Without `--verbose`, `--output` is required.
