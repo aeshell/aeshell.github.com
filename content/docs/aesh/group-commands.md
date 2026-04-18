@@ -222,7 +222,7 @@ Starting container: mycontainer
 
 ## Group Commands with Shared Options
 
-You can add options to the group command itself that apply to all subcommands:
+You can add options to the group command itself. These options are parsed before the subcommand name:
 
 ```java
 @GroupCommandDefinition(
@@ -253,6 +253,60 @@ public class KubectlCommand implements GroupCommand<CommandInvocation> {
     }
 }
 ```
+
+### Inherited Options
+
+To make a group option available to subcommands as well, add `inherited = true`. The option can then be placed either before or after the subcommand name, and its value is automatically propagated to matching fields on the child command:
+
+```java
+@GroupCommandDefinition(
+    name = "cli",
+    description = "My CLI tool",
+    groupCommands = {RunCommand.class, TestCommand.class}
+)
+public class CliCommand implements Command<CommandInvocation> {
+
+    @Option(hasValue = false, inherited = true, description = "Enable verbose output")
+    private boolean verbose;
+
+    @Option(inherited = true, description = "Config file path")
+    private String config;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        return CommandResult.SUCCESS;
+    }
+}
+
+@CommandDefinition(name = "run", description = "Run application")
+public class RunCommand implements Command<CommandInvocation> {
+
+    // Fields matching parent's inherited options -- auto-populated
+    private boolean verbose;
+    private String config;
+
+    @Argument(description = "Main class")
+    private String mainClass;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        if (verbose) {
+            invocation.println("Config: " + config);
+        }
+        invocation.println("Running " + mainClass);
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Both of these are equivalent:
+
+```bash
+$ cli --verbose --config app.yml run MyApp
+$ cli run --verbose --config app.yml MyApp
+```
+
+See [Options - Inherited Options](/docs/aesh/options#inherited-options) for full details.
 
 ## Sub-Command Mode
 

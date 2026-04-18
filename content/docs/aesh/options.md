@@ -24,7 +24,7 @@ The `@Option` annotation defines command-line options (flags with values).
 | `acceptNameWithoutDashes` | `boolean` | `false` | Allow option name without `--` prefix |
 | `negatable` | `boolean` | `false` | Enable `--no-{name}` form for boolean options |
 | `negationPrefix` | `String` | `"no-"` | Prefix for negated form (e.g., `"without-"`) |
-| `inherited` | `boolean` | `false` | Make option available to subcommands in sub-command mode |
+| `inherited` | `boolean` | `false` | Make option available to subcommands |
 | `converter` | `Class<? extends Converter>` | `NullConverter.class` | Custom value converter |
 | `completer` | `Class<? extends OptionCompleter>` | `NullOptionCompleter.class` | Custom completer |
 | `validator` | `Class<? extends OptionValidator>` | `NullValidator.class` | Custom validator |
@@ -261,13 +261,14 @@ Building with:
 
 ## Inherited Options
 
-Inherited options are automatically available to all subcommands when using [sub-command mode](/docs/aesh/sub-command-mode). Mark an option with `inherited = true` on a group command, and subcommands with matching field names will have the value auto-populated.
+Inherited options are automatically available to all subcommands of a group command. Mark an option with `inherited = true` on the parent, and subcommands can use that option even without declaring it themselves.
 
 ### Basic Usage
 
 ```java
 @GroupCommandDefinition(
     name = "project",
+    description = "Project management",
     groupCommands = {BuildCommand.class, TestCommand.class}
 )
 public class ProjectCommand implements Command<CommandInvocation> {
@@ -277,64 +278,77 @@ public class ProjectCommand implements Command<CommandInvocation> {
 
     @Option(name = "config", inherited = true)
     private String configFile;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        return CommandResult.SUCCESS;
+    }
 }
 
-@CommandDefinition(name = "build")
+@CommandDefinition(name = "build", description = "Build the project")
 public class BuildCommand implements Command<CommandInvocation> {
 
-    // These fields are auto-populated from parent's inherited options
-    @Option(name = "verbose", hasValue = false)
+    // Plain fields with matching names -- auto-populated from parent's inherited options
     private boolean verbose;
-
-    @Option(name = "config")
     private String configFile;
+
+    @Option(description = "Build target")
+    private String target;
 
     @Override
     public CommandResult execute(CommandInvocation invocation) {
         if (verbose) {
-            invocation.println("[VERBOSE] Using config: " + configFile);
+            invocation.println("[VERBOSE] Config: " + configFile);
         }
+        invocation.println("Building " + target);
         return CommandResult.SUCCESS;
     }
 }
 ```
 
+The inherited option can be placed either before or after the subcommand name:
+
+```bash
+# Option before the subcommand -- parsed by the parent
+$ project --verbose --config app.yml build --target release
+
+# Option after the subcommand -- recognized from the parent
+$ project build --verbose --config app.yml --target release
+
+# Both forms produce the same result
+```
+
 ### How It Works
 
-1. When a group command enters sub-command mode, inherited option values are cached
-2. When a subcommand is executed, the populator looks for matching field names
-3. If a subcommand field matches an inherited option and wasn't explicitly set by the user, it receives the inherited value
-4. User-provided values always take precedence over inherited values
+1. When the parser encounters an unknown option on a child command, it checks the parent's options for an inherited match
+2. If found, the option is parsed using the parent's definition (the value is stored on the parent)
+3. After both parent and child are populated, inherited values are propagated into matching fields on the child command
+4. If the child has no matching field, the value remains on the parent (accessible via `@ParentCommand`)
 
-### Programmatic Access
+### Field Matching
 
-You can also access inherited values programmatically:
+For auto-propagation, the child command needs a field with the **same name** as the parent's inherited option field. The field does not need to be annotated with `@Option`:
 
 ```java
-@Override
-public CommandResult execute(CommandInvocation invocation) {
-    // Get inherited value by name
-    Boolean verbose = invocation.getInheritedValue("verbose", Boolean.class);
-    String config = invocation.getInheritedValue("configFile", String.class);
+// Parent
+@Option(name = "verbose", hasValue = false, inherited = true)
+private boolean verbose;
 
-    // With default value
-    Boolean debug = invocation.getInheritedValue("debug", Boolean.class, false);
-
-    return CommandResult.SUCCESS;
-}
+// Child -- plain field, same name
+private boolean verbose;  // receives the inherited value
 ```
+
+If the child also declares the option with `@Option`, it works as a regular option -- `searchAllOptions` finds it directly on the child, so no inheritance lookup is needed.
 
 ### Best Practices
 
-1. **Use for common flags** - Options like `--verbose`, `--debug`, `--config` that apply to all subcommands are good candidates.
+1. **Use for common flags** -- Options like `--verbose`, `--debug`, `--config` that apply to all subcommands are good candidates.
 
-2. **Don't overuse** - Only mark options as inherited if subcommands actually need them.
+2. **Don't overuse** -- Only mark options as inherited if subcommands actually need them.
 
-3. **Match field names** - For auto-population, the subcommand's field name must match the parent's field name.
+3. **Match field names** -- For auto-propagation, the child's field name must match the parent's field name.
 
-4. **Document inheritance** - Let users know which options are inherited in your documentation.
-
-See [Sub-Command Mode](/docs/aesh/sub-command-mode) for complete documentation.
+4. **Document inheritance** -- Let users know which options are inherited in your help text.
 
 ## Required Options
 
