@@ -17,6 +17,7 @@ The `@Option` annotation defines command-line options (flags with values).
 | `argument` | `String` | `""` | Value type description |
 | `required` | `boolean` | `false` | Is option required? |
 | `hasValue` | `boolean` | `true` | Does option accept a value? |
+| `optionalValue` | `boolean` | `false` | Allow option with or without a value (arity 0..1) |
 | `defaultValue` | `String[]` | `{}` | Default values |
 | `askIfNotSet` | `boolean` | `false` | Prompt user if not set |
 | `overrideRequired` | `boolean` | `false` | Override required validation |
@@ -60,6 +61,95 @@ private boolean verbose;
 ```
 
 Usage: `greet -v` or `greet --verbose`
+
+## Optional Value Options
+
+Optional value options (arity 0..1) can be used both as a flag (no value) and as a valued option. When used without a value, the `defaultValue` is applied. When used with a value, that value is used.
+
+This is useful for options like `--debug` (enable with default port) vs `--debug 5005` (enable with specific port).
+
+### Basic Usage
+
+```java
+@CommandDefinition(name = "run", description = "Run application")
+public class RunCommand implements Command<CommandInvocation> {
+
+    @Option(shortName = 'd', optionalValue = true, defaultValue = "4004",
+            description = "Enable debugging, optionally with a specific port")
+    private String debug;
+
+    @Option(optionalValue = true, defaultValue = "default",
+            description = "Enable JFR recording")
+    private String jfr;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        if (debug != null) {
+            invocation.println("Debugging on port " + debug);
+        }
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Usage:
+```bash
+# Flag-only: uses defaultValue "4004"
+$ run --debug
+Debugging on port 4004
+
+# With value via space
+$ run --debug 5005
+Debugging on port 5005
+
+# With value via equals
+$ run --debug=6006
+Debugging on port 6006
+
+# Short name
+$ run -d
+Debugging on port 4004
+
+# Short name with value (no space)
+$ run -d8080
+Debugging on port 8080
+
+# Combined with other options -- debug uses default, jfr gets value
+$ run --debug --jfr=filename=recording.jfr
+Debugging on port 4004
+```
+
+### How It Works
+
+When the parser encounters an optional-value option:
+
+1. If the next token is another option (e.g., `--debug --verbose`), no value is consumed and the `defaultValue` is used
+2. If the next token is a regular value (e.g., `--debug 5005`), it is consumed as the option's value
+3. If there are no more tokens (e.g., `--debug` at end of input), the `defaultValue` is used
+4. If the value is provided via `=` (e.g., `--debug=5005`), it is always consumed
+
+### Important Notes
+
+1. **Requires `hasValue = true`** (the default) -- `optionalValue` is only valid for options that accept values, not boolean flags.
+
+2. **Works with any type** -- The option field can be `String`, `Integer`, or any type with a registered converter.
+
+3. **`defaultValue` is always applied** -- Whether the option is provided or not, if `defaultValue` is set, it will be used as a fallback. If you need to distinguish "not provided" from "provided without value", omit `defaultValue` and check for `null`.
+
+### Programmatic API
+
+When building commands programmatically (e.g., with the annotation processor), use `ProcessedOptionBuilder`:
+
+```java
+ProcessedOptionBuilder.builder()
+        .name("debug")
+        .shortName('d')
+        .type(String.class)
+        .optionalValue(true)
+        .addDefaultValue("4004")
+        .description("Enable debugging")
+        .build();
+```
 
 ## Negatable Options
 
