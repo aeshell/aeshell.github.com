@@ -106,6 +106,43 @@ public class CopyCommand implements Command<CommandInvocation> {
 
 Usage: `copy myfile.txt -d /tmp -v`
 
+## Passthrough Arguments
+
+When a command needs to forward arguments to another process (e.g., a script runner), use `stopAtFirstPositional = true` on `@CommandDefinition`. After the first positional argument, all remaining tokens -- even those that look like options -- are collected as arguments:
+
+```java
+@CommandDefinition(
+    name = "run",
+    description = "Run a script",
+    stopAtFirstPositional = true,
+    generateHelp = true
+)
+public class RunCommand implements Command<CommandInvocation> {
+
+    @Option(hasValue = false, description = "Verbose")
+    private boolean verbose;
+
+    @Arguments
+    private List<String> args;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        String script = args.get(0);
+        List<String> scriptArgs = args.subList(1, args.size());
+        // pass scriptArgs to the script
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+```
+$ run --verbose myscript.java -Dfoo=bar --help
+```
+
+Here `--verbose` is parsed as a command option, `myscript.java` is the first positional argument, and `-Dfoo=bar --help` are passthrough arguments collected in `args`.
+
+See [Command Definition](/docs/aesh/command-definition#stop-at-first-positional) for more details.
+
 ## Inherited Arguments
 
 Inherited arguments are automatically available to all subcommands when using [sub-command mode](/docs/aesh/sub-command-mode). Mark an argument with `inherited = true` on a group command, and subcommands with matching field names will have the value auto-populated.

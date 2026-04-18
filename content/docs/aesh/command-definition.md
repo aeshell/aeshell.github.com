@@ -25,6 +25,8 @@ The `@CommandDefinition` annotation is used to define a command class.
 | `validator` | `Class<? extends CommandValidator>` | `NullCommandValidator.class` | Validator to run before execution |
 | `resultHandler` | `Class<? extends ResultHandler>` | `NullResultHandler.class` | Handler to run after execution |
 | `activator` | `Class<? extends CommandActivator>` | `NullCommandActivator.class` | Activator to check if command is available |
+| `stopAtFirstPositional` | `boolean` | `false` | Stop option parsing after the first positional argument |
+| `helpUrl` | `String` | `""` | URL to documentation (shown in `--help` output) |
 
 ## Example
 
@@ -65,6 +67,46 @@ Return one of the following:
 - `CommandResult.SUCCESS` - Command completed successfully
 - `CommandResult.FAILURE` - Command failed
 - `CommandResult.RETURN` - Return from current subcommand
+
+## Stop at First Positional
+
+When `stopAtFirstPositional = true`, option parsing stops as soon as the first positional argument is consumed. All remaining tokens are treated as positional arguments, even if they look like options.
+
+This is useful for commands that pass arguments through to another process:
+
+```java
+@CommandDefinition(
+    name = "run",
+    description = "Run a script",
+    stopAtFirstPositional = true,
+    generateHelp = true
+)
+public class RunCommand implements Command<CommandInvocation> {
+
+    @Option(hasValue = false, description = "Enable verbose output")
+    private boolean verbose;
+
+    @Arguments
+    private List<String> args;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        // args contains the script name and all arguments after it
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+With the command above:
+
+| Input | Result |
+|-------|--------|
+| `run --verbose myscript.java` | `verbose=true`, args=`[myscript.java]` |
+| `run --verbose myscript.java -Dfoo=bar --help` | `verbose=true`, args=`[myscript.java, -Dfoo=bar, --help]` |
+| `run myscript.java --verbose` | `verbose=false`, args=`[myscript.java, --verbose]` |
+| `run --help` | Displays help output |
+
+Note that `--help` (and `--version`) before the first positional still work normally when `generateHelp = true`. Only tokens after the first positional are treated as passthrough arguments.
 
 ### CommandInvocation
 
