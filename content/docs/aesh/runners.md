@@ -348,6 +348,28 @@ CommandRuntime runtime = AeshCommandRuntimeBuilder.builder()
 runtime.executeCommand("run", new String[]{"-c", "code with \"quotes\"", "arg1"});
 ```
 
+#### Building an Executor Without Executing
+
+Use `buildExecutor(String commandName, String[] args)` to parse and populate a command without executing it. This is useful when you need to inspect the parsed command object — for example, to extract option values for external processing:
+
+```java
+CommandRuntime runtime = AeshCommandRuntimeBuilder.builder()
+        .commandRegistry(myRegistry)
+        .build();
+
+// Parse the command and populate fields, but don't execute
+Executor<?> executor = runtime.buildExecutor("run", new String[]{"-c", "my code", "arg1"});
+Execution<?> execution = executor.getExecutions().get(0);
+execution.populateCommand();
+
+// Access the populated command object
+RunCommand cmd = (RunCommand) execution.getCommand();
+System.out.println("Code: " + cmd.getCode());
+System.out.println("Arg: " + cmd.getArg());
+```
+
+This is the same pre-tokenized path as `executeCommand`, so arguments with special characters are handled correctly.
+
 ### Reading User Input Interactively
 
 Commands can read interactive input from users using `CommandInvocation.getShell().readLine()`:
