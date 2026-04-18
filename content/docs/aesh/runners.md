@@ -293,6 +293,61 @@ Verbose mode enabled
 
 The `.args(args)` method automatically parses the command-line arguments and passes them to the registered command. When combined with `.execute()`, it provides a complete single-call execution pattern.
 
+#### Arguments with Special Characters
+
+Arguments containing spaces, embedded quotes, backslashes, newlines, or shell operator characters (`|`, `;`, `>`) are fully supported. The args are passed directly to the command parser without string reconstruction or re-parsing, so their content is preserved exactly:
+
+```java
+@CommandDefinition(name = "run", description = "Run code")
+class RunCommand implements Command<CommandInvocation> {
+
+    @Option(shortName = 'c', description = "Code to execute")
+    private String code;
+
+    @Argument(description = "First positional argument")
+    private String firstArg;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Code: " + code);
+        invocation.println("Arg: " + firstArg);
+        return CommandResult.SUCCESS;
+    }
+}
+
+public class MyTool {
+    public static void main(String[] args) {
+        AeshRuntimeRunner.builder()
+                .command(RunCommand.class)
+                .args(args)
+                .execute();
+    }
+}
+```
+
+This works correctly even with complex multi-line content:
+
+```bash
+java -jar mytool.jar -c 'public class Hello {
+    public static void main(String... args) {
+        System.out.println("Hello");
+    }
+}' firstarg
+```
+
+#### CommandRuntime Pre-Tokenized API
+
+The same pre-tokenized execution is available when using `CommandRuntime` directly via `executeCommand(String commandName, String[] args)`:
+
+```java
+CommandRuntime runtime = AeshCommandRuntimeBuilder.builder()
+        .commandRegistry(myRegistry)
+        .build();
+
+// Pre-tokenized args bypass LineParser — safe for any content
+runtime.executeCommand("run", new String[]{"-c", "code with \"quotes\"", "arg1"});
+```
+
 ### Reading User Input Interactively
 
 Commands can read interactive input from users using `CommandInvocation.getShell().readLine()`:
