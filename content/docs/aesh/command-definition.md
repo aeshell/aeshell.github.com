@@ -25,6 +25,7 @@ The `@CommandDefinition` annotation is used to define a command class.
 | `validator` | `Class<? extends CommandValidator>` | `NullCommandValidator.class` | Validator to run before execution |
 | `resultHandler` | `Class<? extends ResultHandler>` | `NullResultHandler.class` | Handler to run after execution |
 | `activator` | `Class<? extends CommandActivator>` | `NullCommandActivator.class` | Activator to check if command is available |
+| `defaultValueProvider` | `Class<? extends DefaultValueProvider>` | `NullDefaultValueProvider.class` | Dynamic default value resolver |
 | `stopAtFirstPositional` | `boolean` | `false` | Stop option parsing after the first positional argument |
 | `helpUrl` | `String` | `""` | URL to documentation (shown in `--help` output) |
 
@@ -67,6 +68,71 @@ Return one of the following:
 - `CommandResult.SUCCESS` - Command completed successfully
 - `CommandResult.FAILURE` - Command failed
 - `CommandResult.RETURN` - Return from current subcommand
+
+## Dynamic Default Value Provider
+
+The `defaultValueProvider` attribute specifies a class that resolves option defaults at runtime. This is useful when defaults come from configuration files, environment variables, or other external sources not known at compile time.
+
+### Implementing a Provider
+
+Create a class that implements `DefaultValueProvider`:
+
+```java
+public class ConfigDefaultProvider implements DefaultValueProvider {
+
+    @Override
+    public String defaultValue(ProcessedOption option) {
+        // Use option.name() and option.parent().name() to build a config key
+        String key = option.parent().name() + "." + option.name();
+        return Configuration.get(key);  // returns null if not configured
+    }
+}
+```
+
+### Registering the Provider
+
+```java
+@CommandDefinition(
+    name = "init",
+    description = "Initialize a project",
+    defaultValueProvider = ConfigDefaultProvider.class
+)
+public class InitCommand implements Command<CommandInvocation> {
+
+    @Option(defaultValue = "hello")
+    private String template;
+
+    @Option
+    private String editor;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Template: " + template);
+        invocation.println("Editor: " + editor);
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+### Value Precedence
+
+When determining option values, the precedence is (highest to lowest):
+
+1. **User-provided value** -- Explicitly set on the command line
+2. **Dynamic default** -- Returned by the `DefaultValueProvider` (if non-null)
+3. **Static default** -- The `defaultValue` from the annotation
+4. **null** -- If nothing else is set
+
+If the provider returns `null` for an option, aesh falls back to the static `defaultValue`. This lets you use annotation defaults as fallbacks:
+
+```java
+// Provider returns "from-config" for template -> uses "from-config"
+// Provider returns null for editor -> falls back to static default "vi"
+@Option(defaultValue = "vi")
+private String editor;
+```
+
+See [Options - Dynamic Default Values](/docs/aesh/options#dynamic-default-values) for more details.
 
 ## Stop at First Positional
 

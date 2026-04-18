@@ -471,15 +471,54 @@ $ connect -h dev-db.local -p 5434
 Connecting to john@dev-db.local:5434/myapp
 ```
 
+### Dynamic Default Values
+
+For defaults that must be resolved at runtime (e.g., from configuration files, databases, or user profiles), use a `DefaultValueProvider`. The provider is registered on the command, not on individual options:
+
+```java
+public class AppConfigProvider implements DefaultValueProvider {
+
+    @Override
+    public String defaultValue(ProcessedOption option) {
+        // Build a hierarchical key from command + option name
+        String key = option.parent().name() + "." + option.name();
+        return AppConfig.instance().get(key);  // null if not configured
+    }
+}
+
+@CommandDefinition(
+    name = "run",
+    description = "Run application",
+    defaultValueProvider = AppConfigProvider.class
+)
+public class RunCommand implements Command<CommandInvocation> {
+
+    @Option(description = "Debug port", defaultValue = "4004")
+    private String debug;
+
+    @Option(description = "JFR settings")
+    private String jfr;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        // debug = config value if set, else "4004", unless user provided a value
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+If the provider returns `null` for an option, the static `defaultValue` from the annotation is used as a fallback. See [Command Definition - Dynamic Default Value Provider](/docs/aesh/command-definition#dynamic-default-value-provider) for more details.
+
 ### Priority Order
 
 When determining option values, Æsh uses this priority (highest to lowest):
 
 1. **Command-line argument** - Explicitly provided by user
-2. **Environment variable / System property** - If referenced in `defaultValue`
-3. **Fallback value** - Value after `:` in the `defaultValue` expression
-4. **Field initializer** - Java field initialization value
-5. **null** - If nothing else is set
+2. **Dynamic default** - From `DefaultValueProvider` (if non-null)
+3. **Static default / Environment variable / System property** - From `defaultValue` annotation
+4. **Fallback value** - Value after `:` in the `defaultValue` expression
+5. **Field initializer** - Java field initialization value
+6. **null** - If nothing else is set
 
 ### Multiple Default Values
 
