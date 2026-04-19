@@ -705,6 +705,49 @@ The [aesh-examples repository](https://github.com/aeshell/aesh-examples) contain
 
 See the [Examples and Tutorials](../examples) page for detailed information about all available examples.
 
+## Command Lifecycle for Re-Entrant Usage
+
+When a runtime or runner is reused across multiple invocations (e.g., in test suites or long-running applications), Æsh automatically resets option fields to their default values before each parse cycle. However, if your command sets **external state** during execution (static flags, shared configuration, etc.), that state persists between calls.
+
+Implement `CommandLifecycle` to reset external state before each parse:
+
+```java
+import org.aesh.command.Command;
+import org.aesh.command.CommandDefinition;
+import org.aesh.command.CommandLifecycle;
+import org.aesh.command.CommandResult;
+import org.aesh.command.invocation.CommandInvocation;
+import org.aesh.command.option.Option;
+
+@CommandDefinition(name = "run", description = "Run with options")
+class RunCommand implements Command<CommandInvocation>, CommandLifecycle {
+
+    @Option(hasValue = false, description = "Verbose output")
+    private boolean verbose;
+
+    @Option(hasValue = false, description = "Preview mode")
+    private boolean preview;
+
+    @Override
+    public void beforeParse() {
+        // Reset any external state from previous invocations
+        Config.setVerbose(false);
+        Config.setPreview(false);
+    }
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        // Set external state based on parsed options
+        Config.setVerbose(verbose);
+        Config.setPreview(preview);
+        // ... execute command
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+The `beforeParse()` method is called after Æsh clears its internal option values but before the new command line is parsed. This ensures a clean state for every invocation, whether using `executeCommand()`, `buildExecutor()`, or `AeshRuntimeRunner.execute()`.
+
 ## Best Practices
 
 1. **Always add exit command**: For console applications, always call `.addExitCommand()` to allow users to exit gracefully.
