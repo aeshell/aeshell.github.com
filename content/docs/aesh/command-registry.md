@@ -70,6 +70,29 @@ for (CommandContainer<CommandInvocation> cmd : commands) {
 }
 ```
 
+#### getSubcommandNames(String parentCommandName)
+
+Returns the names of all subcommands registered under a group command. Returns an empty set if the command is not a group or not found.
+
+```java
+Set<String> subcommands = registry.getSubcommandNames("git");
+// e.g., {"commit", "push", "pull"}
+```
+
+This is useful for applications that need to distinguish subcommand names from positional arguments, for example to implement a default subcommand:
+
+```java
+Set<String> subcommands = registry.getSubcommandNames("jbang");
+
+public String[] handleArgs(String[] args) {
+    if (args.length > 0 && !subcommands.contains(args[0])) {
+        // First arg is not a subcommand — prepend default "run"
+        return prependRun(args);
+    }
+    return args;
+}
+```
+
 #### containsCommand(String name)
 
 Checks if a command with the given name exists.

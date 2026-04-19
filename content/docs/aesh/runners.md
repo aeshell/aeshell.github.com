@@ -776,6 +776,45 @@ class RunCommand implements Command<CommandInvocation>, CommandLifecycle {
 }
 ```
 
+### Group Command Lifecycle
+
+When executing a subcommand of a `@GroupCommandDefinition`, `afterParse()` is called on the **parent group command first**, then on the child. This gives the parent a chance to process its own options before the child runs:
+
+```java
+@GroupCommandDefinition(name = "app", groupCommands = { RunCmd.class }, generateHelp = true)
+class AppCommand implements Command<CommandInvocation>, CommandLifecycle {
+
+    @Option(name = "stacktrace", shortName = 'x', hasValue = false)
+    boolean stacktrace;
+
+    @Override
+    public void afterParse() {
+        // Called first — parent options are populated
+        Util.setPrintExceptions(stacktrace);
+    }
+
+    @Override
+    public CommandResult execute(CommandInvocation ci) { return CommandResult.SUCCESS; }
+}
+
+@CommandDefinition(name = "run", generateHelp = true)
+class RunCmd implements Command<CommandInvocation>, CommandLifecycle {
+
+    @Option
+    String script;
+
+    @Override
+    public void afterParse() {
+        // Called second — child options are populated
+    }
+
+    @Override
+    public CommandResult execute(CommandInvocation ci) { return CommandResult.SUCCESS; }
+}
+```
+
+Executing `app -x run --script test.java` calls `AppCommand.afterParse()` then `RunCmd.afterParse()`, then `RunCmd.execute()`.
+
 Both hooks are optional (default no-op) and are skipped during tab completion to avoid side effects on every keypress.
 
 ## Best Practices

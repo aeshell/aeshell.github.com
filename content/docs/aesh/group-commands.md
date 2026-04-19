@@ -360,6 +360,21 @@ See [Sub-Command Mode](/docs/aesh/sub-command-mode) for complete documentation o
 - Configuring prompts, exit commands, and messages
 - Nested contexts
 
+## Querying Subcommand Names
+
+Use `getSubcommandNames()` on the registry to get the names of all subcommands for a group command. This avoids hardcoding subcommand names when you need to distinguish them from positional arguments:
+
+```java
+CommandRegistry<CommandInvocation> registry = AeshCommandRegistryBuilder.builder()
+        .command(GitCommand.class)
+        .create();
+
+Set<String> subcommands = registry.getSubcommandNames("git");
+// returns {"commit", "push", "pull"}
+```
+
+See [Command Registry - getSubcommandNames](/docs/aesh/command-registry#getsubcommandnamesstring-parentcommandname) for more details.
+
 ## Best Practices
 
 1. **Use meaningful group names** - Group names should clearly indicate the category of commands they contain.
