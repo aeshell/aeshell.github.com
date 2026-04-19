@@ -54,6 +54,7 @@ That's it! Æsh automatically:
 - **Default values** - Sensible defaults with optional overrides
 - **Required vs optional** - Mark what's mandatory for your commands
 - **Multiple arguments** - Handle variable numbers of positional arguments
+- **[Mixins](mixins)** - Compose reusable option groups across commands without inheritance
 
 ### Command Hierarchies
 - **Group commands** - Create command trees like `git remote add` or `docker container start`

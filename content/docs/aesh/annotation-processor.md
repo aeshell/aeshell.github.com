@@ -192,4 +192,4 @@ public class DeployCommand extends BaseCommand {
 - **Java 8+** -- The processor targets source version 8
 - **No code changes required** -- Drop in the dependency and the processor runs automatically
 - **Fully backward compatible** -- Removing the dependency reverts to the reflection path with no behavior change
-- **Works with all Aesh features** -- Custom validators, completers, converters, activators, renderers, result handlers, option parsers, default value providers, optional-value options, negatable options, stop-at-positional, and inherited options are all supported
+- **Works with all Aesh features** -- Custom validators, completers, converters, activators, renderers, result handlers, option parsers, default value providers, optional-value options, negatable options, stop-at-positional, inherited options, and [mixins](mixins) are all supported
