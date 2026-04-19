@@ -62,6 +62,22 @@ private boolean verbose;
 
 Usage: `greet -v` or `greet --verbose`
 
+### Boolean vs boolean
+
+Use the primitive `boolean` for simple on/off flags. Use the wrapper `Boolean` when you need three-state semantics:
+
+| Type | Not provided | Provided |
+|------|-------------|----------|
+| `boolean` | `false` | `true` |
+| `Boolean` | `null` | `true` |
+
+This is useful when "not specified" should behave differently from "explicitly disabled":
+
+```java
+@Option(hasValue = false, description = "Enable color output")
+private Boolean color;  // null = use terminal default, true = force color
+```
+
 ## Optional Value Options
 
 Optional value options (arity 0..1) can be used both as a flag (no value) and as a valued option. When used without a value, the `defaultValue` is applied. When used with a value, that value is used.

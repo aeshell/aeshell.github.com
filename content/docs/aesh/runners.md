@@ -707,9 +707,13 @@ See the [Examples and Tutorials](../examples) page for detailed information abou
 
 ## Command Lifecycle for Re-Entrant Usage
 
-When a runtime or runner is reused across multiple invocations (e.g., in test suites or long-running applications), Æsh automatically resets option fields to their default values before each parse cycle. However, if your command sets **external state** during execution (static flags, shared configuration, etc.), that state persists between calls.
+When a runtime or runner is reused across multiple invocations (e.g., in test suites or long-running applications), Æsh automatically resets option fields between parse cycles. Reference-type fields with non-null initializers (e.g., `List<String> params = new ArrayList<>()`) are restored to a fresh instance of the same type rather than being set to `null`. `Boolean` wrapper fields reset to `null` (preserving three-state semantics: `null` = unset, `TRUE`, `FALSE`).
 
-Implement `CommandLifecycle` to reset external state before each parse:
+However, if your command sets **external state** during execution (static flags, shared configuration, etc.), that state persists between calls. Implement `CommandLifecycle` to hook into the parse/execution cycle:
+
+### beforeParse()
+
+Called after Æsh clears its internal option values but before the new command line is parsed. Use it to reset external state:
 
 ```java
 import org.aesh.command.Command;
@@ -725,28 +729,54 @@ class RunCommand implements Command<CommandInvocation>, CommandLifecycle {
     @Option(hasValue = false, description = "Verbose output")
     private boolean verbose;
 
-    @Option(hasValue = false, description = "Preview mode")
-    private boolean preview;
-
     @Override
     public void beforeParse() {
         // Reset any external state from previous invocations
         Config.setVerbose(false);
-        Config.setPreview(false);
     }
 
     @Override
     public CommandResult execute(CommandInvocation invocation) {
-        // Set external state based on parsed options
         Config.setVerbose(verbose);
-        Config.setPreview(preview);
-        // ... execute command
         return CommandResult.SUCCESS;
     }
 }
 ```
 
-The `beforeParse()` method is called after Æsh clears its internal option values but before the new command line is parsed. This ensures a clean state for every invocation, whether using `executeCommand()`, `buildExecutor()`, or `AeshRuntimeRunner.execute()`.
+### afterParse()
+
+Called after the command has been parsed and option fields populated, but before `execute()` runs. Use it for post-processing that depends on parsed values, such as splitting argument lists or resolving derived state:
+
+```java
+@CommandDefinition(name = "run", description = "Run a script",
+                   stopAtFirstPositional = true)
+class RunCommand implements Command<CommandInvocation>, CommandLifecycle {
+
+    @Arguments
+    private List<String> allArgs;
+
+    private String scriptFile;
+    private List<String> scriptArgs;
+
+    @Override
+    public void afterParse() {
+        // Split the first argument as the script file
+        if (allArgs != null && !allArgs.isEmpty()) {
+            scriptFile = allArgs.remove(0);
+            scriptArgs = new ArrayList<>(allArgs);
+        }
+    }
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Script: " + scriptFile);
+        invocation.println("Args: " + scriptArgs);
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Both hooks are optional (default no-op) and are skipped during tab completion to avoid side effects on every keypress.
 
 ## Best Practices
 

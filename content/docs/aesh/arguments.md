@@ -65,6 +65,42 @@ public class SumCommand implements Command<CommandInvocation> {
 
 Usage: `sum 1 2 3 4 5`
 
+## Combining @Argument with @Arguments
+
+`@Argument` (singular) and `@Arguments` (plural) can be used together on the same command. The first positional value is captured by `@Argument`, and any remaining positional values overflow into `@Arguments`:
+
+```java
+@CommandDefinition(name = "run", description = "Run a script")
+public class RunCommand implements Command<CommandInvocation> {
+
+    @Argument(description = "Script file or URL")
+    private String scriptFile;
+
+    @Arguments(description = "Script arguments")
+    private List<String> scriptArgs = new ArrayList<>();
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println("Script: " + scriptFile);
+        invocation.println("Args: " + scriptArgs);
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Usage:
+```bash
+$ run myscript.java arg1 arg2
+Script: myscript.java
+Args: [arg1, arg2]
+
+$ run myscript.java
+Script: myscript.java
+Args: []
+```
+
+This eliminates the need to manually split a single `@Arguments` list. When only `@Argument` or `@Arguments` is defined (not both), behavior is unchanged.
+
 ## Required Argument
 
 ```java
@@ -122,14 +158,15 @@ public class RunCommand implements Command<CommandInvocation> {
     @Option(hasValue = false, description = "Verbose")
     private boolean verbose;
 
+    @Argument(description = "Script file")
+    private String script;
+
     @Arguments
-    private List<String> args;
+    private List<String> scriptArgs;
 
     @Override
     public CommandResult execute(CommandInvocation invocation) {
-        String script = args.get(0);
-        List<String> scriptArgs = args.subList(1, args.size());
-        // pass scriptArgs to the script
+        // script and scriptArgs are split automatically
         return CommandResult.SUCCESS;
     }
 }
