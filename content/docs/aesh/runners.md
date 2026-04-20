@@ -468,6 +468,54 @@ public CommandResult execute(CommandInvocation invocation) throws InterruptedExc
 }
 ```
 
+### Generating Shell Completion Scripts
+
+`AeshRuntimeRunner` can generate shell completion scripts (bash, zsh, fish) instead of executing the command. When `generateCompletion()` is set, `execute()` prints the completion script to stdout and returns without running the command.
+
+```java
+import org.aesh.AeshRuntimeRunner;
+import org.aesh.util.completer.ShellCompletionGenerator.ShellType;
+
+public class MyTool {
+    public static void main(String[] args) {
+        if (args.length > 0 && args[0].equals("--completions")) {
+            ShellType shell = args.length > 1
+                    ? ShellType.valueOf(args[1].toUpperCase())
+                    : ShellType.BASH;
+            AeshRuntimeRunner.builder()
+                    .command(MyCommand.class)
+                    .generateCompletion(shell)
+                    .execute();
+            return;
+        }
+
+        AeshRuntimeRunner.builder()
+                .command(MyCommand.class)
+                .args(args)
+                .execute();
+    }
+}
+```
+
+```bash
+# Generate and install completions
+$ mytool --completions bash > /etc/bash_completion.d/mytool
+$ mytool --completions zsh > ~/.zsh/completions/_mytool
+$ mytool --completions fish > ~/.config/fish/completions/mytool.fish
+```
+
+Use `completionProgramName()` to override the program name in the generated script (defaults to the `@CommandDefinition` name):
+
+```java
+AeshRuntimeRunner.builder()
+        .command(MyCommand.class)
+        .generateCompletion(ShellType.BASH)
+        .completionProgramName("my-tool")  // use "my-tool" instead of the annotation name
+        .execute();
+```
+
+See [Completers - Shell Completion Script Generation](../completers#shell-completion-script-generation) for full details on what gets generated and the supported features.
+
 ### Complete Example
 
 ```java

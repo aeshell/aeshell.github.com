@@ -24,6 +24,7 @@ The `@OptionList` annotation defines options that accept multiple values separat
 | `activator` | `Class<? extends OptionActivator>` | `NullActivator.class` | Custom activator |
 | `renderer` | `Class<? extends OptionRenderer>` | `NullOptionRenderer.class` | Custom renderer |
 | `parser` | `Class<? extends OptionParser>` | `AeshOptionParser.class` | Custom parser |
+| `aliases` | `String[]` | `{}` | Alternative long names for this option |
 
 ## Basic Example
 
@@ -94,6 +95,17 @@ Use `Set` instead of `List` to eliminate duplicates:
 @OptionList(description = "Unique tags")
 private Set<String> tags;
 ```
+
+## Aliases
+
+Provide alternative long names with `aliases`:
+
+```java
+@OptionList(name = "items", aliases = {"item"}, description = "Items to process")
+private List<String> items;
+```
+
+Both `--items a,b,c` and `--item a,b,c` are accepted. See [Options - Option Aliases](../options#option-aliases) for more details.
 
 ## Custom Types
 

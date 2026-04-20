@@ -31,6 +31,9 @@ The `@Option` annotation defines command-line options (flags with values).
 | `activator` | `Class<? extends OptionActivator>` | `NullActivator.class` | Custom activator |
 | `renderer` | `Class<? extends OptionRenderer>` | `NullOptionRenderer.class` | Custom renderer |
 | `parser` | `Class<? extends OptionParser>` | `AeshOptionParser.class` | Custom parser |
+| `aliases` | `String[]` | `{}` | Alternative long names for this option |
+| `descriptionUrl` | `String` | `""` | URL for option documentation (clickable in supported terminals) |
+| `url` | `boolean` | `false` | Treat option value as a URL (rendered as clickable link) |
 
 ## Basic Example
 
@@ -365,6 +368,64 @@ If the child also declares the option with `@Option`, it works as a regular opti
 3. **Match field names** -- For auto-propagation, the child's field name must match the parent's field name.
 
 4. **Document inheritance** -- Let users know which options are inherited in your help text.
+
+## Option Aliases
+
+The `aliases` property defines alternative long names for an option. This is useful when migrating from another CLI framework, supporting legacy names, or providing shorter alternatives.
+
+### Basic Usage
+
+```java
+@CommandDefinition(name = "runner", description = "Java runner")
+public class RunnerCommand implements Command<CommandInvocation> {
+
+    @Option(name = "enableassertions", aliases = {"ea"},
+            hasValue = false, description = "Enable assertions")
+    private boolean enableAssertions;
+
+    @Option(name = "classpath", aliases = {"cp"},
+            description = "Class path")
+    private String classpath;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+All of these are equivalent:
+
+```bash
+$ runner --enableassertions --classpath /path
+$ runner --ea --cp /path
+```
+
+### Help Output
+
+Aliases appear alongside the primary name in help output:
+
+```
+Options:
+  --enableassertions, --ea      Enable assertions
+  --classpath, --cp <value>     Class path
+```
+
+### Tab Completion
+
+Both primary names and aliases are offered during tab completion. Typing `--e` and pressing Tab will suggest both `--enableassertions` and `--ea` (if both match the prefix).
+
+### With OptionList
+
+Aliases also work with `@OptionList`:
+
+```java
+@OptionList(name = "items", aliases = {"item"},
+            description = "Items to process")
+private List<String> items;
+```
+
+Both `--items a,b,c` and `--item a,b,c` are accepted.
 
 ## Required Options
 

@@ -155,3 +155,133 @@ Works with `@Arguments` as well:
 @Arguments(completer = CommandNameCompleter.class)
 private List<String> commandNames;
 ```
+
+## Shell Completion Script Generation
+
+Aesh can generate static completion scripts for **bash**, **zsh**, and **fish** shells. These scripts provide tab completion for your CLI tool's command names, option names, option aliases, negated forms, and default values without requiring a running JVM.
+
+### Supported Shells
+
+| Shell | Generator | Script format |
+|-------|-----------|---------------|
+| Bash | `BashCompletionGenerator` | `complete -F` functions with `compgen -W` |
+| Zsh | `ZshCompletionGenerator` | Native `compdef`/`_arguments` format |
+| Fish | `FishCompletionGenerator` | `complete -c` commands with conditions |
+
+### Quick Start with AeshRuntimeRunner
+
+The simplest way to add completion generation to your CLI tool:
+
+```java
+public class MyApp {
+    public static void main(String[] args) {
+        // Check for completion generation flag
+        if (args.length > 0 && args[0].equals("--generate-completion")) {
+            ShellType shell = ShellType.valueOf(args.length > 1 ? args[1] : "BASH");
+            AeshRuntimeRunner.builder()
+                    .command(MyCommand.class)
+                    .generateCompletion(shell)
+                    .execute();
+            return;
+        }
+
+        // Normal execution
+        AeshRuntimeRunner.builder()
+                .command(MyCommand.class)
+                .args(args)
+                .execute();
+    }
+}
+```
+
+```bash
+# Generate and install bash completion
+$ myapp --generate-completion BASH > ~/.local/share/bash-completion/completions/myapp
+
+# Generate zsh completion
+$ myapp --generate-completion ZSH > ~/.zsh/completions/_myapp
+
+# Generate fish completion
+$ myapp --generate-completion FISH > ~/.config/fish/completions/myapp.fish
+```
+
+### One-Shot Static API
+
+Generate a completion script from a command class without building a full runner:
+
+```java
+import org.aesh.util.completer.ShellCompletionGenerator;
+import org.aesh.util.completer.ShellCompletionGenerator.ShellType;
+
+String bashScript = ShellCompletionGenerator.generate(
+        ShellType.BASH, MyCommand.class, "myapp");
+
+String zshScript = ShellCompletionGenerator.generate(
+        ShellType.ZSH, MyCommand.class, "myapp");
+
+String fishScript = ShellCompletionGenerator.generate(
+        ShellType.FISH, MyCommand.class, "myapp");
+```
+
+### Using the Strategy Interface
+
+For more control, use the `ShellCompletionGenerator` interface directly with a command parser:
+
+```java
+import org.aesh.util.completer.ShellCompletionGenerator;
+
+ShellCompletionGenerator generator = ShellCompletionGenerator.forShell(ShellType.BASH);
+String script = generator.generate(parser, "myapp");
+```
+
+### What Gets Generated
+
+The generators introspect the command model and produce:
+
+- **Option names** (long and short forms)
+- **Option aliases** (e.g., `--ea` for `--enableassertions`)
+- **Negatable options** (e.g., `--no-verbose` for `--verbose`)
+- **Default value completions** (offered when completing option values)
+- **File path completion** for `File`, `Path`, and `Resource`-typed options
+- **Subcommand names** for group commands
+- **Positional argument completion** (file completion for `@Argument`/`@Arguments` with file types)
+
+### Generated Script Examples
+
+Given this command:
+
+```java
+@CommandDefinition(name = "deploy", description = "Deploy application")
+public class DeployCommand implements Command<CommandInvocation> {
+
+    @Option(shortName = 'e', defaultValue = {"dev", "staging", "prod"},
+            description = "Target environment")
+    private String environment;
+
+    @Option(shortName = 'v', hasValue = false, negatable = true,
+            description = "Verbose output")
+    private boolean verbose;
+
+    @Option(name = "config", aliases = {"cfg"}, description = "Config file")
+    private File configFile;
+}
+```
+
+**Bash** generates functions using `_init_completion`, `compgen -W` for values, and `_filedir` for file options.
+
+**Zsh** generates native `_arguments` specs with exclusion groups, value completions, and `_files` for file-typed options.
+
+**Fish** generates `complete -c` entries with `-l` (long), `-s` (short), `-r` (requires argument), `-a` (values), and `__fish_use_subcommand`/`__fish_seen_subcommand_from` conditions for group commands.
+
+### Using the CompleterCommand
+
+Aesh also provides a built-in `CompleterCommand` that generates completion scripts from a command class name:
+
+```java
+AeshRuntimeRunner.builder()
+        .command(CompleterCommand.class)
+        .args("--shell", "FISH", "com.example.MyCommand")
+        .execute();
+```
+
+This writes the completion script to a file named `mycommand.fish` (or `.bash`/`.zsh`).
