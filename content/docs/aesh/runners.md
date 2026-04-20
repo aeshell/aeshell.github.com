@@ -470,7 +470,14 @@ public CommandResult execute(CommandInvocation invocation) throws InterruptedExc
 
 ### Generating Shell Completion Scripts
 
-`AeshRuntimeRunner` can generate shell completion scripts (bash, zsh, fish) instead of executing the command. When `generateCompletion()` is set, `execute()` prints the completion script to stdout and returns without running the command.
+`AeshRuntimeRunner` can generate shell completion scripts (bash, zsh, fish) instead of executing the command. There are two modes:
+
+- **Static** (`generateCompletion()`) — scripts that complete option names, subcommand names, and default values without a running JVM
+- **Dynamic** (`generateDynamicCompletion()`) — scripts that call back to the program at tab-time via `--aesh-complete`, running custom `OptionCompleter` logic
+
+#### Static Completion Scripts
+
+When `generateCompletion()` is set, `execute()` prints the static completion script to stdout and returns without running the command.
 
 ```java
 import org.aesh.AeshRuntimeRunner;
@@ -514,7 +521,54 @@ AeshRuntimeRunner.builder()
         .execute();
 ```
 
-See [Completers - Shell Completion Script Generation](../completers#shell-completion-script-generation) for full details on what gets generated and the supported features.
+#### Dynamic Callback Completion
+
+Dynamic scripts call back to your program at tab-time, running the full aesh completion engine including custom `OptionCompleter` implementations. This is ideal for GraalVM native images where startup is near-instant (~10ms).
+
+Use `handleDynamicCompletion()` to detect and handle the `--aesh-complete` callback, and `generateDynamicCompletion()` to generate the shell script:
+
+```java
+import org.aesh.AeshRuntimeRunner;
+import org.aesh.util.completer.ShellCompletionGenerator.ShellType;
+
+public class MyTool {
+    public static void main(String[] args) {
+        // Handle dynamic completion callbacks from the shell
+        if (AeshRuntimeRunner.handleDynamicCompletion(args, MyCommand.class)) {
+            return;
+        }
+
+        // Generate dynamic completion script
+        if (args.length > 0 && args[0].equals("--completions")) {
+            ShellType shell = args.length > 1
+                    ? ShellType.valueOf(args[1].toUpperCase())
+                    : ShellType.BASH;
+            AeshRuntimeRunner.builder()
+                    .command(MyCommand.class)
+                    .generateDynamicCompletion(shell)
+                    .execute();
+            return;
+        }
+
+        // Normal execution
+        AeshRuntimeRunner.builder()
+                .command(MyCommand.class)
+                .args(args)
+                .execute();
+    }
+}
+```
+
+```bash
+# Generate and install dynamic completions
+$ mytool --completions bash > /etc/bash_completion.d/mytool
+$ mytool --completions zsh > ~/.zsh/completions/_mytool
+$ mytool --completions fish > ~/.config/fish/completions/mytool.fish
+```
+
+When the user presses Tab, the shell calls `mytool --aesh-complete -- <partial-args>`, the completion engine runs, and candidates are printed one per line to stdout.
+
+See [Completers - Shell Completion Script Generation](../completers#shell-completion-script-generation) for full details on static vs dynamic scripts, what gets generated, and GraalVM native image support.
 
 ### Complete Example
 

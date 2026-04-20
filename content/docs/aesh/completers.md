@@ -158,7 +158,19 @@ private List<String> commandNames;
 
 ## Shell Completion Script Generation
 
-Aesh can generate static completion scripts for **bash**, **zsh**, and **fish** shells. These scripts provide tab completion for your CLI tool's command names, option names, option aliases, negated forms, and default values without requiring a running JVM.
+Aesh can generate completion scripts for **bash**, **zsh**, and **fish** shells. There are two approaches:
+
+- **Static scripts** — complete option names, subcommand names, and default values without a running JVM. Fast and zero-overhead, but cannot run custom `OptionCompleter` logic.
+- **Dynamic callback scripts** — thin shell shims that call back to your program at tab-time via `--aesh-complete`, running the full aesh completion engine (including custom completers). Ideal for GraalVM native images where startup is near-instant.
+
+### Static vs Dynamic
+
+| | Static | Dynamic |
+|---|---|---|
+| Custom `OptionCompleter` support | No | Yes |
+| JVM required at tab-time | No | Yes |
+| Startup cost per Tab press | None | ~10ms (native) / ~200ms (JVM) |
+| Best for | Option names, default values | Runtime-dependent completions |
 
 ### Supported Shells
 
@@ -168,9 +180,11 @@ Aesh can generate static completion scripts for **bash**, **zsh**, and **fish** 
 | Zsh | `ZshCompletionGenerator` | Native `compdef`/`_arguments` format |
 | Fish | `FishCompletionGenerator` | `complete -c` commands with conditions |
 
-### Quick Start with AeshRuntimeRunner
+### Static Completion Scripts
 
-The simplest way to add completion generation to your CLI tool:
+#### Quick Start with AeshRuntimeRunner
+
+The simplest way to add static completion generation to your CLI tool:
 
 ```java
 public class MyApp {
@@ -285,3 +299,93 @@ AeshRuntimeRunner.builder()
 ```
 
 This writes the completion script to a file named `mycommand.fish` (or `.bash`/`.zsh`).
+
+### Dynamic Callback Completion Scripts
+
+Dynamic scripts generate thin shell shims that call back to your Java program at tab-time. When the user presses Tab, the shell invokes `myapp --aesh-complete -- <partial-command-line>`, and aesh's full completion engine runs — including all custom `OptionCompleter` implementations.
+
+#### Quick Start
+
+The simplest approach uses the `handleDynamicCompletion()` helper:
+
+```java
+public class MyApp {
+    public static void main(String[] args) {
+        // Handle dynamic completion requests (called by the shell script)
+        if (AeshRuntimeRunner.handleDynamicCompletion(args, MyCommand.class)) {
+            return;
+        }
+
+        // Check for completion script generation flag
+        if (args.length > 0 && args[0].equals("--generate-completion")) {
+            ShellType shell = ShellType.valueOf(args.length > 1 ? args[1] : "BASH");
+            AeshRuntimeRunner.builder()
+                    .command(MyCommand.class)
+                    .generateDynamicCompletion(shell)
+                    .execute();
+            return;
+        }
+
+        // Normal execution
+        AeshRuntimeRunner.builder()
+                .command(MyCommand.class)
+                .args(args)
+                .execute();
+    }
+}
+```
+
+```bash
+# Generate and install dynamic bash completion
+$ myapp --generate-completion BASH > ~/.local/share/bash-completion/completions/myapp
+
+# Generate dynamic zsh completion
+$ myapp --generate-completion ZSH > ~/.zsh/completions/_myapp
+
+# Generate dynamic fish completion
+$ myapp --generate-completion FISH > ~/.config/fish/completions/myapp.fish
+```
+
+#### How It Works
+
+1. You generate a dynamic completion script and install it in your shell
+2. When the user presses Tab, the shell script calls `myapp --aesh-complete -- <partial-args>`
+3. `handleDynamicCompletion()` detects the `--aesh-complete` flag, runs the completion engine, and prints one candidate per line to stdout
+4. The shell script captures the output and presents it as completion candidates
+
+#### One-Shot Dynamic API
+
+Generate a dynamic script from a command class without building a runner:
+
+```java
+String bashScript = ShellCompletionGenerator.generateDynamic(
+        ShellType.BASH, MyCommand.class, "myapp");
+
+String zshScript = ShellCompletionGenerator.generateDynamic(
+        ShellType.ZSH, MyCommand.class, "myapp");
+
+String fishScript = ShellCompletionGenerator.generateDynamic(
+        ShellType.FISH, MyCommand.class, "myapp");
+```
+
+#### GraalVM Native Images
+
+Dynamic callback completion is ideal for GraalVM native images. Since native binaries start in ~10ms, tab completion feels instant. The generated scripts use the program name directly — no special configuration needed:
+
+```bash
+# Build native image (e.g., with Maven)
+$ mvn package -Pnative
+
+# Generate and install completion — the native binary handles --aesh-complete directly
+$ ./target/myapp --generate-completion BASH > ~/.local/share/bash-completion/completions/myapp
+```
+
+For JVM-based tools where users run via `java -jar`, you can use a wrapper script and set `completionProgramName()` to match the wrapper name:
+
+```java
+AeshRuntimeRunner.builder()
+        .command(MyCommand.class)
+        .generateDynamicCompletion(ShellType.BASH)
+        .completionProgramName("myapp")  // matches the wrapper script name
+        .execute();
+```
