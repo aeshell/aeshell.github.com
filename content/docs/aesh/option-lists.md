@@ -25,6 +25,7 @@ The `@OptionList` annotation defines options that accept multiple values separat
 | `renderer` | `Class<? extends OptionRenderer>` | `NullOptionRenderer.class` | Custom renderer |
 | `parser` | `Class<? extends OptionParser>` | `AeshOptionParser.class` | Custom parser |
 | `aliases` | `String[]` | `{}` | Alternative long names for this option |
+| `helpGroup` | `String` | `""` | Group heading for this option in help output (see [Options - Help Grouping](../options#help-grouping)) |
 
 ## Basic Example
 

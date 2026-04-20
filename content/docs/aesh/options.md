@@ -32,6 +32,7 @@ The `@Option` annotation defines command-line options (flags with values).
 | `renderer` | `Class<? extends OptionRenderer>` | `NullOptionRenderer.class` | Custom renderer |
 | `parser` | `Class<? extends OptionParser>` | `AeshOptionParser.class` | Custom parser |
 | `aliases` | `String[]` | `{}` | Alternative long names for this option |
+| `helpGroup` | `String` | `""` | Group heading for this option in help output |
 | `descriptionUrl` | `String` | `""` | URL for option documentation (clickable in supported terminals) |
 | `url` | `boolean` | `false` | Treat option value as a URL (rendered as clickable link) |
 
@@ -426,6 +427,118 @@ private List<String> items;
 ```
 
 Both `--items a,b,c` and `--item a,b,c` are accepted.
+
+## Help Grouping
+
+The `helpGroup` property organizes options under custom headings in `--help` output. Without it, all options appear under a single "Options:" heading. With `helpGroup`, you can create structured, readable help output by grouping related options together.
+
+### Basic Usage
+
+```java
+@CommandDefinition(name = "myapp", description = "My application", generateHelp = true)
+public class MyAppCommand implements Command<CommandInvocation> {
+
+    @Option(hasValue = false, description = "Output as JSON", helpGroup = "Output Format")
+    private boolean json;
+
+    @Option(hasValue = false, description = "Output as XML", helpGroup = "Output Format")
+    private boolean xml;
+
+    @Option(description = "Username", helpGroup = "Authentication")
+    private String user;
+
+    @Option(description = "Password", helpGroup = "Authentication")
+    private String password;
+
+    @Option(hasValue = false, description = "Verbose output")
+    private boolean verbose;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Help output:
+
+```
+Usage: myapp [<options>]
+My application
+
+Output Format:
+  --json      Output as JSON
+  --xml       Output as XML
+
+Authentication:
+  --user      Username
+  --password  Password
+
+Options:
+  --verbose   Verbose output
+```
+
+### How It Works
+
+1. Options with the same `helpGroup` value are displayed together under that heading
+2. Named groups appear first, in the order their first option was defined
+3. Options without a `helpGroup` (or with an empty value) appear under the default "Options:" heading
+4. If all options have a `helpGroup`, the "Options:" heading is omitted entirely
+5. Column alignment spans all groups, so descriptions stay aligned across the entire help output
+
+### With OptionList
+
+`helpGroup` also works with `@OptionList`:
+
+```java
+@OptionList(description = "Include patterns", helpGroup = "Filters")
+private List<String> include;
+
+@OptionList(description = "Exclude patterns", helpGroup = "Filters")
+private List<String> exclude;
+```
+
+### With Mixins
+
+Mixin options retain their `helpGroup` when included in a command. This makes mixins a natural way to add entire option groups:
+
+```java
+public class OutputMixin {
+    @Option(hasValue = false, description = "Output as JSON", helpGroup = "Output Format")
+    boolean json;
+
+    @Option(hasValue = false, description = "Output as XML", helpGroup = "Output Format")
+    boolean xml;
+}
+
+@CommandDefinition(name = "report", description = "Generate report", generateHelp = true)
+public class ReportCommand implements Command<CommandInvocation> {
+
+    @Mixin
+    OutputMixin output;
+
+    @Option(description = "Report title")
+    private String title;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+### Programmatic API
+
+When building commands programmatically, use `ProcessedOptionBuilder`:
+
+```java
+ProcessedOptionBuilder.builder()
+        .name("json")
+        .type(boolean.class)
+        .description("Output as JSON")
+        .helpGroup("Output Format")
+        .build();
+```
 
 ## Required Options
 
