@@ -26,6 +26,8 @@ The `@OptionList` annotation defines options that accept multiple values separat
 | `parser` | `Class<? extends OptionParser>` | `AeshOptionParser.class` | Custom parser |
 | `aliases` | `String[]` | `{}` | Alternative long names for this option |
 | `helpGroup` | `String` | `""` | Group heading for this option in help output (see [Options - Help Grouping](../options#help-grouping)) |
+| `exclusiveWith` | `String[]` | `{}` | Names of mutually exclusive options (see [Options - Mutually Exclusive Options](../options#mutually-exclusive-options)) |
+| `visibility` | `OptionVisibility` | `BRIEF` | Controls help and completion visibility (see [Options - Visibility Levels](../options#visibility-levels)) |
 
 ## Basic Example
 

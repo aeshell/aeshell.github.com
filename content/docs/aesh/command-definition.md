@@ -28,6 +28,8 @@ The `@CommandDefinition` annotation is used to define a command class.
 | `defaultValueProvider` | `Class<? extends DefaultValueProvider>` | `NullDefaultValueProvider.class` | Dynamic default value resolver |
 | `stopAtFirstPositional` | `boolean` | `false` | Stop option parsing after the first positional argument |
 | `helpUrl` | `String` | `""` | URL to documentation (shown in `--help` output) |
+| `helpGroup` | `String` | `""` | Group heading when listed as a subcommand in parent's help |
+| `helpSectionProvider` | `Class<? extends HelpSectionProvider>` | `NullHelpSectionProvider.class` | Provider for dynamic help sections |
 
 ## Example
 
@@ -182,3 +184,142 @@ Provides access to:
 - `stop()` - Stop the console
 - `getShell()` - Access the shell
 - `getHelpInfo(String)` - Get help text
+
+## Help Group for Subcommands
+
+The `helpGroup` property on `@CommandDefinition` (and `@GroupCommandDefinition`) controls how a subcommand appears in its parent's help output. Subcommands with the same `helpGroup` value are displayed together under that heading.
+
+### Basic Usage
+
+```java
+@GroupCommandDefinition(
+    name = "cli",
+    description = "My CLI tool",
+    generateHelp = true,
+    groupCommands = {
+        BuildCommand.class, TestCommand.class,
+        InstallCommand.class, PublishCommand.class,
+        InfoCommand.class, VersionCommand.class
+    }
+)
+public class CliCommand implements GroupCommand<CommandInvocation> {
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        return CommandResult.SUCCESS;
+    }
+}
+
+@CommandDefinition(name = "build", description = "Build the project", helpGroup = "Build")
+public class BuildCommand implements Command<CommandInvocation> { /* ... */ }
+
+@CommandDefinition(name = "test", description = "Run tests", helpGroup = "Build")
+public class TestCommand implements Command<CommandInvocation> { /* ... */ }
+
+@CommandDefinition(name = "install", description = "Install dependencies", helpGroup = "Publish")
+public class InstallCommand implements Command<CommandInvocation> { /* ... */ }
+
+@CommandDefinition(name = "publish", description = "Publish package", helpGroup = "Publish")
+public class PublishCommand implements Command<CommandInvocation> { /* ... */ }
+
+@CommandDefinition(name = "info", description = "Show project info")
+public class InfoCommand implements Command<CommandInvocation> { /* ... */ }
+
+@CommandDefinition(name = "version", description = "Show version")
+public class VersionCommand implements Command<CommandInvocation> { /* ... */ }
+```
+
+Help output:
+```
+Usage: cli [<options>]
+My CLI tool
+
+Build:
+    build     Build the project
+    test      Run tests
+
+Publish:
+    install   Install dependencies
+    publish   Publish package
+
+Other:
+    info      Show project info
+    version   Show version
+```
+
+### How It Works
+
+1. Subcommands with the same `helpGroup` value are grouped under that heading
+2. Named groups appear first, in the order their first subcommand was defined
+3. Subcommands without a `helpGroup` appear under a default heading
+4. If all subcommands have a `helpGroup`, there is no default group
+
+This is separate from the `helpGroup` property on `@Option`, which groups options within a single command's help output. See [Options - Help Grouping](/docs/aesh/options#help-grouping).
+
+## Help Section Provider
+
+The `helpSectionProvider` property lets you dynamically add sections to a command's help output at render time. This is useful for showing external plugins, aliases, or dynamically discovered commands without statically defining them.
+
+### Implementing a Provider
+
+Create a class that implements `HelpSectionProvider`:
+
+```java
+public class PluginHelpProvider implements HelpSectionProvider {
+
+    @Override
+    public Map<String, List<HelpEntry>> getAdditionalSections() {
+        Map<String, List<HelpEntry>> sections = new LinkedHashMap<>();
+
+        // Discover plugins at runtime
+        List<HelpEntry> plugins = new ArrayList<>();
+        plugins.add(new HelpEntry("docker", "Docker integration plugin"));
+        plugins.add(new HelpEntry("k8s", "Kubernetes deployment plugin"));
+        sections.put("Plugins", plugins);
+
+        return sections;
+    }
+}
+```
+
+### Registering the Provider
+
+```java
+@GroupCommandDefinition(
+    name = "app",
+    description = "My application",
+    generateHelp = true,
+    groupCommands = {RunCommand.class, BuildCommand.class},
+    helpSectionProvider = PluginHelpProvider.class
+)
+public class AppCommand implements GroupCommand<CommandInvocation> {
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Help output:
+```
+Usage: app [<options>]
+My application
+
+app commands:
+    run       Run the application
+    build     Build the project
+
+Plugins:
+    docker    Docker integration plugin
+    k8s       Kubernetes deployment plugin
+```
+
+### Merging with helpGroup
+
+If a provider section name matches an existing `helpGroup` from statically defined subcommands, the entries are appended to that group rather than creating a duplicate heading.
+
+### Key Points
+
+1. **Zero startup cost** -- The provider class is stored as a reference and only instantiated when help is rendered
+2. **Works with both `@CommandDefinition` and `@GroupCommandDefinition`**
+3. **HelpEntry** is a simple value class with `name()` and `description()` (description is optional)
+4. **Return an empty map** (not null) if there are no additional sections to show

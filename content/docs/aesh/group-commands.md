@@ -38,6 +38,8 @@ public class GitCommand implements GroupCommand<CommandInvocation> {
 | `groupCommands` | `Class[]` | `{}` | Array of subcommand classes |
 | `generateHelp` | `boolean` | `false` | Auto-generate `--help` option |
 | `aliases` | `String[]` | `{}` | Alternative names for the group |
+| `helpGroup` | `String` | `""` | Group heading when listed as a subcommand in parent's help |
+| `helpSectionProvider` | `Class<? extends HelpSectionProvider>` | `NullHelpSectionProvider.class` | Provider for dynamic help sections |
 
 ## Subcommands
 

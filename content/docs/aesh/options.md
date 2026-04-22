@@ -33,6 +33,8 @@ The `@Option` annotation defines command-line options (flags with values).
 | `parser` | `Class<? extends OptionParser>` | `AeshOptionParser.class` | Custom parser |
 | `aliases` | `String[]` | `{}` | Alternative long names for this option |
 | `helpGroup` | `String` | `""` | Group heading for this option in help output |
+| `exclusiveWith` | `String[]` | `{}` | Names of mutually exclusive options (without `--` prefix) |
+| `visibility` | `OptionVisibility` | `BRIEF` | Controls help and completion visibility (`BRIEF`, `FULL`, `HIDDEN`) |
 | `descriptionUrl` | `String` | `""` | URL for option documentation (clickable in supported terminals) |
 | `url` | `boolean` | `false` | Treat option value as a URL (rendered as clickable link) |
 
@@ -537,6 +539,204 @@ ProcessedOptionBuilder.builder()
         .type(boolean.class)
         .description("Output as JSON")
         .helpGroup("Output Format")
+        .build();
+```
+
+## Mutually Exclusive Options
+
+The `exclusiveWith` property declares that two or more options cannot be used together. If a user provides both, a `MutuallyExclusiveOptionException` is thrown during parsing.
+
+### Basic Usage
+
+```java
+@CommandDefinition(name = "export", description = "Export data", generateHelp = true)
+public class ExportCommand implements Command<CommandInvocation> {
+
+    @Option(hasValue = false, description = "Output as JSON", exclusiveWith = {"xml", "csv"})
+    private boolean json;
+
+    @Option(hasValue = false, description = "Output as XML", exclusiveWith = {"json", "csv"})
+    private boolean xml;
+
+    @Option(hasValue = false, description = "Output as CSV", exclusiveWith = {"json", "xml"})
+    private boolean csv;
+
+    @Option(hasValue = false, description = "Verbose output")
+    private boolean verbose;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Usage:
+```bash
+# Valid -- only one format selected
+$ export --json
+$ export --xml --verbose
+
+# Invalid -- mutually exclusive options used together
+$ export --json --xml
+Error: Options --json and --xml are mutually exclusive.
+```
+
+### How It Works
+
+1. Each option lists the names of options it conflicts with (long names, without the `--` prefix)
+2. The relationship should be declared on both sides: if `--json` lists `xml`, then `--xml` should list `json`
+3. Validation runs after parsing, at the same point as required option checks
+4. Non-exclusive options (like `--verbose` above) can be freely combined with any exclusive option
+
+### Tab Completion
+
+When an exclusive option has been set, conflicting options are automatically filtered from tab completion. For example, after typing `export --json`, pressing Tab will not suggest `--xml` or `--csv`.
+
+### With OptionList
+
+`exclusiveWith` also works with `@OptionList`:
+
+```java
+@OptionList(description = "Items to process", exclusiveWith = {"file"})
+private List<String> items;
+
+@Option(description = "Read items from file", exclusiveWith = {"items"})
+private String file;
+```
+
+### Programmatic API
+
+When building commands programmatically, use `ProcessedOptionBuilder`:
+
+```java
+ProcessedOptionBuilder.builder()
+        .name("json")
+        .type(boolean.class)
+        .hasValue(false)
+        .exclusiveWith("xml", "csv")
+        .build();
+```
+
+## Visibility Levels
+
+The `visibility` property controls whether an option appears in `--help` output and tab completion. This is useful for organizing help output by importance — showing essential options by default and revealing advanced or deprecated options only on request.
+
+### Visibility Values
+
+| Level | `--help` | `--help=all` | Tab completion |
+|-------|----------|--------------|----------------|
+| `BRIEF` (default) | Shown | Shown | Shown |
+| `FULL` | Hidden | Shown | Shown |
+| `HIDDEN` | Hidden | Hidden | Hidden |
+
+### Basic Usage
+
+```java
+@CommandDefinition(name = "serve", description = "Start server", generateHelp = true)
+public class ServeCommand implements Command<CommandInvocation> {
+
+    @Option(shortName = 'p', description = "Server port")
+    private int port;
+
+    @Option(description = "Bind address")
+    private String host;
+
+    @Option(description = "Enable request tracing", visibility = OptionVisibility.FULL)
+    private boolean trace;
+
+    @Option(description = "Thread pool size", visibility = OptionVisibility.FULL)
+    private int threads;
+
+    @Option(description = "Internal diagnostic token", visibility = OptionVisibility.HIDDEN)
+    private String diagnosticToken;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Default help shows only essential options:
+
+```bash
+$ serve --help
+Usage: serve [<options>]
+Start server
+
+Options:
+  -p, --port      Server port
+  --host          Bind address
+  -h, --help      Display help (use --help=all for all options)
+```
+
+Full help reveals advanced options:
+
+```bash
+$ serve --help=all
+Usage: serve [<options>]
+Start server
+
+Options:
+  -p, --port      Server port
+  --host          Bind address
+  --trace         Enable request tracing
+  --threads       Thread pool size
+  -h, --help      Display help (use --help=all for all options)
+```
+
+The `--diagnosticToken` option never appears in help but still works when typed explicitly.
+
+### When to Use Each Level
+
+- **`BRIEF`** — Options every user needs to know about. This is the default; existing commands are unaffected.
+- **`FULL`** — Advanced tuning, debugging, or rarely-used options. Power users can discover them with `--help=all`.
+- **`HIDDEN`** — Internal, deprecated, or experimental options that should not be discoverable. They still parse and work when used explicitly.
+
+### Tab Completion
+
+`HIDDEN` options are excluded from tab completion. `BRIEF` and `FULL` options are both offered during completion — visibility only affects help output for `FULL` options.
+
+### With Help Grouping
+
+Visibility works with `helpGroup`. A group heading is only printed if it contains at least one visible option:
+
+```java
+@Option(description = "Enable tracing", helpGroup = "Diagnostics",
+        visibility = OptionVisibility.FULL)
+private boolean trace;
+
+@Option(description = "Profile mode", helpGroup = "Diagnostics",
+        visibility = OptionVisibility.FULL)
+private boolean profile;
+```
+
+With `--help`, the "Diagnostics" group is omitted entirely. With `--help=all`, it appears with both options.
+
+### With OptionList and OptionGroup
+
+Visibility also works with `@OptionList` and `@OptionGroup`:
+
+```java
+@OptionList(description = "Debug modules", visibility = OptionVisibility.FULL)
+private List<String> debugModules;
+
+@OptionGroup(shortName = 'X', description = "Internal flags",
+             visibility = OptionVisibility.HIDDEN)
+private Map<String, String> internalFlags;
+```
+
+### Programmatic API
+
+When building commands programmatically, use `ProcessedOptionBuilder`:
+
+```java
+ProcessedOptionBuilder.builder()
+        .name("trace")
+        .type(boolean.class)
+        .description("Enable request tracing")
+        .visibility(OptionVisibility.FULL)
         .build();
 ```
 
