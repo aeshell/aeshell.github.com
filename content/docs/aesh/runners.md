@@ -775,23 +775,38 @@ public CommandResult execute(CommandInvocation invocation) {
 
 ### Runtime Runner
 
-With runtime execution, handle errors in your application code:
+`AeshRuntimeRunner.execute()` returns a `CommandResult` with an exit code that reflects what happened:
+
+| Scenario | Exit code | Constant |
+|----------|-----------|----------|
+| Command succeeds | `0` | `CommandResult.SUCCESS` |
+| Parse error (unknown option, missing required arg) | `2` | `CommandResult.valueOf(2)` |
+| Option validation error | `2` | `CommandResult.valueOf(2)` |
+| Command not found | `-1` | `CommandResult.FAILURE` |
+| Command execution error | `-1` | `CommandResult.FAILURE` |
+| Command validator error | `-1` | `CommandResult.FAILURE` |
+
+Exit code 2 follows the POSIX convention for usage errors and matches the behavior of picocli and most CLI frameworks. This ensures scripts and CI pipelines correctly detect invalid input:
+
+```bash
+mytool --unknown-option || echo "Failed with exit $?"
+# Failed with exit 2
+```
+
+In code, check the result:
 
 ```java
-AeshRuntimeRunner runner = AeshRuntimeRunner.builder()
+CommandResult result = AeshRuntimeRunner.builder()
         .command(MyCommand.class)
-        .build();
+        .args(args)
+        .execute();
 
-try {
-    String result = runner.execute("mycommand --option value");
-    if (result.contains("Error")) {
-        // Handle command error
-    }
-} catch (Exception e) {
-    // Handle execution exception
-    e.printStackTrace();
+if (result != null && result.isFailure()) {
+    System.exit(result.getResultValue());
 }
 ```
+
+For **group commands**, when a parse error occurs on a subcommand, the error message is followed by the subcommand's help (not the root group's help). This works with nested groups as well — `docker container start --badopt` shows help for `start`, not for `docker`.
 
 ## Working Examples
 
