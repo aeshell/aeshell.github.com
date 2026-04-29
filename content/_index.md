@@ -67,6 +67,7 @@ AeshRuntimeRunner.builder()
 
 **Command Definition**
 - Annotation-based (`@CommandDefinition`, `@Option`, `@Argument`) or builder API
+- Optional [compile-time annotation processor](/docs/aesh/annotation-processor) eliminates runtime reflection
 - Automatic parsing and type conversion (String, Integer, Boolean, File, Enum, custom types)
 - Support for short (`-v`) and long (`--verbose`) option names
 - Required and optional parameters with default values
@@ -77,9 +78,11 @@ AeshRuntimeRunner.builder()
 - Dynamic command registration and removal at runtime
 
 **User Experience**
-- Automatic help generation (`--help`)
+- Automatic help generation (`--help`) with [visibility levels](/docs/aesh/options#visibility-levels)
 - Tab completion for commands, options, and values
+- Shell completion script generation for bash, zsh, and fish
 - Built-in completers for files, booleans, enums
+- [Ghost text suggestions](/docs/aesh/ghost-text-suggestions) as you type
 - Command history and line editing (via Readline)
 - Clear error messages and validation feedback
 
@@ -94,6 +97,15 @@ AeshRuntimeRunner.builder()
 - **Console mode** - Interactive shell with readline features
 - **Runtime mode** - Single command execution from command-line arguments
 - **Programmatic** - Direct command invocation from Java code
+
+**Performance & Native Images**
+- [Annotation processor](/docs/aesh/annotation-processor) shifts all reflection to compile time -- **3-4x faster** startup than the reflection path
+- **67-655x faster** command registration than picocli in benchmarks
+- **8-21x faster** command-line parsing than picocli
+- GraalVM native-image friendly -- generated code uses direct `new` calls, no reflection configuration needed
+- Zero external dependencies
+
+Coming from picocli? See the [Migration Guide](/docs/aesh/migrating-from-picocli).
 
 ### Use Cases
 

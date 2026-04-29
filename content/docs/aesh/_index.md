@@ -195,6 +195,7 @@ Ready to build your CLI application?
 3. **[Command Definition](command-definition)** - Learn about command structure
 4. **[Extensions Library](extensions)** - Use ready-made commands (ls, cd, cat, etc.)
 5. **[Examples](examples)** - Explore complete working examples
+6. **[Migrating from Picocli](migrating-from-picocli)** - Annotation mapping and migration guide
 
 ## Æsh vs Æsh Readline
 
