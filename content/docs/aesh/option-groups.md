@@ -122,6 +122,37 @@ Usage:
 $ build -Pversion=2.0 -Ptarget=release -Ehome=/opt/app
 ```
 
+## Keys Without Values
+
+By default, `@OptionGroup` requires `key=value` format. Specifying just a key (e.g., `-Dfoo`) without `=` results in a parse error.
+
+When a `defaultValue` is set, keys without `=` are accepted and the default value is used:
+
+```java
+@OptionGroup(shortName = 'D', description = "System properties",
+             defaultValue = "")
+private Map<String, String> properties;
+```
+
+Usage:
+```bash
+$ run -Dverbose -Dport=8080
+```
+
+This produces `{"verbose": "", "port": "8080"}`. The key `verbose` gets the default value (empty string), while `port` gets the explicit value `8080`.
+
+This is useful for Java-style `-D` flags where `-Dflag` is equivalent to setting the property to an empty string:
+
+```java
+@OptionGroup(shortName = 'D', description = "System properties",
+             defaultValue = "true")
+private Map<String, String> properties;
+```
+
+With `defaultValue = "true"`, `-Dverbose` produces `{"verbose": "true"}`.
+
+The same default value applies when `=` is present but the value is empty: `-Dkey=` also uses the default value.
+
 ## Differences from @OptionList
 
 | | `@OptionGroup` | `@OptionList` |

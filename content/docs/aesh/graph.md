@@ -67,6 +67,9 @@ String output = Graph.render(root, 25);
 
 // Custom style + max width
 String output = Graph.render(root, GraphStyle.ASCII, 25);
+
+// Custom style + max width + label wrapping
+String output = Graph.render(root, GraphStyle.UNICODE, 60, 20);
 ```
 
 ## Builder API
@@ -92,6 +95,7 @@ String output = Graph.<Task>builder()
 | `children(Function<T, List<T>>)` | *required* | Extracts children (null/empty = leaf) |
 | `style(GraphStyle)`              | `UNICODE`  | Visual style for connectors           |
 | `maxWidth(int)`                  | `0`        | Max output width (0 = no limit)       |
+| `maxLabelWidth(int)`             | `0`        | Max label width before wrapping (0 = no wrapping) |
 
 Calling `build()` throws `IllegalStateException` if `label` or `children` are not set.
 
@@ -236,6 +240,55 @@ Compile  │  │  Test  │  Lint
 
 A `maxWidth` of `0` (the default) means no limit. The wrapping applies to the node label layers; routing lines between layers may extend slightly beyond `maxWidth` when connecting nodes across split rows.
 
+## Label Wrapping
+
+When node labels are long, the `maxLabelWidth` parameter wraps them at word boundaries. Each label that exceeds the limit is split into multiple lines, and the graph layout accounts for the variable node heights.
+
+```java
+GraphNode root = GraphNode.of("Build and Deploy Pipeline")
+        .child("Compile Source Code")
+        .child("Run Integration Tests");
+
+// Without label wrapping:
+Graph.render(root);
+```
+
+```
+     Build and Deploy Pipeline
+     ┌──────────────┴──────────┐
+Compile Source Code   Run Integration Tests
+```
+
+```java
+// With maxLabelWidth=12:
+Graph.render(root, GraphStyle.UNICODE, 0, 12);
+```
+
+```
+  Build and
+   Deploy
+  Pipeline
+  ┌───┴────┐
+Compile  Run
+Source   Integration
+ Code    Tests
+```
+
+Labels wrap at spaces when possible. If a label has no spaces within the limit, it hard-breaks at the exact character position.
+
+With the builder API:
+
+```java
+String output = Graph.<Task>builder()
+        .label(Task::getDescription)
+        .children(Task::getDependencies)
+        .maxLabelWidth(20)
+        .build()
+        .render(rootTask);
+```
+
+A `maxLabelWidth` of `0` (the default) means no wrapping.
+
 ## Using in Commands
 
 Here is a complete command example that displays a build dependency graph:
@@ -320,6 +373,7 @@ Use `Tree` for simple hierarchies (file systems, org charts). Use `Graph` when n
 | `render(GraphNode, int)`                  | `String`   | Render with UNICODE style + max width    |
 | `render(GraphNode, GraphStyle)`           | `String`   | Render with specified style              |
 | `render(GraphNode, GraphStyle, int)`      | `String`   | Render with specified style + max width  |
+| `render(GraphNode, GraphStyle, int, int)` | `String`   | Render with style + max width + label wrapping |
 | `builder()`                               | `Builder`  | Create a generic builder                 |
 
 ### GraphStyle
