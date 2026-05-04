@@ -977,6 +977,23 @@ public static class PathConverter implements Converter<Path> {
 }
 ```
 
+## File-Typed Options
+
+When an option field is typed as `Resource`, `File`, or `Path`, Aesh automatically provides file path tab completion and type conversion -- no completer or converter needed:
+
+```java
+@Option(description = "Output file")
+private Resource output;    // automatic file completion + Resource API
+
+@Option(description = "Config file")
+private File config;         // automatic file completion + java.io.File
+
+@Option(description = "Data directory")
+private Path dataDir;        // automatic file completion + java.nio.file.Path
+```
+
+`Resource` is recommended when your command needs to read, write, or inspect files, as it provides a richer API with glob expansion, directory filtering, and I/O streams. See [File and Resource Handling](../resources) for the full API and filtering options.
+
 ## Short Names
 
 The `shortName` defines the single-character option:

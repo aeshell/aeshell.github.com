@@ -28,7 +28,7 @@ The `ConverterInvocation` provides:
 - `float` / `Float`, `double` / `Double`
 - `boolean` / `Boolean` (accepts `true`, `false`, `yes`, `no`)
 - `char` / `Character`
-- `File`, `Path`
+- `File`, `Path`, [`Resource`](../resources)
 - Any `Enum` type (matched by name, case-insensitive)
 
 ## Enum Conversion

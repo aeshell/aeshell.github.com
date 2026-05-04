@@ -256,7 +256,7 @@ The generators introspect the command model and produce:
 - **Option aliases** (e.g., `--ea` for `--enableassertions`)
 - **Negatable options** (e.g., `--no-verbose` for `--verbose`)
 - **Default value completions** (offered when completing option values)
-- **File path completion** for `File`, `Path`, and `Resource`-typed options
+- **File path completion** for `File`, `Path`, and [`Resource`](../resources)-typed options
 - **Subcommand names** for group commands
 - **Positional argument completion** (file completion for `@Argument`/`@Arguments` with file types)
 
