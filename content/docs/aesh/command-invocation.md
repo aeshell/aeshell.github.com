@@ -49,8 +49,9 @@ public interface CommandInvocation {
     // Operator support
     Operator getOperator();
 
-    // Piped input
-    String getInputLine() throws InterruptedException;
+    // Standard input (piped or redirected)
+    InputStream getStdin();
+    boolean hasStdin();
 
     // Sub-command mode
     boolean enterSubCommandMode(Command<?> command);
@@ -309,30 +310,50 @@ public CommandResult execute(CommandInvocation invocation) {
 | `OR` | `\|\|` | Execute next if failure |
 | `END` | `;` | Execute next unconditionally |
 
-## Piped Input
+## Standard Input (Pipes and Redirects)
 
-### getInputLine()
+### getStdin()
 
-Reads a line of input when the command is receiving piped data.
+Returns an `InputStream` when the command is receiving piped or redirected input. Returns `null` if no input is available. Both `cmd1 | cmd2` and `cmd2 < file` deliver input through this method.
 
 ```java
 @CommandDefinition(name = "uppercase", description = "Convert input to uppercase")
 public class UppercaseCommand implements Command<CommandInvocation> {
-    
+
     @Override
-    public CommandResult execute(CommandInvocation invocation) throws InterruptedException {
-        String line;
-        while ((line = invocation.getInputLine()) != null) {
-            invocation.println(line.toUpperCase());
+    public CommandResult execute(CommandInvocation invocation) throws CommandException {
+        InputStream stdin = invocation.getStdin();
+        if (stdin != null) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(stdin))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    invocation.println(line.toUpperCase());
+                }
+            } catch (IOException e) {
+                throw new CommandException(e);
+            }
         }
         return CommandResult.SUCCESS;
     }
 }
 ```
 
-**Usage:** `echo "hello world" | uppercase`
+**Usage:** `echo "hello world" | uppercase` or `uppercase < input.txt`
 
 **Output:** `HELLO WORLD`
+
+### hasStdin()
+
+Lightweight check for whether piped or redirected input is available, without allocating any streams.
+
+```java
+if (invocation.hasStdin()) {
+    // Process piped/redirected input
+} else {
+    // Interactive mode
+}
+```
 
 ## Sub-Command Mode Methods
 
@@ -701,8 +722,8 @@ public class MyCommandInvocationImpl implements MyCommandInvocation {
     }
     
     @Override
-    public String getInputLine() throws InterruptedException {
-        return delegate.getInputLine();
+    public InputStream getStdin() {
+        return delegate.getStdin();
     }
     
     // Custom methods for application services
@@ -924,9 +945,9 @@ The `CommandInvocation` object is **not thread-safe**. It should only be used wi
 
 1. **Always use invocation for output** - Use `invocation.println()` instead of `System.out.println()` to ensure output goes to the correct terminal.
 
-2. **Handle InterruptedException** - Methods like `readLine()` and `getInputLine()` throw `InterruptedException`. Always declare it in your method signature.
+2. **Handle InterruptedException** - Methods like `readLine()` throw `InterruptedException`. Always declare it in your method signature.
 
-3. **Check for null input** - `getInputLine()` returns `null` when there's no more piped input.
+3. **Check for null stdin** - `getStdin()` returns `null` when there's no piped or redirected input. Use `hasStdin()` for a lightweight check.
 
 4. **Use Prompt for sensitive input** - Always use `Prompt` with a mask character for passwords and other sensitive data.
 

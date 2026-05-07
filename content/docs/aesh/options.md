@@ -33,6 +33,7 @@ The `@Option` annotation defines command-line options (flags with values).
 | `parser` | `Class<? extends OptionParser>` | `AeshOptionParser.class` | Custom parser |
 | `aliases` | `String[]` | `{}` | Alternative long names for this option |
 | `helpGroup` | `String` | `""` | Group heading for this option in help output |
+| `allowedValues` | `String[]` | `{}` | Restricts option to a fixed set of valid values |
 | `exclusiveWith` | `String[]` | `{}` | Names of mutually exclusive options (without `--` prefix) |
 | `visibility` | `OptionVisibility` | `BRIEF` | Controls help and completion visibility (`BRIEF`, `FULL`, `HIDDEN`) |
 | `descriptionUrl` | `String` | `""` | URL for option documentation (clickable in supported terminals) |
@@ -962,6 +963,36 @@ if (password == null) {
     password = shell.readLine(new Prompt("Password: ", '*'));
 }
 ```
+
+## Allowed Values
+
+The `allowedValues` attribute restricts an option to a fixed set of valid string values. Invalid values are rejected at parse time with a clear error message, and the allowed values are offered as tab completion candidates automatically.
+
+```java
+@Option(name = "format",
+        allowedValues = { "text", "json", "yaml" },
+        description = "Output format")
+private String format;
+```
+
+```
+$ mycmd --format text    # OK
+$ mycmd --format xml     # Error: Invalid value 'xml' for option '--format'. Allowed values: text, json, yaml
+$ mycmd --format <tab>   # Offers: text, json, yaml
+```
+
+When a custom completer is also specified, it takes precedence over the `allowedValues` completion.
+
+`allowedValues` is also available on `@OptionList` to restrict each element in the list:
+
+```java
+@OptionList(name = "tags",
+            allowedValues = { "v1", "v2", "latest" },
+            description = "Deployment tags")
+private List<String> tags;
+```
+
+For enum-typed options, you don't need `allowedValues` -- enums automatically validate and complete from their constants (see [Converters -- Enum Conversion](../converters#enum-conversion)).
 
 ## Custom Types with Converter
 

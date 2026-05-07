@@ -254,7 +254,7 @@ List<Resource> resolved = home.resolve(cwd);
 | **API richness** | Full (listing, glob, I/O, copy/move) | Java standard | Java NIO |
 | **Glob expansion** | Built-in via `resolve()` | Manual | Via `PathMatcher` |
 | **Filtering** | `ResourceFilter` integration | Manual | Manual |
-| **Abstraction** | Pluggable (file, pipeline, remote) | Local filesystem only | Local filesystem only |
+| **Abstraction** | Pluggable (file, custom implementations) | Local filesystem only | Local filesystem only |
 | **Recommendation** | Use for commands that work with files | Use when you need `java.io.File` APIs | Use when you need `java.nio.file` APIs |
 
 Use `Resource` when your command needs filesystem operations and you want the richest API. Use `File` or `Path` if you need compatibility with existing Java APIs that expect those types.

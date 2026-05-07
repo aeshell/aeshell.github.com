@@ -54,7 +54,7 @@ cat data.csv | filter --column status --value active | sort --by name
 
 ### Writing Pipeable Commands
 
-Commands that produce output for piping should write to the shell normally. Commands that consume piped input should read from `getInputLine()`:
+Commands that produce output for piping should write to the shell normally. Commands that consume piped input read from `getStdin()`:
 
 ```java
 @CommandDefinition(name = "upper", description = "Convert input to uppercase")
@@ -62,10 +62,18 @@ public class UpperCommand implements Command<CommandInvocation> {
 
     @Override
     public CommandResult execute(CommandInvocation invocation)
-            throws InterruptedException {
-        String line;
-        while ((line = invocation.getInputLine()) != null) {
-            invocation.println(line.toUpperCase());
+            throws CommandException {
+        InputStream stdin = invocation.getStdin();
+        if (stdin != null) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(stdin))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    invocation.println(line.toUpperCase());
+                }
+            } catch (IOException e) {
+                throw new CommandException(e);
+            }
         }
         return CommandResult.SUCCESS;
     }
@@ -158,7 +166,7 @@ process < input.txt
 transform < input.csv > output.csv
 ```
 
-Commands receiving redirected input read it through `getInputLine()`, the same way they receive piped input.
+Commands receiving redirected input read it through `getStdin()`, the same way they receive piped input. Both `cmd1 | cmd2` and `cmd2 < file` deliver input via `invocation.getStdin()`.
 
 ## Conditional Execution
 
@@ -278,16 +286,25 @@ public class FilterCommand implements Command<CommandInvocation> {
 
     @Override
     public CommandResult execute(CommandInvocation invocation)
-            throws InterruptedException {
-        String line;
-        boolean matched = false;
+            throws CommandException {
+        InputStream stdin = invocation.getStdin();
+        if (stdin == null) {
+            return CommandResult.FAILURE;
+        }
 
-        while ((line = invocation.getInputLine()) != null) {
-            boolean contains = line.contains(pattern);
-            if (contains != invert) {
-                invocation.println(line);
-                matched = true;
+        boolean matched = false;
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(stdin))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                boolean contains = line.contains(pattern);
+                if (contains != invert) {
+                    invocation.println(line);
+                    matched = true;
+                }
             }
+        } catch (IOException e) {
+            throw new CommandException(e);
         }
 
         return matched ? CommandResult.SUCCESS : CommandResult.FAILURE;
@@ -296,7 +313,7 @@ public class FilterCommand implements Command<CommandInvocation> {
 ```
 
 This command:
-- Reads piped input or redirected input via `getInputLine()`
+- Reads piped input or redirected input via `getStdin()`
 - Writes matching lines to stdout (available for further piping or redirection)
 - Returns `FAILURE` if nothing matched, enabling conditional chaining:
 
