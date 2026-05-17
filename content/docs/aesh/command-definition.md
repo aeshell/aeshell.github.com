@@ -317,9 +317,52 @@ Plugins:
 
 If a provider section name matches an existing `helpGroup` from statically defined subcommands, the entries are appended to that group rather than creating a duplicate heading.
 
+### Header and Footer
+
+`HelpSectionProvider` can also supply header text (shown before the synopsis) and footer text (shown after everything). Both are `default` methods returning `String`, so existing implementations are unaffected:
+
+```java
+public class JBangHelpProvider implements HelpSectionProvider {
+
+    @Override
+    public String getHeader() {
+        return "jbang - Unleash the power of Java\n"
+             + "  jbang init hello.java        (initialize a script)\n"
+             + "  jbang hello.java [args...]    (run a .java file)";
+    }
+
+    @Override
+    public String getFooter() {
+        return "See https://jbang.dev for more info";
+    }
+
+    @Override
+    public Map<String, List<HelpEntry>> getAdditionalSections() {
+        return Collections.emptyMap();
+    }
+}
+```
+
+Help output:
+```
+jbang - Unleash the power of Java
+  jbang init hello.java        (initialize a script)
+  jbang hello.java [args...]   (run a .java file)
+Usage: jbang [<options>]
+JBang tool
+
+Options:
+  ...
+
+See https://jbang.dev for more info
+```
+
+Both methods return `null` by default (no header/footer). The text can contain newline characters for multi-line content.
+
 ### Key Points
 
 1. **Zero startup cost** -- The provider class is stored as a reference and only instantiated when help is rendered
 2. **Works with both `@CommandDefinition` and `@GroupCommandDefinition`**
 3. **HelpEntry** is a simple value class with `name()` and `description()` (description is optional)
 4. **Return an empty map** (not null) if there are no additional sections to show
+5. **Header** appears before the synopsis, **footer** appears after all other content

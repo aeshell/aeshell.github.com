@@ -587,7 +587,7 @@ Error: Options --json and --xml are mutually exclusive.
 
 1. Each option lists the names of options it conflicts with (long names, without the `--` prefix)
 2. The relationship should be declared on both sides: if `--json` lists `xml`, then `--xml` should list `json`
-3. Validation runs after parsing, at the same point as required option checks
+3. Validation runs after parsing in both `STRICT` and `VALIDATE` modes, so it is enforced whether you use the interactive console or the runtime API
 4. Non-exclusive options (like `--verbose` above) can be freely combined with any exclusive option
 
 ### Tab Completion
@@ -992,7 +992,7 @@ When a custom completer is also specified, it takes precedence over the `allowed
 private List<String> tags;
 ```
 
-For enum-typed options, you don't need `allowedValues` -- enums automatically validate and complete from their constants (see [Converters -- Enum Conversion](../converters#enum-conversion)).
+For enum-typed options, you don't need to set `allowedValues` manually -- aesh automatically populates `allowedValues` from the enum constants (lowercased). This means enum options get both tab completion and consistent `OptionValidatorException` error messages ("Invalid value 'xyz' for option '--format'. Allowed values: text, json, yaml") without any extra configuration. The check is case-insensitive, so `TEXT`, `text`, and `Text` are all accepted. See also [Converters -- Enum Conversion](../converters#enum-conversion).
 
 ## Custom Types with Converter
 

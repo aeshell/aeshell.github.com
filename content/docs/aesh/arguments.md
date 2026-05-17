@@ -12,6 +12,8 @@ The `@Argument` annotation defines positional command-line arguments.
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `description` | `String` | `""` | Help description |
+| `paramLabel` | `String` | `""` | Display label in help synopsis (defaults to field name) |
+| `arity` | `String` | `""` | Number of values accepted (e.g., `"0..1"`, `"1"`) |
 | `required` | `boolean` | `false` | Is argument required? |
 | `defaultValue` | `String[]` | `{}` | Default values |
 | `askIfNotSet` | `boolean` | `false` | Prompt user if not set |
@@ -44,6 +46,28 @@ public class EchoCommand implements Command<CommandInvocation> {
 Usage: `echo Hello World`
 
 ## Multiple Arguments with @Arguments
+
+The `@Arguments` annotation is for multiple positional values using a `Collection`:
+
+### @Arguments Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `description` | `String` | `""` | Help description |
+| `paramLabel` | `String` | `""` | Display label in help synopsis (defaults to field name) |
+| `arity` | `String` | `""` | Number of values accepted (e.g., `"2"`, `"1..*"`, `"0..1"`) |
+| `type` | `Class<?>` | `String.class` | Element type |
+| `valueSeparator` | `char` | `' '` | Separator between values |
+| `required` | `boolean` | `false` | Is at least one value required? |
+| `defaultValue` | `String[]` | `{}` | Default values |
+| `askIfNotSet` | `boolean` | `false` | Prompt user if not set |
+| `converter` | `Class<? extends Converter>` | `NullConverter.class` | Custom value converter |
+| `completer` | `Class<? extends OptionCompleter>` | `NullOptionCompleter.class` | Custom completer |
+| `validator` | `Class<? extends OptionValidator>` | `NullValidator.class` | Custom validator |
+| `activator` | `Class<? extends OptionActivator>` | `NullActivator.class` | Custom activator |
+| `parser` | `Class<? extends OptionParser>` | `AeshOptionParser.class` | Custom parser |
+
+### Basic Example
 
 For multiple values, use `@Arguments` (plural) with a `Collection`:
 
@@ -114,6 +138,87 @@ private String file;
 @Argument(defaultValue = "output.txt", description = "Output file")
 private String outputFile;
 ```
+
+## Param Label
+
+By default, the help synopsis shows the field name (e.g., `<input>`). Use `paramLabel` to customize the display label:
+
+```java
+@Argument(paramLabel = "scriptOrFile", description = "A file or URL to run")
+private String input;
+```
+
+Help shows: `Usage: run [<options>] <scriptOrFile>` instead of `Usage: run [<options>] <input>`.
+
+`paramLabel` is also available on `@Arguments`:
+
+```java
+@Arguments(paramLabel = "sources", description = "Source files to compile")
+private List<String> files;
+```
+
+## Arity
+
+The `arity` attribute controls how many values an argument accepts. By default, `@Argument` accepts 0 or 1 values, and `@Arguments` accepts 0 or more. Use `arity` to override this.
+
+### Syntax
+
+| Arity | Meaning |
+|-------|---------|
+| `"2"` | Exactly 2 values |
+| `"0..1"` | Optional (0 or 1) |
+| `"1..*"` | One or more |
+| `"0..*"` | Zero or more (default for `@Arguments`) |
+| `"2..4"` | Between 2 and 4 |
+
+### Example: Exact Count
+
+```java
+@CommandDefinition(name = "config-set", description = "Set a configuration value")
+public class ConfigSetCommand implements Command<CommandInvocation> {
+
+    @Arguments(arity = "2", paramLabel = "args", description = "key and value")
+    private List<String> args;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        String key = args.get(0);
+        String value = args.get(1);
+        invocation.println("Set " + key + " = " + value);
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+```bash
+$ config-set mykey myvalue    # OK
+$ config-set mykey            # Error: Argument 'args' requires at least 2 values, but got 1.
+$ config-set a b c            # Error: Too many arguments. Maximum is 2.
+```
+
+Help synopsis: `Usage: config-set [<options>] <args> <args>`
+
+### Example: One or More
+
+```java
+@Arguments(arity = "1..*", paramLabel = "files", description = "Files to process")
+private List<String> files;
+```
+
+Help synopsis: `Usage: process [<options>] <files>...`
+
+### Example: Optional Single
+
+```java
+@Arguments(arity = "0..1", description = "Optional output file")
+private List<String> output;
+```
+
+Help synopsis: `Usage: generate [<options>] [<output>]`
+
+### Interaction with `required`
+
+When `arity` is set, it takes precedence over `required` for count validation. Setting `arity = "1..*"` implicitly requires at least one value. Setting `arity = "0..1"` makes the argument optional regardless of the `required` flag.
 
 ## Combined with Options
 
