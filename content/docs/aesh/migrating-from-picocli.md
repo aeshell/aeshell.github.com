@@ -59,14 +59,14 @@ Key differences:
 
 | Picocli | Aesh |
 |---------|------|
-| `@Parameters(index = "0")` | `@Argument` |
-| `@Parameters List<String>` | `@Arguments` |
+| `@Parameters(index = "0")` | `@Argument(index = "0")` |
+| `@Parameters(index = "1..*") List<String>` | `@Arguments(index = "1..*")` |
 | `@Parameters(description = "...")` | `@Argument(description = "...")` |
 | `@Parameters(paramLabel = "FILE")` | `@Argument(paramLabel = "FILE")` |
 | `@Parameters(arity = "1..*")` | `@Arguments(arity = "1..*")` |
 | `@Parameters(arity = "2")` | `@Arguments(arity = "2")` |
 
-Aesh uses `@Argument` for a single positional argument and `@Arguments` for multiple. There is no `index` attribute -- field declaration order determines position. The `paramLabel` attribute customizes the display name in help synopsis, and `arity` constrains how many values are accepted (e.g., `"2"` for exactly two, `"1..*"` for one-or-more).
+Aesh uses `@Argument` for singular positional values and `@Arguments` for multiple values. Both support explicit `index` ranges, so picocli `@Parameters(index = ...)` maps directly. The `paramLabel` attribute customizes the display name in help synopsis, and `arity` constrains how many values are accepted (e.g., `"2"` for exactly two, `"1..*"` for one-or-more).
 
 ### Other Annotations
 

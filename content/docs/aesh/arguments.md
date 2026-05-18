@@ -14,6 +14,7 @@ The `@Argument` annotation defines positional command-line arguments.
 | `description` | `String` | `""` | Help description |
 | `paramLabel` | `String` | `""` | Display label in help synopsis (defaults to field name) |
 | `arity` | `String` | `""` | Number of values accepted (e.g., `"0..1"`, `"1"`) |
+| `index` | `String` | `"0"` | Positional index or range (e.g., `"0"`, `"2..2"`) |
 | `required` | `boolean` | `false` | Is argument required? |
 | `defaultValue` | `String[]` | `{}` | Default values |
 | `askIfNotSet` | `boolean` | `false` | Prompt user if not set |
@@ -56,6 +57,7 @@ The `@Arguments` annotation is for multiple positional values using a `Collectio
 | `description` | `String` | `""` | Help description |
 | `paramLabel` | `String` | `""` | Display label in help synopsis (defaults to field name) |
 | `arity` | `String` | `""` | Number of values accepted (e.g., `"2"`, `"1..*"`, `"0..1"`) |
+| `index` | `String` | `"1..*"` | Positional index or range (e.g., `"1..*"`, `"3..5"`) |
 | `type` | `Class<?>` | `String.class` | Element type |
 | `valueSeparator` | `char` | `' '` | Separator between values |
 | `required` | `boolean` | `false` | Is at least one value required? |
@@ -89,18 +91,50 @@ public class SumCommand implements Command<CommandInvocation> {
 
 Usage: `sum 1 2 3 4 5`
 
-## Combining @Argument with @Arguments
+## Indexed Positional Parameters
 
-`@Argument` (singular) and `@Arguments` (plural) can be used together on the same command. The first positional value is captured by `@Argument`, and any remaining positional values overflow into `@Arguments`:
+Aesh supports explicit positional indexes on both `@Argument` and `@Arguments`.
+
+### Index Syntax
+
+| Syntax | Meaning |
+|--------|---------|
+| `"0"` | Exactly positional index 0 |
+| `"2..4"` | Positional indexes 2 through 4 |
+| `"1..*"` | Positional indexes 1 and above |
+
+### Multiple `@Argument` Example
+
+```java
+@CommandDefinition(name = "copy2")
+public class Copy2Command implements Command<CommandInvocation> {
+
+    @Argument(index = "0", description = "Source path")
+    private String source;
+
+    @Argument(index = "1", description = "Destination path")
+    private String destination;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        invocation.println(source + " -> " + destination);
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+### Combining `@Argument` with `@Arguments`
+
+`@Argument` (singular) and `@Arguments` (plural) can be used together with explicit indexes. A common pattern is one singular argument at index `0` and overflow values from index `1` onward:
 
 ```java
 @CommandDefinition(name = "run", description = "Run a script")
 public class RunCommand implements Command<CommandInvocation> {
 
-    @Argument(description = "Script file or URL")
+    @Argument(index = "0", description = "Script file or URL")
     private String scriptFile;
 
-    @Arguments(description = "Script arguments")
+    @Arguments(index = "1..*", description = "Script arguments")
     private List<String> scriptArgs = new ArrayList<>();
 
     @Override
@@ -123,7 +157,12 @@ Script: myscript.java
 Args: []
 ```
 
-This eliminates the need to manually split a single `@Arguments` list. When only `@Argument` or `@Arguments` is defined (not both), behavior is unchanged.
+When only `@Argument` or `@Arguments` is defined, default indexes preserve legacy behavior.
+
+### Validation Rules
+
+- Positional ranges must not overlap.
+- If a token lands on an unsupported positional index, parsing fails with an error that includes the token index and declared ranges.
 
 ## Required Argument
 
