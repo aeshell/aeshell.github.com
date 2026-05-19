@@ -11,9 +11,9 @@ The `aesh-processor` module provides a compile-time annotation processor that ge
 
 By default, Aesh uses runtime reflection to scan `@CommandDefinition`, `@Option`, `@Argument` and other annotations every time a command is registered. The annotation processor shifts this work to compile time:
 
-- **3-4x faster startup** -- Benchmarks show the generated path is 3.4-3.8x faster than the reflection path for command registration
+- **5-8x faster startup** -- Benchmarks show the generated path is 5-8x faster than the reflection path for command registration
 - **No runtime reflection** -- Annotation scanning, instance creation, and field get/set are all replaced by generated code
-- **Lower memory usage** -- No reflection metadata retained in memory
+- **Lower memory usage** -- No reflection metadata retained in memory; converters and completers are shared across options
 - **GraalVM native-image friendly** -- Generated code uses direct `new` calls and cached field accessors instead of reflection, reducing the need for reflection configuration
 - **Compile-time validation** -- Catch annotation errors at build time, not at runtime
 - **Zero behavior change** -- Existing commands are unaffected; the processor is fully optional
@@ -24,12 +24,13 @@ Startup benchmarks (100 commands, 3000 measured iterations after warmup):
 
 | Benchmark | Generated | Reflection | Speedup |
 |---|---|---|---|
-| Flat commands (4 options each) | 40 us | 135 us | **3.4x** |
-| Mixin commands | 50 us | 182 us | **3.6x** |
-| Group commands (parent + 2 children) | 26 us | 93 us | **3.6x** |
-| Nested groups (3-level hierarchy) | 13 us | 50 us | **3.8x** |
+| Flat commands (4 options each) | 22 us | 153 us | **6.8x** |
+| Mixin commands | 26 us | 208 us | **8.0x** |
+| Group commands (parent + 2 children) | 15 us | 102 us | **7.0x** |
+| Nested groups (3-level hierarchy) | 10 us | 56 us | **5.8x** |
+| Option variety (OptionList, OptionGroup, help, version) | 20 us | 135 us | **6.8x** |
 
-The speedup comes from eliminating annotation scanning, reflective field lookup, and exception-based class hierarchy walking during command registration.
+The speedup comes from bypassing the `ProcessedOptionBuilder` entirely (using `ProcessedOption.createDirect()`), skipping compile-time-verified uniqueness checks (`addOptionDirect()`), and sharing converter and completer instances across options via static constants.
 
 ## Installation
 
