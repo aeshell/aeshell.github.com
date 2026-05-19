@@ -27,6 +27,7 @@ The `@CommandDefinition` annotation is used to define a command class.
 | `activator` | `Class<? extends CommandActivator>` | `NullCommandActivator.class` | Activator to check if command is available |
 | `defaultValueProvider` | `Class<? extends DefaultValueProvider>` | `NullDefaultValueProvider.class` | Dynamic default value resolver |
 | `stopAtFirstPositional` | `boolean` | `false` | Stop option parsing after the first positional argument |
+| `sortOptions` | `boolean` | `false` | Sort help options alphabetically by name (after explicit option order) |
 | `helpUrl` | `String` | `""` | URL to documentation (shown in `--help` output) |
 | `helpGroup` | `String` | `""` | Group heading when listed as a subcommand in parent's help |
 | `helpSectionProvider` | `Class<? extends HelpSectionProvider>` | `NullHelpSectionProvider.class` | Provider for dynamic help sections |
@@ -175,6 +176,43 @@ With the command above:
 | `run --help` | Displays help output |
 
 Note that `--help` (and `--version`) before the first positional still work normally when `generateHelp = true`. Only tokens after the first positional are treated as passthrough arguments.
+
+## Option Ordering in Help
+
+Use `sortOptions` to control how options are ordered in help output:
+
+- `sortOptions = false` (default): options are ordered by explicit option `order`, then declaration order
+- `sortOptions = true`: options are ordered by explicit option `order`, then alphabetical name
+
+```java
+@CommandDefinition(
+    name = "build",
+    description = "Build project",
+    sortOptions = true,
+    generateHelp = true
+)
+public class BuildCommand implements Command<CommandInvocation> {
+
+    @Option(description = "Always first", order = 10)
+    private boolean ci;
+
+    @Option(description = "Build profile", order = 20)
+    private String profile;
+
+    @Option(description = "Clean output")
+    private boolean clean;
+
+    @Option(description = "Verbose output")
+    private boolean verbose;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+The `order` attribute is defined on `@Option`, `@OptionList`, and `@OptionGroup`.
 
 ### CommandInvocation
 

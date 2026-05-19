@@ -24,6 +24,7 @@ The `@OptionGroup` annotation defines key=value pair options collected into a `M
 | `renderer` | `Class<? extends OptionRenderer>` | `NullOptionRenderer.class` | Custom renderer |
 | `parser` | `Class<? extends OptionParser>` | `AeshOptionParser.class` | Custom parser |
 | `visibility` | `OptionVisibility` | `BRIEF` | Controls help and completion visibility (see [Options - Visibility Levels](../options#visibility-levels)) |
+| `order` | `int` | `Integer.MAX_VALUE` | Explicit help-order position (see [Options - Help Option Ordering](../options#help-option-ordering)) |
 
 ## Basic Example
 

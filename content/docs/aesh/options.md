@@ -36,6 +36,7 @@ The `@Option` annotation defines command-line options (flags with values).
 | `allowedValues` | `String[]` | `{}` | Restricts option to a fixed set of valid values |
 | `exclusiveWith` | `String[]` | `{}` | Names of mutually exclusive options (without `--` prefix) |
 | `visibility` | `OptionVisibility` | `BRIEF` | Controls help and completion visibility (`BRIEF`, `FULL`, `HIDDEN`) |
+| `order` | `int` | `Integer.MAX_VALUE` | Explicit help-order position (lower values appear first) |
 | `descriptionUrl` | `String` | `""` | URL for option documentation (clickable in supported terminals) |
 | `url` | `boolean` | `false` | Treat option value as a URL (rendered as clickable link) |
 
@@ -542,6 +543,27 @@ ProcessedOptionBuilder.builder()
         .helpGroup("Output Format")
         .build();
 ```
+
+## Help Option Ordering
+
+Use `order` on options to explicitly control help output order:
+
+```java
+@Option(description = "Always first", order = 10)
+private boolean ci;
+
+@Option(description = "Shown after --ci", order = 20)
+private String profile;
+```
+
+Options are ordered by:
+
+1. `order` (lower first)
+2. Then by command-level `sortOptions` behavior:
+   - `sortOptions = false` (default): declaration order
+   - `sortOptions = true`: alphabetical by option name
+
+`order` also works on `@OptionList` and `@OptionGroup`.
 
 ## Mutually Exclusive Options
 

@@ -28,6 +28,7 @@ The `@OptionList` annotation defines options that accept multiple values separat
 | `helpGroup` | `String` | `""` | Group heading for this option in help output (see [Options - Help Grouping](../options#help-grouping)) |
 | `exclusiveWith` | `String[]` | `{}` | Names of mutually exclusive options (see [Options - Mutually Exclusive Options](../options#mutually-exclusive-options)) |
 | `visibility` | `OptionVisibility` | `BRIEF` | Controls help and completion visibility (see [Options - Visibility Levels](../options#visibility-levels)) |
+| `order` | `int` | `Integer.MAX_VALUE` | Explicit help-order position (see [Options - Help Option Ordering](../options#help-option-ordering)) |
 
 ## Basic Example
 
