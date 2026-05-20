@@ -18,6 +18,7 @@ The `@Option` annotation defines command-line options (flags with values).
 | `required` | `boolean` | `false` | Is option required? |
 | `hasValue` | `boolean` | `true` | Does option accept a value? |
 | `optionalValue` | `boolean` | `false` | Allow option with or without a value (arity 0..1) |
+| `fallbackValue` | `String` | `""` | Value when option is specified bare (implies `optionalValue`, not applied when omitted) |
 | `defaultValue` | `String[]` | `{}` | Default values |
 | `askIfNotSet` | `boolean` | `false` | Prompt user if not set |
 | `overrideRequired` | `boolean` | `false` | Override required validation |
@@ -172,6 +173,72 @@ ProcessedOptionBuilder.builder()
         .optionalValue(true)
         .addDefaultValue("4004")
         .description("Enable debugging")
+        .build();
+```
+
+## Fallback Value (Three-State Options)
+
+The `fallbackValue` attribute solves the three-state problem: distinguishing "not specified", "specified without value", and "specified with explicit value". Unlike `optionalValue` + `defaultValue`, the fallback is only applied when the option is specified bare -- not when it's omitted entirely.
+
+### Basic Usage
+
+```java
+@CommandDefinition(name = "run", description = "Run application")
+public class RunCommand implements Command<CommandInvocation> {
+
+    @Option(name = "debug", fallbackValue = "4004",
+            description = "Enable debugging. Default port: ${FALLBACK-VALUE}")
+    private String debug;
+
+    @Argument(description = "Script file")
+    private String script;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        if (debug == null) {
+            invocation.println("No debugging");
+        } else {
+            invocation.println("Debugging on port " + debug);
+        }
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+| Invocation | `debug` value | Meaning |
+|---|---|---|
+| `run test.java` | `null` | Not specified -- no debugging |
+| `run --debug test.java` | `"4004"` | Bare -- use fallback port |
+| `run --debug=5005 test.java` | `"5005"` | Explicit -- use given port |
+
+### How It Works
+
+When `fallbackValue` is set:
+
+1. **Implies `optionalValue = true`** -- You don't need to set both
+2. **Bare usage (`--debug`)** applies the fallback value and does NOT consume the next token. The next token (`test.java`) remains available as a positional argument
+3. **Explicit value (`--debug=5005`)** uses the given value, same as any normal option
+4. **Not specified** leaves the field as `null` (or the `defaultValue` / `DefaultValueProvider` value if configured)
+
+This eliminates the need for custom `OptionParser` implementations to handle the three-state pattern.
+
+### Compared to `optionalValue`
+
+| | `optionalValue` + `defaultValue` | `fallbackValue` |
+|---|---|---|
+| `--debug` (bare) | Uses `defaultValue` | Uses `fallbackValue` |
+| Not specified | Also uses `defaultValue` | `null` (or static `defaultValue`) |
+| Can distinguish bare from omitted? | No | Yes |
+| Consumes next token? | Yes (ambiguous) | No (only `=` syntax) |
+
+### Programmatic API
+
+```java
+ProcessedOptionBuilder.builder()
+        .name("debug")
+        .type(String.class)
+        .fallbackValue("4004")
+        .description("Debug port")
         .build();
 ```
 

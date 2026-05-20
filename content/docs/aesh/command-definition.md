@@ -137,6 +137,33 @@ private String editor;
 
 See [Options - Dynamic Default Values](/docs/aesh/options#dynamic-default-values) for more details.
 
+### Registry-Level Provider
+
+Instead of repeating `defaultValueProvider = MyProvider.class` on every command, you can set a single provider at the registry or runtime level:
+
+```java
+// Via AeshRuntimeRunner
+AeshRuntimeRunner.builder()
+    .command(MyApp.class)
+    .defaultValueProvider(new ConfigDefaultProvider())
+    .execute();
+
+// Via AeshCommandRegistryBuilder
+CommandRegistry registry = AeshCommandRegistryBuilder.builder()
+    .defaultValueProvider(new ConfigDefaultProvider())
+    .command(RunCommand.class)
+    .command(BuildCommand.class)
+    .create();
+
+// Via AeshCommandRuntimeBuilder
+CommandRuntime runtime = AeshCommandRuntimeBuilder.builder()
+    .commandRegistry(registry)
+    .defaultValueProvider(new ConfigDefaultProvider())
+    .build();
+```
+
+The registry-level provider applies to all commands (including group command children) that don't declare their own per-command provider. Per-command `@CommandDefinition(defaultValueProvider = ...)` takes precedence when set.
+
 ## Stop at First Positional
 
 When `stopAtFirstPositional = true`, option parsing stops as soon as the first positional argument is consumed. All remaining tokens are treated as positional arguments, even if they look like options.
