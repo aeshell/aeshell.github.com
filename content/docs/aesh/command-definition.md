@@ -19,7 +19,7 @@ The `@CommandDefinition` annotation is used to define a command class.
 |----------|------|---------|-------------|
 | `aliases` | `String[]` | `{}` | Alternative names for the command |
 | `description` | `String` | `""` | Command description shown in help |
-| `generateHelp` | `boolean` | `false` | Auto-generate `--help` option |
+| `generateHelp` | `boolean` | `false` | Auto-generate `--help` / `-h` boolean flag (use `--help=all` for full visibility) |
 | `disableParsing` | `boolean` | `false` | Skip parsing (everything goes to @Arguments) |
 | `version` | `String` | `""` | Version string (adds `--version`, `-v` option) |
 | `validator` | `Class<? extends CommandValidator>` | `NullCommandValidator.class` | Validator to run before execution |
