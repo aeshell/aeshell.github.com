@@ -277,12 +277,17 @@ Usage:
 
 ### Help Output
 
-Negatable options automatically show both forms in help output:
+Negatable options are rendered as a single combined entry using `--[prefix]name` format:
 
 ```
 Options:
-  --verbose, --no-verbose       Enable verbose output
-  --color, --without-color      Enable color output
+  --[no-]verbose            Enable verbose output
+  --[without-]color         Enable color output
+```
+
+In the synopsis:
+```
+Usage: mycommand [--[no-]verbose] [--[without-]color]
 ```
 
 ### Completion Support

@@ -50,6 +50,32 @@ Usage: `compile -Denv=prod -Ddebug=true -Dlog.level=INFO`
 
 Each `-D` occurrence adds an entry to the map. The key and value are split on the `=` character.
 
+### Help Output
+
+`@OptionGroup` renders with `=<key=value>` syntax in help to show the expected format:
+
+```
+Options:
+  -D=<key=value>  Define system properties
+```
+
+Synopsis:
+```
+Usage: compile [-D<key>=<value>]
+```
+
+### Short-Name Only
+
+When `@OptionGroup` has a `shortName` but no explicit `name`, only the short name is shown. No long name is auto-derived from the Java field name:
+
+```java
+@OptionGroup(shortName = 'D', description = "System properties")
+private Map<String, String> properties;
+// Renders as: -D=<key=value>  (NOT -D, --properties=<key=value>)
+```
+
+To also have a long name, set it explicitly: `@OptionGroup(shortName = 'D', name = "define", ...)`
+
 ## Field Type Requirements
 
 The annotated field **must** implement `Map`. Both `Map` and `TreeMap` (or other `Map` implementations) are supported:

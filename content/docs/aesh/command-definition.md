@@ -19,7 +19,7 @@ The `@CommandDefinition` annotation is used to define a command class.
 |----------|------|---------|-------------|
 | `aliases` | `String[]` | `{}` | Alternative names for the command |
 | `description` | `String` | `""` | Command description shown in help |
-| `generateHelp` | `boolean` | `false` | Auto-generate `--help` / `-h` boolean flag (use `--help=all` for full visibility) |
+| `generateHelp` | `boolean` | `false` | Auto-generate `--help` / `-h` boolean flag. Bypasses required argument validation when set. |
 | `disableParsing` | `boolean` | `false` | Skip parsing (everything goes to @Arguments) |
 | `version` | `String` | `""` | Version string (adds `--version`, `-v` option) |
 | `validator` | `Class<? extends CommandValidator>` | `NullCommandValidator.class` | Validator to run before execution |
@@ -240,6 +240,42 @@ public class BuildCommand implements Command<CommandInvocation> {
 ```
 
 The `order` attribute is defined on `@Option`, `@OptionList`, and `@OptionGroup`.
+
+## Help Output Layout
+
+When `generateHelp = true`, aesh produces styled help output with the following structure:
+
+```
+Description text
+Usage: command [-hv] [--config=<config>] [--verbose | --quiet] [COMMAND]
+
+  Examples or header text (from HelpSectionProvider)
+
+Options:
+  -h, --help              Display this help and exit
+  --config=<config>       Path to config file
+  --[no-]verbose          Enable verbose output
+      <scriptOrFile>      Script file to run
+      [<userParams>...]   Additional parameters
+
+command commands:
+    run       Run a script
+    build     Build a project
+
+Footer text (from HelpSectionProvider)
+```
+
+Key formatting features:
+- **ANSI colors**: option names in yellow, value placeholders in cyan, command name in bold
+- **Detailed synopsis**: grouped boolean flags `[-hv]`, value options `[--config=<config>]`, mutually exclusive pipes `[--verbose | --quiet]`, `[COMMAND]` for group commands
+- **Synopsis wrapping**: wraps at 80 columns with continuation indentation
+- **Option column cap**: option names wider than 24 characters wrap the description to the next line
+- **Negatable options**: rendered as `--[no-]name` (single entry, not two)
+- **Value placeholders**: options that accept values show `=<name>` (using option name or `argument` attribute)
+- **`@OptionGroup` key=value**: rendered as `=<key=value>` to show the expected syntax
+- **Inline positional arguments**: shown after options, not in separate sections
+- **`--help` bypasses validation**: required arguments are not validated when `--help` is used
+- All ANSI styling is disabled when `ansiMode = false`
 
 ### CommandInvocation
 

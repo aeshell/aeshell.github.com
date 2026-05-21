@@ -90,7 +90,21 @@ Table.<User>builder()
 
 ## Table Styles
 
-Four predefined styles are available via `TableStyle`:
+Five predefined styles are available via `TableStyle`:
+
+### PLAIN
+
+No borders or separators — columns aligned with spaces only:
+
+```java
+Table.render(80, users, headers, accessors, TableStyle.PLAIN.characters());
+```
+
+```
+  Name   Email             Age
+  Alice  alice@test.com     30
+  Bob    bob@test.com       25
+```
 
 ### POSTGRES
 
@@ -356,6 +370,7 @@ If an invalid character map is passed to `Table.render()`, it falls back to the 
 
 | Style | Borders | Characters | Row Separators |
 |-------|---------|------------|----------------|
+| `PLAIN` | None | Spaces only | No |
 | `POSTGRES` | None | ASCII (`\|`, `-`, `+`) | No |
 | `SQLITE` | Full | ASCII (`\|`, `-`, `+`) | No |
 | `DUCKDB` | Full | Unicode box-drawing | No |
