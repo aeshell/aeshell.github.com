@@ -53,10 +53,10 @@ Both implementations wrap these Windows Console API functions:
 | Function | Purpose |
 |----------|---------|
 | `GetStdHandle` | Obtain stdin/stdout/stderr handles |
-| `GetConsoleMode` / `SetConsoleMode` | Control raw mode, echo, VT processing |
+| `GetConsoleMode` / `SetConsoleMode` | Control raw mode, echo, VT processing, mouse input |
 | `GetConsoleOutputCP` | Detect console encoding |
 | `GetConsoleScreenBufferInfo` | Query terminal width and height |
-| `ReadConsoleInputW` | Read key events and window resize events |
+| `ReadConsoleInputW` | Read key events, mouse events, and window resize events |
 | `WriteConsoleW` | Write Unicode output to the console |
 
 ## Building from Source

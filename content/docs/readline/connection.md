@@ -31,7 +31,7 @@ The `Connection` interface represents a connection to a terminal (local, direct,
 | Area | Location | Examples |
 |------|----------|---------|
 | Core I/O | `Connection` | `write()`, `stdinHandler()`, `stdoutHandler()` |
-| Handlers | `Connection` | `setSignalHandler()`, `setSizeHandler()`, `setCloseHandler()`, `setThemeChangeHandler()` |
+| Handlers | `Connection` | `setSignalHandler()`, `setSizeHandler()`, `setCloseHandler()`, `setThemeChangeHandler()`, `setMouseHandler()` |
 | Terminal state | `Connection` | `attributes()`, `enterRawMode()`, `supportsAnsi()`, `size()`, `device()` |
 | Lifecycle | `Connection` | `openBlocking()`, `openNonBlocking()`, `close()`, `reading()` |
 | Queries | `conn.terminal()` | `queryTerminal()`, `queryColors()`, `queryDeviceAttributes()` |
@@ -161,6 +161,23 @@ Consumer<TerminalTheme> themeHandler = connection.themeChangeHandler();
 ```
 
 When a handler is registered, the `EventDecoder` in the input pipeline intercepts unsolicited `CSI ? 997 ; Ps n` responses and routes them to this handler, preventing them from appearing as input. See [Theme Mode Queries](#theme-mode-queries) for the full API.
+
+### Mouse Handler
+
+Called when mouse events are received. Mouse tracking must be explicitly enabled via [MouseTracking](mouse-tracking) for the terminal to send mouse events:
+
+```java
+import org.aesh.terminal.tty.MouseEvent;
+
+connection.setMouseHandler(event -> {
+    System.out.printf("%s %s at (%d, %d)%n",
+            event.type(), event.button(), event.x(), event.y());
+});
+
+Consumer<MouseEvent> mouseHandler = connection.mouseHandler();
+```
+
+When a handler is registered, the `EventDecoder` intercepts SGR mouse sequences (`CSI < Pb;Px;Py M/m`) and dispatches them to the handler instead of passing them through as input. On Windows, setting the mouse handler also enables `ENABLE_MOUSE_INPUT` on the console. See [Mouse Tracking](mouse-tracking) for the full API.
 
 ## Terminal Properties
 

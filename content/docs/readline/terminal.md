@@ -66,6 +66,13 @@ Attributes previousAttributes = connection.enterRawMode();
 connection.setAttributes(previousAttributes);
 ```
 
+`enterRawMode()` clears these flags:
+- Local flags: `ICANON`, `ECHO`, `IEXTEN`, `ISIG`
+- Input flags: `IXON`, `ICRNL`, `INLCR`
+- Control chars: `VMIN=1`, `VTIME=0`, `VINTR=0`
+
+On Windows, clearing `ISIG` disables `ENABLE_PROCESSED_INPUT` on the console, matching the behavior of other terminal libraries. Signal handling in raw mode is done at the Java level via `setSignalHandler()`.
+
 ## Terminal Attributes
 
 Control terminal behavior:

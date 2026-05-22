@@ -129,6 +129,19 @@ connection.setMouseHandler(null);
 
 When no mouse handler is registered, mouse escape sequences pass through to the input handler unchanged. The `ActionDecoder` will consume them as `SequenceKeyAction` via the [VtParser](vt-parser) fallback, preventing byte-by-byte leakage.
 
+## Windows Support
+
+On Windows, mouse events are delivered through the VT input path when `ENABLE_VIRTUAL_TERMINAL_INPUT` is active. The `MouseTracking.enable()` / `enableEncoding()` sequences tell the console to start sending SGR mouse reports, which are intercepted by the `EventDecoder` mouse filter.
+
+When `connection.setMouseHandler()` is called on a `TerminalConnection` backed by a Windows terminal, it automatically:
+- Enables `ENABLE_MOUSE_INPUT` on the console input handle
+- Disables `ENABLE_QUICK_EDIT_MODE` (which conflicts with mouse tracking)
+
+### Known Limitations on Windows
+
+- **SHIFT modifier is not detected.** The Windows console does not encode the SHIFT bit in the SGR mouse button byte. This affects all SGR-based mouse tracking on Windows, not just Æsh Readline. Ctrl and Alt modifiers work correctly.
+- **Legacy consoles** without VT input support may not receive mouse events via the SGR path.
+
 ## Terminal Support
 
 Most modern terminal emulators support SGR mouse encoding:
@@ -143,6 +156,7 @@ Most modern terminal emulators support SGR mouse encoding:
 | iTerm2 | Yes | |
 | GNOME Terminal (VTE) | Yes | |
 | Windows Terminal | Yes | Via VT input mode |
+| Windows Console | Yes | Requires VT input support (Windows 10 1809+) |
 | tmux | Yes | Requires `set -g mouse on` |
 | Linux console | No | No mouse support |
 
