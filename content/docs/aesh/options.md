@@ -1333,3 +1333,71 @@ public class ConfigCommand implements Command<CommandInvocation> {
 $ config key database.host value localhost
 Set database.host = localhost
 ```
+
+## Optional Values
+
+Options and arguments can be declared as `Optional<T>` to distinguish between "not provided" and "provided with a value":
+
+```java
+@CommandDefinition(name = "deploy", description = "Deploy app")
+public class DeployCommand implements Command<CommandInvocation> {
+
+    @Option(name = "environment", description = "Target environment")
+    Optional<String> environment;
+
+    @Option(name = "replicas", description = "Number of replicas")
+    Optional<Integer> replicas;
+
+    @Argument(description = "Application name")
+    Optional<String> application;
+
+    @Override
+    public CommandResult execute(CommandInvocation ci) {
+        if (environment.isPresent()) {
+            ci.println("Deploying to " + environment.get());
+        } else {
+            ci.println("No environment specified, using default");
+        }
+        ci.println("Replicas: " + replicas.orElse(1));
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+When an option is not provided on the command line, the field is set to `Optional.empty()` (never `null`). When provided, it's wrapped with `Optional.of(value)`.
+
+This works with all option and argument types:
+
+| Declaration | When provided | When not provided |
+|-------------|--------------|-------------------|
+| `@Option Optional<String> name` | `Optional.of("value")` | `Optional.empty()` |
+| `@Option Optional<Integer> count` | `Optional.of(42)` | `Optional.empty()` |
+| `@OptionList Optional<List<String>> items` | `Optional.of(["a","b"])` | `Optional.empty()` |
+| `@OptionGroup Optional<Map<String,String>> props` | `Optional.of({k=v})` | `Optional.empty()` |
+| `@Argument Optional<String> file` | `Optional.of("file.txt")` | `Optional.empty()` |
+| `@Arguments Optional<List<String>> files` | `Optional.of(["a","b"])` | `Optional.empty()` |
+
+## Multi-line Descriptions
+
+Option descriptions can contain newlines for richer help output. Continuation lines are automatically indented to align with the description column:
+
+```java
+@Option(name = "env", description = "Target environment\nMust be one of: dev, staging, prod")
+String environment;
+```
+
+Produces:
+```
+  --env=<env>  Target environment
+               Must be one of: dev, staging, prod
+```
+
+Text blocks (Java 15+) also work — leading indentation is automatically stripped:
+
+```java
+@Option(name = "env", description = """
+    Target environment.
+    Must be one of: dev, staging, prod.
+    Defaults to the value of $APP_ENV.""")
+String environment;
+```

@@ -30,12 +30,12 @@ Aesh also parses command lines 8-21x faster than picocli once commands are regis
 | Picocli | Aesh |
 |---------|------|
 | `@Command(name = "deploy", description = "...")` | `@CommandDefinition(name = "deploy", description = "...")` |
-| `@Command(subcommands = {Sub.class})` | `@GroupCommandDefinition(name = "grp", groupCommands = {Sub.class})` |
+| `@Command(subcommands = {Sub.class})` | `@CommandDefinition(name = "grp", groupCommands = {Sub.class})` |
 | `@Command(mixinStandardHelpOptions = true)` | `@CommandDefinition(generateHelp = true)` |
 | `@Command(version = "1.0")` | `@CommandDefinition(version = "1.0")` |
 | `implements Runnable` or `Callable<Integer>` | `implements Command<CommandInvocation>` |
 
-In picocli, `@Command` handles both simple and group commands. In Aesh, group commands use the separate `@GroupCommandDefinition` annotation with a `groupCommands` attribute listing subcommand classes.
+Like picocli, Aesh uses a single annotation for both simple and group commands. Add `groupCommands = {Sub.class}` to make a command a group command.
 
 ### Options
 
@@ -200,7 +200,7 @@ Picocli commands return an `int` exit code from `Callable.call()`. Aesh commands
 
 ### Group Commands
 
-Picocli uses `subcommands = {...}` on `@Command`. Aesh uses a separate `@GroupCommandDefinition` annotation:
+Picocli uses `subcommands = {...}` on `@Command`. Aesh uses `groupCommands = {...}` on `@CommandDefinition`:
 
 ```java
 // Picocli
@@ -208,7 +208,7 @@ Picocli uses `subcommands = {...}` on `@Command`. Aesh uses a separate `@GroupCo
 public class RemoteCommand implements Runnable { ... }
 
 // Aesh
-@GroupCommandDefinition(name = "remote",
+@CommandDefinition(name = "remote",
         groupCommands = {AddCommand.class, RemoveCommand.class})
 public class RemoteCommand implements Command<CommandInvocation> { ... }
 ```
@@ -231,6 +231,7 @@ Both `app --verbose run` and `app run --verbose` set `verbose = true` on the chi
 
 These features have no picocli equivalent:
 
+- **[Optional values](../options#optional-values)** -- `@Option Optional<String> name` for clean present/absent handling with `isPresent()` and `orElse()`
 - **[Negatable booleans](../options#negatable-options)** -- `@Option(negatable = true)` generates `--no-verbose` automatically
 - **[Exclusive options](../options#mutually-exclusive-options)** -- `@Option(exclusiveWith = "json")` enforces mutual exclusion at parse time
 - **[Option visibility](../options#visibility-levels)** -- `OptionVisibility.BRIEF/FULL/HIDDEN` controls which options appear in `--help` and tab completion
@@ -238,6 +239,7 @@ These features have no picocli equivalent:
 - **[Ghost text suggestions](../ghost-text-suggestions)** -- Inline suggestions as the user types
 - **[Selectors](../selectors)** -- Interactive list/checkbox selection for option values
 - **[Sub-command mode](../sub-command-mode)** -- Enter a context where subcommands run without repeating the parent name
+- **[Multi-line descriptions](../options#multi-line-descriptions)** -- Descriptions with `\n` or text blocks render with proper indentation in `--help`
 
 ## Shell Completion Scripts
 

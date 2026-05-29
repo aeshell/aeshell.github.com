@@ -7,17 +7,17 @@ weight: 7
 
 Group commands allow you to create hierarchical command structures, similar to `git` with subcommands like `commit`, `push`, `pull`.
 
-## @GroupCommandDefinition
+## Defining a Group Command
 
-Use the `@GroupCommandDefinition` annotation to define a command group. The `groupCommands` property specifies which commands are subcommands of this group:
+Use the `groupCommands` property on `@CommandDefinition` to define subcommands:
 
 ```java
-@GroupCommandDefinition(
+@CommandDefinition(
     name = "git",
     description = "Version control system",
     groupCommands = {CommitCommand.class, PushCommand.class, PullCommand.class}
 )
-public class GitCommand implements GroupCommand<CommandInvocation> {
+public class GitCommand implements Command<CommandInvocation> {
     
     @Override
     public CommandResult execute(CommandInvocation invocation) {
@@ -29,18 +29,11 @@ public class GitCommand implements GroupCommand<CommandInvocation> {
 }
 ```
 
-### Properties
+A command becomes a group command simply by having a non-empty `groupCommands` array. All standard `@CommandDefinition` properties are available (`generateHelp`, `version`, `helpUrl`, `sortOptions`, etc.).
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `name` | `String` | required | The group command name |
-| `description` | `String` | `""` | Description shown in help |
-| `groupCommands` | `Class[]` | `{}` | Array of subcommand classes |
-| `generateHelp` | `boolean` | `false` | Auto-generate `--help` option |
-| `aliases` | `String[]` | `{}` | Alternative names for the group |
-| `sortOptions` | `boolean` | `false` | Sort help options alphabetically by name (after explicit option order) |
-| `helpGroup` | `String` | `""` | Group heading when listed as a subcommand in parent's help |
-| `helpSectionProvider` | `Class<? extends HelpSectionProvider>` | `NullHelpSectionProvider.class` | Provider for dynamic help sections |
+{{< callout type="info" >}}
+The `@GroupCommandDefinition` annotation is deprecated. Use `@CommandDefinition` with `groupCommands` instead. Existing code using `@GroupCommandDefinition` continues to work.
+{{< /callout >}}
 
 ## Subcommands
 
