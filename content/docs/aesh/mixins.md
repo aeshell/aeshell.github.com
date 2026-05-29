@@ -137,27 +137,93 @@ All option features work within mixins: custom converters, completers, validator
 
 ## Mixin Inheritance
 
-Mixin classes can extend other classes. Options from the mixin's superclass chain are included:
+Mixin classes can extend other classes. Options from the entire superclass chain are included automatically:
 
 ```java
 public class BaseMixin {
     @Option(name = "debug", hasValue = false, description = "Debug mode")
     boolean debug;
+
+    @Option(name = "config", description = "Config file")
+    String config;
 }
 
-public class LoggingMixin extends BaseMixin {
+public class ExtendedMixin extends BaseMixin {
     @Option(name = "verbose", hasValue = false, description = "Verbose output")
     boolean verbose;
+
+    @Option(name = "log-level", description = "Log level")
+    String logLevel;
 }
 
-// Command gets both --debug and --verbose
+// Command gets all four options: --debug, --config, --verbose, --log-level
 @CommandDefinition(name = "run", description = "Run application")
 public class RunCommand implements Command<CommandInvocation> {
     @Mixin
-    LoggingMixin logging;
-    // ...
+    ExtendedMixin options;
+
+    @Override
+    public CommandResult execute(CommandInvocation ci) {
+        if (options.verbose) {
+            ci.println("Debug=" + options.debug + " level=" + options.logLevel);
+        }
+        return CommandResult.SUCCESS;
+    }
 }
 ```
+
+This works with any depth of inheritance -- if `BaseMixin` itself extends another class, those options are included too.
+
+## Nested Mixins
+
+A mixin can contain `@Mixin` fields pointing to other mixin classes. Options from nested mixins are flattened into the command's option list:
+
+```java
+public class AuthMixin {
+    @Option(name = "token", description = "Auth token")
+    String token;
+
+    @Option(name = "insecure", hasValue = false, description = "Skip TLS verification")
+    boolean insecure;
+}
+
+public class ConnectionMixin {
+    @Mixin
+    AuthMixin auth;
+
+    @Option(name = "host", description = "Server hostname")
+    String host;
+
+    @Option(name = "port", description = "Server port")
+    int port;
+}
+
+@CommandDefinition(name = "connect", description = "Connect to server")
+public class ConnectCommand implements Command<CommandInvocation> {
+    @Mixin
+    ConnectionMixin connection;
+
+    @Override
+    public CommandResult execute(CommandInvocation ci) {
+        ci.println("Connecting to " + connection.host + ":" + connection.port);
+        if (connection.auth.token != null) {
+            ci.println("Using token auth");
+        }
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+Usage:
+```bash
+$ connect --host example.com --port 8443 --token secret --insecure
+Connecting to example.com:8443
+Using token auth
+```
+
+All four options (`--host`, `--port`, `--token`, `--insecure`) appear as top-level options on the command. Nested mixin objects are automatically created if null. You access nested values through the chain: `connection.auth.token`.
+
+Nested mixins can be combined with mixin inheritance -- a nested mixin class can extend another class, and its parent's options will also be included.
 
 ## Field Initialization
 

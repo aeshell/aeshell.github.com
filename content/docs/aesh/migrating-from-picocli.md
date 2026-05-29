@@ -75,7 +75,7 @@ Aesh uses `@Argument` for singular positional values and `@Arguments` for multip
 | `@Mixin` | `@Mixin` |
 | `@ParentCommand` | `@ParentCommand` |
 
-These work the same way in both frameworks.
+These work the same way in both frameworks. Aesh supports mixin class inheritance (a mixin extending another class) and nested mixins (a `@Mixin` field inside another mixin). See [Mixins](../mixins) for details.
 
 ### Execution
 
