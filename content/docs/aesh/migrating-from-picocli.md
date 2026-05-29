@@ -241,14 +241,20 @@ These features have no picocli equivalent:
 
 ## Shell Completion Scripts
 
-Aesh generates bash, zsh, and fish completion scripts automatically. See [Completers -- Shell Completion Scripts](../completers#shell-completion-scripts) for details.
+Aesh generates bash, zsh, and fish completion scripts automatically -- no extra code required. The standard `AeshRuntimeRunner` pattern automatically supports `--aesh-completion` and `--aesh-completion-install` flags. See [Completers -- Shell Completion Scripts](../completers#shell-completion-scripts) for details.
 
-```java
-AeshRuntimeRunner.builder()
-        .command(DeployCommand.class)
-        .args(new String[] {"--aesh-completion", "bash"})
-        .execute();
+```bash
+# Generate completion script (auto-detects shell)
+$ myapp --aesh-completion
+
+# Generate for a specific shell
+$ myapp --aesh-completion bash
+
+# Auto-detect, generate, and install
+$ myapp --aesh-completion-install
 ```
+
+Picocli's `AutoComplete` only supports bash. Aesh supports bash, zsh, and fish, with both static and dynamic (callback-based) completion scripts.
 
 ## Annotation Processor
 
