@@ -256,6 +256,30 @@ $ myapp --aesh-completion-install
 
 Picocli's `AutoComplete` only supports bash. Aesh supports bash, zsh, and fish, with both static and dynamic (callback-based) completion scripts.
 
+## Documentation Generation
+
+Aesh can generate AsciiDoc or Markdown documentation from command metadata, similar to picocli's `ManPageGenerator`. See [Documentation Generation](../documentation-generation) for details.
+
+```bash
+# Generate AsciiDoc documentation
+$ myapp --aesh-doc asciidoc > docs/myapp.adoc
+
+# Generate Markdown
+$ myapp --aesh-doc markdown > docs/myapp.md
+```
+
+For Antora-based documentation sites, the programmatic API supports cross-reference prefixes and navigation file generation:
+
+```java
+DocumentationGenerator.builder()
+    .commandClass(MyCommand.class)
+    .outputDir(new File("docs/pages"))
+    .crossRefPrefix("myapp:cli:")
+    .navFile(new File("docs/nav.adoc"))
+    .format(DocFormat.ASCIIDOC)
+    .generate();
+```
+
 ## Annotation Processor
 
 For maximum startup performance, add the [annotation processor](../annotation-processor) to eliminate all runtime reflection:
