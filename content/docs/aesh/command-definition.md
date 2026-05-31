@@ -29,6 +29,7 @@ The `@CommandDefinition` annotation is used to define a command class.
 | `stopAtFirstPositional` | `boolean` | `false` | Stop option parsing after the first positional argument |
 | `sortOptions` | `boolean` | `false` | Sort help options alphabetically by name (after explicit option order) |
 | `helpUrl` | `String` | `""` | URL to documentation (shown in `--help` output) |
+| `groupCommands` | `Class<? extends Command>[]` | `{}` | Subcommand classes. Non-empty makes this a [group command](group-commands). Replaces the deprecated `@GroupCommandDefinition`. |
 | `helpGroup` | `String` | `""` | Group heading when listed as a subcommand in parent's help |
 | `helpSectionProvider` | `Class<? extends HelpSectionProvider>` | `NullHelpSectionProvider.class` | Provider for dynamic help sections |
 
@@ -288,12 +289,12 @@ Provides access to:
 
 ## Help Group for Subcommands
 
-The `helpGroup` property on `@CommandDefinition` (and `@GroupCommandDefinition`) controls how a subcommand appears in its parent's help output. Subcommands with the same `helpGroup` value are displayed together under that heading.
+The `helpGroup` property on `@CommandDefinition` controls how a subcommand appears in its parent's help output. Subcommands with the same `helpGroup` value are displayed together under that heading.
 
 ### Basic Usage
 
 ```java
-@GroupCommandDefinition(
+@CommandDefinition(
     name = "cli",
     description = "My CLI tool",
     generateHelp = true,
@@ -385,7 +386,7 @@ public class PluginHelpProvider implements HelpSectionProvider {
 ### Registering the Provider
 
 ```java
-@GroupCommandDefinition(
+@CommandDefinition(
     name = "app",
     description = "My application",
     generateHelp = true,
@@ -463,7 +464,7 @@ Both methods return `null` by default (no header/footer). The text can contain n
 ### Key Points
 
 1. **Zero startup cost** -- The provider class is stored as a reference and only instantiated when help is rendered
-2. **Works with both `@CommandDefinition` and `@GroupCommandDefinition`**
+2. **Works with `@CommandDefinition`** (including group commands with `groupCommands`)
 3. **HelpEntry** is a simple value class with `name()` and `description()` (description is optional)
 4. **Return an empty map** (not null) if there are no additional sections to show
 5. **Header** appears before the synopsis, **footer** appears after all other content

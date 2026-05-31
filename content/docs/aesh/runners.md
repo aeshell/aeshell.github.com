@@ -895,10 +895,10 @@ class RunCommand implements Command<CommandInvocation>, CommandLifecycle {
 
 ### Group Command Lifecycle
 
-When executing a subcommand of a `@GroupCommandDefinition`, `afterParse()` is called on the **parent group command first**, then on the child. This gives the parent a chance to process its own options before the child runs:
+When executing a subcommand of a group command (`@CommandDefinition` with `groupCommands`), `afterParse()` is called on the **parent group command first**, then on the child. This gives the parent a chance to process its own options before the child runs:
 
 ```java
-@GroupCommandDefinition(name = "app", groupCommands = { RunCmd.class }, generateHelp = true)
+@CommandDefinition(name = "app", groupCommands = { RunCmd.class }, generateHelp = true)
 class AppCommand implements Command<CommandInvocation>, CommandLifecycle {
 
     @Option(name = "stacktrace", shortName = 'x', hasValue = false)

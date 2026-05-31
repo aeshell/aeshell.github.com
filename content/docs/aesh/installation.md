@@ -29,7 +29,7 @@ dependencies {
 
 ## Annotation Processor (Optional)
 
-To generate command metadata at compile time (3-4x faster startup, no runtime reflection, GraalVM-friendly), add the `aesh-processor` dependency. See [Annotation Processor](../annotation-processor) for details.
+To generate command metadata at compile time (5-8x faster startup, no runtime reflection, GraalVM-friendly), add the `aesh-processor` dependency. See [Annotation Processor](../annotation-processor) for details.
 
 ### Maven
 

@@ -329,7 +329,7 @@ See [Command Definition](/docs/aesh/command-definition#stop-at-first-positional)
 Inherited arguments are automatically available to all subcommands when using [sub-command mode](/docs/aesh/sub-command-mode). Mark an argument with `inherited = true` on a group command, and subcommands with matching field names will have the value auto-populated.
 
 ```java
-@GroupCommandDefinition(
+@CommandDefinition(
     name = "project",
     groupCommands = {BuildCommand.class, TestCommand.class}
 )

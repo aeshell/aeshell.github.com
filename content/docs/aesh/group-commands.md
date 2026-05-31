@@ -95,7 +95,7 @@ Only the top-level group command needs to be registered. The subcommands are aut
 
 ```java
 AeshConsoleRunner.builder()
-        .command(GitCommand.class)  // Subcommands are included via @GroupCommandDefinition
+        .command(GitCommand.class)  // Subcommands are included via groupCommands
         .prompt("[myapp]$ ")
         .addExitCommand()
         .start();
@@ -146,7 +146,7 @@ docker
 
 ```java
 // Top-level group
-@GroupCommandDefinition(
+@CommandDefinition(
     name = "docker",
     description = "Container management",
     groupCommands = {ContainerGroup.class, ImageGroup.class, VolumeGroup.class}
@@ -161,7 +161,7 @@ public class DockerCommand implements GroupCommand<CommandInvocation> {
 }
 
 // Nested group for container commands
-@GroupCommandDefinition(
+@CommandDefinition(
     name = "container",
     description = "Manage containers",
     groupCommands = {ContainerLsCommand.class, ContainerStartCommand.class, 
@@ -221,7 +221,7 @@ Starting container: mycontainer
 You can add options to the group command itself. These options are parsed before the subcommand name:
 
 ```java
-@GroupCommandDefinition(
+@CommandDefinition(
     name = "kubectl",
     description = "Kubernetes CLI",
     groupCommands = {GetCommand.class, ApplyCommand.class, DeleteCommand.class}
@@ -255,7 +255,7 @@ public class KubectlCommand implements GroupCommand<CommandInvocation> {
 To make a group option available to subcommands as well, add `inherited = true`. The option can then be placed either before or after the subcommand name, and its value is automatically propagated to matching fields on the child command:
 
 ```java
-@GroupCommandDefinition(
+@CommandDefinition(
     name = "cli",
     description = "My CLI tool",
     groupCommands = {RunCommand.class, TestCommand.class}
@@ -309,7 +309,7 @@ See [Options - Inherited Options](/docs/aesh/options#inherited-options) for full
 Group commands can enter an interactive **sub-command mode** where users work within the group's context. This is useful for workflows that involve multiple operations on the same resource.
 
 ```java
-@GroupCommandDefinition(
+@CommandDefinition(
     name = "project",
     description = "Project management",
     groupCommands = {BuildCommand.class, TestCommand.class}

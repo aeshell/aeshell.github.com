@@ -218,7 +218,7 @@ public class RemoteCommand implements Command<CommandInvocation> { ... }
 Picocli supports inherited options via `@Option(scope = INHERIT)`. Aesh uses `@Option(inherited = true)` on the parent command. Inherited options can appear before or after the subcommand name on the command line:
 
 ```java
-@GroupCommandDefinition(name = "app", groupCommands = {RunCommand.class})
+@CommandDefinition(name = "app", groupCommands = {RunCommand.class})
 public class AppCommand implements Command<CommandInvocation> {
     @Option(name = "verbose", hasValue = false, inherited = true)
     boolean verbose;

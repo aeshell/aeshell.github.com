@@ -362,7 +362,7 @@ Inherited options are automatically available to all subcommands of a group comm
 ### Basic Usage
 
 ```java
-@GroupCommandDefinition(
+@CommandDefinition(
     name = "project",
     description = "Project management",
     groupCommands = {BuildCommand.class, TestCommand.class}

@@ -79,25 +79,31 @@ dependencies {
 
 The processor follows a **dual-mode** approach:
 
-1. At compile time, the processor scans classes annotated with `@CommandDefinition` or `@GroupCommandDefinition` and generates a `_AeshMetadata` class for each command
-2. The generated classes implement `CommandMetadataProvider` and are registered via `META-INF/services` (ServiceLoader)
-3. At runtime, when Aesh registers a command, it first checks if a generated provider exists for that command class
-4. If a provider is found, it uses the generated metadata (no reflection). If not, it falls back to the existing reflection-based path
+1. At compile time, the processor scans classes annotated with `@CommandDefinition` (or the deprecated `@GroupCommandDefinition`) and generates a `_AeshMetadata` class for each command
+2. A single `_AeshMetadataRegistry` class is generated with a `switch` statement that maps command class names to their metadata providers
+3. The registry implements `MetadataRegistry` and is registered via `META-INF/services` (ServiceLoader)
+4. At runtime, when Aesh registers a command, ServiceLoader discovers the single registry class (not all 65+ individual providers). Only the requested command's metadata class is loaded and instantiated via the `switch` -- other commands remain untouched
+5. If no provider is found, Aesh falls back to the existing reflection-based path
 
 ```
 Compile Time                          Runtime
 ┌─────────────────────┐
 │  @CommandDefinition │
 │  MyCommand.java     │
+│  OtherCommand.java  │
 └─────────┬───────────┘
           │ annotation processor
           ▼
-┌─────────────────────────┐     ┌───────────────────────┐
-│ MyCommand_AeshMetadata  │ ──▶ │ ServiceLoader lookup  │
-│  (generated source)     │     │ Provider found? ──Yes──▶ Use generated metadata
-└─────────────────────────┘     │                ──No───▶ Reflection fallback
-                                └───────────────────────┘
+┌─────────────────────────┐     ┌──────────────────────────────┐
+│ MyCommand_AeshMetadata  │     │ ServiceLoader discovers      │
+│ OtherCmd_AeshMetadata   │     │ _AeshMetadataRegistry (1 cls)│
+│ _AeshMetadataRegistry   │ ──▶ │                              │
+│  switch("MyCommand")    │     │ switch hit ──▶ new MyCommand_AeshMetadata()
+│    → new MyCmd_Meta()   │     │ switch miss ──▶ Reflection fallback
+└─────────────────────────┘     └──────────────────────────────┘
 ```
+
+This architecture means a project with 65 commands (like jbang) loads only 3 classes at startup (the registry + the invoked command's metadata + the command itself) instead of 130 classes (65 providers + 65 commands).
 
 ### What Gets Generated
 
@@ -108,29 +114,37 @@ For each option, argument, and mixin field, the generated code provides:
 | Annotation scanning (`getAnnotation`, `getDeclaredFields`) | Compile-time literals |
 | Instance creation (`ReflectionUtil.newInstance()`) | Direct `new MyCommand()` |
 | Validator, converter, completer, activator creation | Direct `new X()` calls |
-| Field set (`field.set(instance, value)`) | Cached `Field` + `fieldSetter` accessor |
-| Field get (`field.get(instance)`) | Cached `Field` + `fieldGetter` accessor |
-| Field reset (clear between parses) | Cached `Field` + `fieldResetter` accessor |
+| Field set (`field.set(instance, value)`) | Direct assignment or cached `Field` accessor |
+| Field get (`field.get(instance)`) | Direct read or cached `Field` accessor |
+| Field reset (clear between parses) | Direct assignment or cached `Field` accessor |
 | `@ParentCommand` injection (field scanning + set) | Direct `parentCommandInjector` |
-| Mixin field resolution (`getField` + `setAccessible`) | Cached mixin `Field` + two-step accessor |
+| Mixin field resolution (`getField` + `setAccessible`) | Direct mixin field access or cached `Field` |
 
-The generated `Field` constants are resolved once in a `static {}` initializer and reused for every parse cycle, avoiding repeated class hierarchy walks.
+### Field Visibility
+
+{{< callout type="info" >}}
+**Recommendation:** Use `public` or package-private fields for `@Option`, `@Argument`, and `@Mixin` fields when using the annotation processor. This gives **zero-reflection** performance.
+{{< /callout >}}
+
+- **Public / package-private fields** -- The generated code uses direct field access (`((MyCommand) inst).myField = value`). No `java.lang.reflect.Field`, no `getDeclaredField()`, no `setAccessible()`. This is the fastest possible path and requires no GraalVM native-image reflection configuration.
+
+- **Private fields** -- The generated code resolves `Field` constants once in a `static {}` initializer and caches them for reuse. This avoids repeated class hierarchy walks but still uses `getDeclaredField()` + `setAccessible()` at class load time, and requires reflection entries in native-image configuration (which the processor generates automatically -- see [GraalVM Native Image](#graalvm-native-image) below).
 
 ## Generated Code
 
-For a command like:
+For a command with public fields (recommended):
 
 ```java
 @CommandDefinition(name = "build", description = "Run build")
 public class BuildCommand implements Command<CommandInvocation> {
     @Option(shortName = 'v', description = "Verbose", hasValue = false)
-    private boolean verbose;
+    boolean verbose;
 
     @Option(name = "output", required = true, description = "Output path")
-    private String outputFile;
+    String outputFile;
 
     @Argument(description = "Source")
-    private String source;
+    String source;
 
     @Override
     public CommandResult execute(CommandInvocation invocation) {
@@ -139,85 +153,57 @@ public class BuildCommand implements Command<CommandInvocation> {
 }
 ```
 
-The processor generates `BuildCommand_AeshMetadata` in the same package:
+The processor generates `BuildCommand_AeshMetadata` with **zero reflection** -- direct field access via a switch-based `Accessor`:
 
 ```java
 public final class BuildCommand_AeshMetadata
         implements CommandMetadataProvider<BuildCommand> {
 
-    // Field references resolved once at class load
-    private static final java.lang.reflect.Field FIELD_verbose;
-    private static final java.lang.reflect.Field FIELD_outputFile;
-    private static final java.lang.reflect.Field FIELD_source;
+    // No Field constants needed -- direct access to package-private fields
 
-    static {
-        try {
-            FIELD_verbose = BuildCommand.class.getDeclaredField("verbose");
-            FIELD_verbose.setAccessible(true);
-            FIELD_outputFile = BuildCommand.class.getDeclaredField("outputFile");
-            FIELD_outputFile.setAccessible(true);
-            FIELD_source = BuildCommand.class.getDeclaredField("source");
-            FIELD_source.setAccessible(true);
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    // Shared converter and completer constants
+    private static final Converter CONVERTER_Boolean = CLConverterManager.getInstance()
+            .getConverter(Boolean.class);
+    private static final OptionCompleter BOOLEAN_COMPLETER = new BooleanOptionCompleter();
 
-    public Class<BuildCommand> commandType() {
-        return BuildCommand.class;
-    }
-
-    public BuildCommand newInstance() {
-        return new BuildCommand();  // no reflection
-    }
-
+    public Class<BuildCommand> commandType() { return BuildCommand.class; }
+    public BuildCommand newInstance() { return new BuildCommand(); }
     public boolean isGroupCommand() { return false; }
-
-    public Class<? extends Command>[] groupCommandClasses() {
-        return new Class[0];
-    }
-
+    public Class<? extends Command>[] groupCommandClasses() { return new Class[0]; }
     public String commandName() { return "build"; }
 
-    public ProcessedCommand buildProcessedCommand(BuildCommand instance)
-            throws CommandLineParserException {
-        ProcessedCommand processedCommand = ProcessedCommandBuilder.builder()
-                .name("build")
-                .description("Run build")
-                .command(instance)
-                .create();
+    public ProcessedCommand buildProcessedCommand(BuildCommand instance) {
+        // Options use ProcessedOption.createDirect() with an Accessor
+        // for reflection-free field get/set via switch dispatch
+        // ...
+    }
 
-        processedCommand.addOption(
-                ProcessedOptionBuilder.builder()
-                        .shortName('v')
-                        .name("verbose")
-                        .description("Verbose")
-                        .type(boolean.class)
-                        .fieldName("verbose")
-                        .optionType(OptionType.BOOLEAN)
-                        .completer(new BooleanOptionCompleter())
-                        .fieldSetter((inst, val) -> {
-                            try { FIELD_verbose.set(inst, val); }
-                            catch (IllegalAccessException e) { throw new RuntimeException(e); }
-                        })
-                        .fieldResetter(inst -> {
-                            try { FIELD_verbose.set(inst, false); }
-                            catch (IllegalAccessException e) { throw new RuntimeException(e); }
-                        })
-                        .fieldGetter(inst -> {
-                            try { return FIELD_verbose.get(inst); }
-                            catch (IllegalAccessException e) { throw new RuntimeException(e); }
-                        })
-                        .build());
+    // Switch-based accessor -- no reflection, no lambdas
+    static final class Accessor implements FieldAccessor, BiConsumer<Object, Object> {
+        private final int idx;
+        Accessor(int idx) { this.idx = idx; }
 
-        // ... output and source options with the same pattern
-
-        return processedCommand;
+        public void set(Object inst, Object val) {
+            switch (idx) {
+                case 0: ((BuildCommand) inst).verbose = val != null && (Boolean) val; break;
+                case 1: ((BuildCommand) inst).outputFile = (String) val; break;
+                case 2: ((BuildCommand) inst).source = (String) val; break;
+            }
+        }
+        public Object get(Object inst) {
+            switch (idx) {
+                case 0: return ((BuildCommand) inst).verbose;
+                case 1: return ((BuildCommand) inst).outputFile;
+                case 2: return ((BuildCommand) inst).source;
+                default: return null;
+            }
+        }
+        // ...
     }
 }
 ```
 
-The generated code uses the same `ProcessedCommandBuilder` and `ProcessedOptionBuilder` APIs that the reflection path uses, ensuring identical behavior. The key difference is that field access uses cached `Field` constants with pre-built accessor functions, rather than scanning annotations and resolving fields at runtime.
+For commands with **private** fields, the generated code uses cached `Field` constants with `getDeclaredField()` + `setAccessible()` in a static initializer, and the `Accessor` switch delegates to those fields. See [Field Visibility](#field-visibility) above.
 
 ## Compile-Time Validation
 
@@ -237,15 +223,21 @@ The processor supports all Aesh annotation features:
 
 ### Group Commands
 
-Group commands with `@GroupCommandDefinition` are fully supported. The processor generates metadata for the parent command and records its subcommand classes. At runtime, each subcommand is resolved through its own provider (if available) or via the reflection fallback.
+Group commands are fully supported using `@CommandDefinition` with `groupCommands`:
 
 ```java
-@GroupCommandDefinition(name = "remote", description = "Manage remotes",
+@CommandDefinition(name = "remote", description = "Manage remotes",
         groupCommands = {RemoteAddCommand.class, RemoteRemoveCommand.class})
 public class RemoteCommand implements Command<CommandInvocation> {
     // ...
 }
 ```
+
+The processor generates metadata for the parent command and records its subcommand classes. At runtime, each subcommand is resolved lazily through its own provider (if available) or via the reflection fallback.
+
+{{< callout type="warning" >}}
+`@GroupCommandDefinition` is deprecated. Use `@CommandDefinition(groupCommands = {...})` instead. The processor supports both, but new code should use the unified annotation.
+{{< /callout >}}
 
 ### Class Hierarchies
 
@@ -298,9 +290,42 @@ public class RemoteAddCommand implements Command<CommandInvocation> {
 
 Custom validators, completers, converters, activators, renderers, result handlers, option parsers, default value providers, optional-value options, negatable options, stop-at-positional, inherited options, exclusive options, option visibility levels, and help section providers are all supported.
 
+## GraalVM Native Image
+
+The processor automatically generates GraalVM native-image configuration files under `META-INF/native-image/org.aesh/<project>/`:
+
+- **`resource-config.json`** -- Always generated. Ensures the `META-INF/services/org.aesh.command.metadata.MetadataRegistry` ServiceLoader descriptor is included in the native image.
+
+- **`reflect-config.json`** -- Generated only when commands have **private** annotated fields. Contains entries for each class with private `@Option`, `@Argument`, `@Mixin`, or `@ParentCommand` fields, enabling `getDeclaredField()` + `setAccessible()` in the generated code.
+
+Commands with only public/package-private fields produce **no reflection entries** -- the generated code accesses them directly.
+
+### Processor Options
+
+Configure via `-A` compiler flags:
+
+| Option | Default | Description |
+|---|---|---|
+| `aeshNativeImageProject` | `aesh-generated` | Subdirectory name under `META-INF/native-image/org.aesh/` |
+| `aeshNativeImageDisable` | `false` | Set to `true` to skip native-image config generation |
+
+Example Maven configuration:
+
+```xml
+<plugin>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <configuration>
+    <compilerArgs>
+      <arg>-AaeshNativeImageProject=my-app</arg>
+    </compilerArgs>
+  </configuration>
+</plugin>
+```
+
 ## Compatibility
 
 - **Java 8+** -- The processor targets source version 8
 - **No code changes required** -- Drop in the dependency and the processor runs automatically
 - **Fully backward compatible** -- Removing the dependency reverts to the reflection path with no behavior change
 - **Incremental** -- You can use the processor for some commands and not others; commands without a generated provider fall back to reflection
+- **Multi-module** -- Each module generates its own `_AeshMetadataRegistry`. ServiceLoader merges registries across JARs automatically

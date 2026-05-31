@@ -364,7 +364,7 @@ These methods support [Sub-Command Mode](/docs/aesh/sub-command-mode), allowing 
 Enters sub-command mode for the current group command. Returns `true` if successful, `false` if sub-command mode is disabled.
 
 ```java
-@GroupCommandDefinition(name = "project", groupCommands = {BuildCommand.class, TestCommand.class})
+@CommandDefinition(name = "project", groupCommands = {BuildCommand.class, TestCommand.class})
 public class ProjectCommand implements Command<CommandInvocation> {
 
     @Option(name = "name", required = true)
@@ -517,7 +517,7 @@ public CommandResult execute(CommandInvocation invocation) {
 Here's a complete example showing how subcommands access parent values:
 
 ```java
-@GroupCommandDefinition(
+@CommandDefinition(
     name = "project",
     description = "Project management",
     groupCommands = {BuildCommand.class, StatusCommand.class}

@@ -334,7 +334,7 @@ public class MyApp {
 **A:** Use group commands. See [Group Commands](/docs/aesh/group-commands):
 
 ```java
-@GroupCommandDefinition(name = "git", description = "Git commands")
+@CommandDefinition(name = "git", description = "Git commands")
 public class GitCommand implements GroupCommand<CommandInvocation> {
     // ...
 }

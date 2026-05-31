@@ -36,7 +36,7 @@ project[myapp]> exit
 Sub-command mode is enabled by default. When a group command is executed, it can enter sub-command mode by calling `enterSubCommandMode()`:
 
 ```java
-@GroupCommandDefinition(
+@CommandDefinition(
     name = "project",
     description = "Project management",
     groupCommands = {BuildCommand.class, TestCommand.class, DeployCommand.class}
@@ -133,7 +133,7 @@ public class TestCommand implements Command<CommandInvocation> {
 Mark parent options with `inherited = true` for automatic propagation to subcommands:
 
 ```java
-@GroupCommandDefinition(name = "project", ...)
+@CommandDefinition(name = "project", ...)
 public class ProjectCommand implements Command<CommandInvocation> {
 
     // This option is automatically available to all subcommands
@@ -296,7 +296,7 @@ public class SubCommandModeExample {
         new ReadlineConsole(settings).start();
     }
 
-    @GroupCommandDefinition(
+    @CommandDefinition(
         name = "project",
         description = "Project management",
         groupCommands = {BuildCommand.class, TestCommand.class}
