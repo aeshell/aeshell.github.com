@@ -108,6 +108,16 @@ boolean enabled = history.isEnabled();
 
 ## History Search
 
+### Fuzzy Search (Ctrl+R)
+
+Press `Ctrl+R` to open an interactive fuzzy history search inspired by [fzf](https://github.com/junegunn/fzf). Type to filter results, use `↑`/`↓` to navigate, and `Enter` to select. See [Fuzzy History Search]({{< ref "fuzzy-history-search" >}}) for full documentation.
+
+### Traditional Search (Ctrl+S)
+
+The traditional incremental forward search is available via `Ctrl+S`. The old `Ctrl+R` reverse incremental search can be restored by rebinding the key -- see [Fuzzy History Search]({{< ref "fuzzy-history-search" >}}#reverting-to-the-old-search) for details.
+
+### Programmatic Search
+
 Access history for search operations:
 
 ```java

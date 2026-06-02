@@ -31,7 +31,7 @@ weight: 5
 | Kill to next word | `M-d` |
 | Kill to prev whitespace | `C-w` |
 | Yank (paste) | `C-y` |
-| Search history backward | `C-r` |
+| Fuzzy history search | `C-r` |
 | Search history forward | `C-s` |
 | Switch to Vi mode | `M-C-j` |
 
@@ -63,7 +63,7 @@ weight: 5
 
 | Action | Key Binding |
 |---------|-------------|
-| Search history backward | `C-r` |
+| Fuzzy history search | `C-r` |
 | Search history forward | `C-s` |
 | Delete char left of cursor | `Backspace` |
 
