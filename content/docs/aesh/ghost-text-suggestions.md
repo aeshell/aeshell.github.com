@@ -5,7 +5,7 @@ title: 'Ghost Text Suggestions'
 weight: 9
 ---
 
-Ghost text suggestions display inline, dimmed text ahead of the cursor as you type, showing what Æsh predicts you want to enter. Unlike [tab completion](completers), which requires pressing Tab, ghost text appears automatically and can be accepted by pressing the right arrow key.
+Ghost text suggestions display inline, dimmed text ahead of the cursor as you type, showing what Aesh predicts you want to enter. Unlike [tab completion](completers), which requires pressing Tab, ghost text appears automatically and can be accepted with keyboard shortcuts.
 
 ## How It Works
 
@@ -14,16 +14,46 @@ As you type, ghost text suggestions appear automatically:
 ```
 myapp> ca|che                    ← "che" appears dimmed after cursor
 myapp> connect --ho|st=          ← "st=" appears dimmed after cursor
-myapp> git co|mmit               ← "mmit" appears dimmed after cursor
+myapp> mvn clean tes|t -pl aesh  ← "t -pl aesh" from history, dimmed
 ```
 
-- **Right arrow** accepts the suggestion
-- **Keep typing** to narrow or dismiss the suggestion
-- Only shown when there is exactly one unambiguous match
+- **Right arrow / End** -- Accept the full suggestion
+- **Alt+F / Ctrl+Right** -- Accept the next word from the suggestion
+- **Keep typing** -- Narrow or dismiss the suggestion
+- Ghost text updates automatically after every keystroke, including backspace
+
+## History Suggestions
+
+Aesh Readline includes a built-in `HistorySuggestionProvider` that suggests commands from your history as you type, similar to [fish shell's auto-suggestions](https://fishshell.com/docs/current/interactive.html#autosuggestions). It searches history from most recent to oldest, finding the first entry that starts with what you've typed, and shows the remaining text as ghost text.
+
+```
+myapp> mvn c|lean test -pl aesh -Dtest=ProcessorTest
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ from history
+```
+
+### Automatic activation
+
+When you call `setSuggestionProvider()` on `ReadlineConsole`, history suggestions are automatically enabled and take priority over command-level suggestions. No additional setup is needed -- if the current input matches a history entry, that suggestion is shown; otherwise, the command suggestion provider is used as a fallback.
+
+### Standalone history suggestions
+
+If you want history suggestions without a command-level provider (e.g., in a plain readline application):
+
+```java
+Readline readline = new Readline(editMode, history, completionHandler);
+readline.enableHistorySuggestions();
+```
+
+### How it works
+
+- Searches `History.getAll()` in reverse order (most recent first)
+- Uses prefix matching -- the buffer must match the beginning of a history entry
+- Returns only the suffix (the part you haven't typed yet)
+- Combined with other providers via `CompositeSuggestionProvider` (history first)
 
 ## CommandSuggestionProvider
 
-`CommandSuggestionProvider` uses the command registry to suggest command names, subcommand names, and option names as you type. It implements the `SuggestionProvider` interface from Æsh Readline.
+`CommandSuggestionProvider` uses the command registry to suggest command names, subcommand names, and option names as you type. It implements the `SuggestionProvider` interface from Aesh Readline.
 
 ### What It Suggests
 
@@ -69,25 +99,29 @@ console.start();
 
 ## CompositeSuggestionProvider
 
-You can combine multiple suggestion sources using `CompositeSuggestionProvider`. The first provider that returns a non-null suggestion wins. This lets you layer history-based suggestions with command-based suggestions:
+Multiple suggestion sources are combined using `CompositeSuggestionProvider`. The first provider that returns a non-null suggestion wins.
+
+{{< callout type="info" >}}
+When you call `setSuggestionProvider()` with history available, Aesh automatically creates a `CompositeSuggestionProvider` with history suggestions first and your provider second. You typically don't need to create one manually.
+{{< /callout >}}
+
+For custom chaining:
 
 ```java
-import org.aesh.readline.CompositeSuggestionProvider;
-import org.aesh.readline.SuggestionProvider;
+import org.aesh.readline.suggestion.CompositeSuggestionProvider;
+import org.aesh.readline.suggestion.SuggestionProvider;
 
-// History-based suggestions (checked first)
-SuggestionProvider historyProvider = buffer -> {
-    // Return matching history entry suffix, or null
-    return findHistoryMatch(buffer);
+SuggestionProvider myProvider = buffer -> {
+    // Custom suggestion logic
+    return null;
 };
 
-// Command registry suggestions (fallback)
 CommandSuggestionProvider<?> commandProvider =
         new CommandSuggestionProvider<>(console.getCommandRegistry());
 
-// Combine: history takes priority, falls back to commands
+// Custom ordering: your provider first, then commands
 CompositeSuggestionProvider composite =
-        new CompositeSuggestionProvider(historyProvider, commandProvider);
+        new CompositeSuggestionProvider(myProvider, commandProvider);
 
 console.setSuggestionProvider(composite);
 ```
@@ -97,7 +131,7 @@ console.setSuggestionProvider(composite);
 You can implement the `SuggestionProvider` interface directly for custom suggestion logic:
 
 ```java
-import org.aesh.readline.SuggestionProvider;
+import org.aesh.readline.suggestion.SuggestionProvider;
 
 SuggestionProvider myProvider = buffer -> {
     // Return the suffix to append as ghost text, or null for no suggestion
