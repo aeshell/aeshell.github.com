@@ -72,7 +72,7 @@ Duplicate history entries are automatically removed. Only the most recent occurr
 
 ### Timestamps
 
-Each entry shows when it was added to history (format: `MM-dd HH:mm`). Timestamps are tracked by `InMemoryHistory` and `FileHistory`.
+Each entry shows when it was added to history (format: `MM-dd HH:mm`). Timestamps are tracked by both `InMemoryHistory` and `FileHistory`, and are persisted to the history file across sessions. Legacy history files (from older versions without timestamps) use the file's modification time as a fallback.
 
 ### Sort Toggle
 

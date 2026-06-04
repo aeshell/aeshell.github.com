@@ -148,6 +148,27 @@ history.push("command2");
 // History is loaded from file on construction
 ```
 
+### Timestamps
+
+Both `InMemoryHistory` and `FileHistory` track when each command was added. Timestamps are persisted to the history file and restored on load, so they survive across sessions.
+
+```java
+History history = ...;
+
+// Timestamps are parallel to getAll() — same size and order
+List<Long> timestamps = history.getTimestamps();
+if (timestamps != null) {
+    for (int i = 0; i < history.size(); i++) {
+        long epochMillis = timestamps.get(i);
+        System.out.println(new Date(epochMillis) + " — " + history.get(i));
+    }
+}
+```
+
+Timestamps are displayed in the [fuzzy history search]({{< ref "fuzzy-history-search" >}}) UI and are preserved when the history file is saved and reloaded.
+
+The history file uses a backward-compatible format: new files store timestamps alongside commands, while legacy history files (from older versions) are read with the file's modification time as a fallback timestamp.
+
 ## History Size Limits
 
 ```java
