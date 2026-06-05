@@ -1402,6 +1402,37 @@ Text blocks (Java 15+) also work — leading indentation is automatically stripp
 String environment;
 ```
 
+## Enum Options and Valid Values
+
+When an option uses an enum type, aesh automatically appends the valid values to the help description. You don't need to manually list them -- they stay in sync with the actual enum constants.
+
+```java
+public enum Format { TEXT, JSON, XML }
+
+@Option(name = "format", description = "Output format")
+Format format;
+```
+
+Help output:
+```
+--format=<format>  Output format. Valid values: text, json, xml
+```
+
+If you add a new value to the enum, the help updates automatically.
+
+The auto-append is skipped when the description already contains the values (e.g., via `${COMPLETION-CANDIDATES}`), so there is no duplication:
+
+```java
+@Option(name = "format", description = "Output format (${COMPLETION-CANDIDATES})")
+Format format;
+// Renders: --format=<format>  Output format (text, json, xml)
+// "Valid values:" is NOT appended since the values are already shown
+```
+
+{{< callout type="info" >}}
+Enum values are shown in lowercase in help output. The parser accepts values case-insensitively (e.g., `--format TEXT`, `--format text`, and `--format Text` all work).
+{{< /callout >}}
+
 ## Description Variables
 
 Option and command descriptions support `${VARIABLE}` placeholders that are resolved at help-render time. This keeps descriptions in sync with annotation values automatically.
