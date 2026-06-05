@@ -50,6 +50,29 @@ Usage: `compile -Denv=prod -Ddebug=true -Dlog.level=INFO`
 
 Each `-D` occurrence adds an entry to the map. The key and value are split on the `=` character.
 
+### Syntax Variants
+
+`@OptionGroup` supports two syntaxes for specifying key-value pairs:
+
+| Syntax | Example | Result |
+|--------|---------|--------|
+| **Concatenated** (aesh native) | `--manifestFoo=Bar` | `{Foo: Bar}` |
+| **Separated** (picocli compatible) | `--manifest=Foo=Bar` | `{Foo: Bar}` |
+| **Short name** | `-DFoo=Bar` | `{Foo: Bar}` |
+
+Both long-name syntaxes produce identical results. The separated syntax (`--name=key=value`) is useful for backward compatibility with picocli-based scripts and tools.
+
+```bash
+# All equivalent:
+compile --manifestFoo=Bar
+compile --manifest=Foo=Bar
+compile -DFoo=Bar
+
+# Multiple entries:
+compile --manifest=env=prod --manifest=debug=true
+compile -Denv=prod -Ddebug=true
+```
+
 ### Help Output
 
 `@OptionGroup` renders with `=<key=value>` syntax in help to show the expected format:
