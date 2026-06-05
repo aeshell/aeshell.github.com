@@ -265,6 +265,42 @@ The generators introspect the command model and produce:
 - **Subcommand names** for group commands
 - **Positional argument completion** (file completion for `@Argument`/`@Arguments` with file types)
 
+### Completion Fallback Control
+
+By default, when no completion candidates are available for an argument, the shell falls back to file/path completion for `String`, `File`, and `Path` types, and no fallback for enum types. You can override this per-argument using `completeFallback`:
+
+```java
+@Argument(description = "Script file")
+String script;  // DEFAULT: auto-detected as FILES (String type)
+
+@Argument(description = "Catalog name", completeFallback = CompletionFallback.NONE)
+String catalog;  // No file fallback -- only completer candidates
+
+@Option(name = "workspace", completeFallback = CompletionFallback.DIRECTORIES)
+String workspace;  // Only directories, no regular files
+```
+
+| Value | Behavior |
+|-------|----------|
+| `DEFAULT` | Auto-detect: `FILES` for String/File/Path, `NONE` for enums |
+| `FILES` | Offer file and directory path completion |
+| `DIRECTORIES` | Offer only directory completion (no regular files) |
+| `NONE` | No fallback -- only show candidates from completers |
+
+This is especially useful for commands where some arguments expect file paths and others expect non-file values like identifiers, versions, or names:
+
+```java
+@CommandDefinition(name = "jdk", description = "Manage JDKs",
+        groupCommands = { JdkInstallCommand.class })
+public class JdkCommand implements Command<CommandInvocation> { }
+
+@CommandDefinition(name = "install", description = "Install a JDK version")
+public class JdkInstallCommand implements Command<CommandInvocation> {
+    @Argument(description = "JDK version", completeFallback = CompletionFallback.NONE)
+    String version;  // "17", "21" -- not a file path
+}
+```
+
 ### GraalVM Native Images
 
 Dynamic callback completion is ideal for GraalVM native images. Since native binaries start in ~10ms, tab completion feels instant:
