@@ -1401,3 +1401,55 @@ Text blocks (Java 15+) also work — leading indentation is automatically stripp
     Defaults to the value of $APP_ENV.""")
 String environment;
 ```
+
+## Description Variables
+
+Option and command descriptions support `${VARIABLE}` placeholders that are resolved at help-render time. This keeps descriptions in sync with annotation values automatically.
+
+### Option-level variables
+
+| Variable | Resolves to | Example |
+|----------|-------------|---------|
+| `${DEFAULT-VALUE}` | The option's `defaultValue` | `"4004"` |
+| `${FALLBACK-VALUE}` | The option's `fallbackValue` | `"4004"` |
+| `${COMPLETION-CANDIDATES}` | The option's `allowedValues` (comma-separated) | `"fast, safe"` |
+
+```java
+@Option(name = "debug", defaultValue = "4004",
+        description = "Enable debugging on port ${DEFAULT-VALUE}")
+String debug;
+// Renders: --debug=<debug>  Enable debugging on port 4004
+
+@Option(name = "mode", allowedValues = {"fast", "safe"},
+        description = "Build mode (${COMPLETION-CANDIDATES})")
+String mode;
+// Renders: --mode=<mode>    Build mode (fast, safe)
+
+@Option(name = "port", defaultValue = "8080", fallbackValue = "8080",
+        optionalValue = true,
+        description = "Server port (default: ${DEFAULT-VALUE})")
+String port;
+// Renders: --port=<port>    Server port (default: 8080)
+```
+
+### Command-level variables
+
+These work in both option descriptions and command descriptions, as well as in `HelpSectionProvider` content (header, footer, additional sections):
+
+| Variable | Resolves to |
+|----------|-------------|
+| `${COMMAND-NAME}` | The current command name (e.g., `run`) |
+| `${COMMAND-FULL-NAME}` | The full command path (e.g., `jbang run`) |
+| `${ROOT-COMMAND-NAME}` | The root/top-level command name (e.g., `jbang`) |
+| `${PARENT-COMMAND-NAME}` | The parent command name (e.g., `jbang`) |
+| `${PARENT-COMMAND-FULL-NAME}` | The parent command full path |
+
+```java
+@CommandDefinition(name = "run",
+        description = "Run a ${ROOT-COMMAND-NAME} script")
+public class RunCommand implements Command<CommandInvocation> {
+    // Description renders as: "Run a jbang script"
+}
+```
+
+Unknown variables are left as-is (not replaced).
