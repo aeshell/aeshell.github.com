@@ -37,10 +37,10 @@ The `@GroupCommandDefinition` annotation is deprecated. Use `@CommandDefinition`
 
 ## Subcommands
 
-Define subcommands as regular commands with `@CommandDefinition`:
+Define subcommands as regular commands with `@CommandDefinition`. Subcommands support `aliases` for short alternative names:
 
 ```java
-@CommandDefinition(name = "commit", description = "Commit changes")
+@CommandDefinition(name = "commit", aliases = {"ci"}, description = "Commit changes")
 public class CommitCommand implements Command<CommandInvocation> {
 
     @Option(shortName = 'm', description = "Commit message", required = true)
@@ -99,6 +99,13 @@ AeshConsoleRunner.builder()
         .prompt("[myapp]$ ")
         .addExitCommand()
         .start();
+```
+
+Subcommand aliases work for both direct invocation and shell completion:
+
+```bash
+git commit -m "fix"   # primary name
+git ci -m "fix"       # alias — resolves to commit
 ```
 
 ## Usage

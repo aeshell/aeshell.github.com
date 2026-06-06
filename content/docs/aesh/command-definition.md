@@ -468,3 +468,13 @@ Both methods return `null` by default (no header/footer). The text can contain n
 3. **HelpEntry** is a simple value class with `name()` and `description()` (description is optional)
 4. **Return an empty map** (not null) if there are no additional sections to show
 5. **Header** appears before the synopsis, **footer** appears after all other content
+
+## NO_COLOR Support
+
+Aesh respects the [NO_COLOR](https://no-color.org) standard. When the `NO_COLOR` environment variable is set (to any value), all ANSI color and styling codes are suppressed in help output:
+
+```bash
+NO_COLOR=1 myapp --help   # plain text, no ANSI codes
+```
+
+This affects synopsis (bold command, yellow options, cyan placeholders), option formatting, and any other framework-generated styled text. The setting can also be controlled programmatically via `parser.updateAnsiMode(false)`.
