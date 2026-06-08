@@ -220,7 +220,7 @@ When `fallbackValue` is set:
 3. **Explicit value (`--debug=5005`)** uses the given value, same as any normal option
 4. **Not specified** leaves the field as `null` (or the `defaultValue` / `DefaultValueProvider` value if configured)
 
-This eliminates the need for custom `OptionParser` implementations to handle the three-state pattern.
+This works with both the built-in `AeshOptionParser` and custom `OptionParser` implementations -- the fallback chain runs automatically after any parser returns without setting a value.
 
 ### Compared to `optionalValue`
 
@@ -1088,6 +1088,64 @@ The `fallbackValue()` method is a `default` method returning `null`. Existing `D
 | Bare flag (`--debug`) needs a static value | `@Option(fallbackValue = "4004")` |
 | Bare flag needs a value from config/env | `DefaultValueProvider.fallbackValue()` |
 | All of the above combined | Both annotation + provider, resolution chain handles priority |
+
+### Custom Parsers and the Fallback Chain
+
+When using a custom `OptionParser` (via `@Option(parser = MyParser.class)`), the value resolution chain applies automatically. If the custom parser decides not to consume a token and returns without calling `addValue()`, the framework applies the fallback chain (provider `fallbackValue()` -> annotation `fallbackValue` -> annotation `defaultValue`).
+
+This separates the **parsing concern** (which tokens to consume) from the **value resolution concern** (what value to use when no tokens were consumed):
+
+```java
+public class DebugOptionParser implements OptionParser {
+    private static final Pattern PORT = Pattern.compile("\\d+");
+
+    @Override
+    public void parse(ParsedLineIterator iter, ProcessedOption option)
+            throws OptionParserException {
+        // Consume the option name token
+        iter.pollParsedWord();
+
+        // Peek at next token -- only consume if it matches a port number
+        if (iter.hasNextWord()) {
+            String next = iter.peekWord();
+            if (!next.startsWith("-") && PORT.matcher(next).matches()) {
+                option.addValue(next);
+                iter.pollParsedWord();
+                return;
+            }
+        }
+        // No addValue() call -- framework applies the fallback chain
+    }
+}
+
+@CommandDefinition(name = "run", description = "Run script")
+public class RunCommand implements Command<CommandInvocation> {
+
+    @Option(name = "debug", parser = DebugOptionParser.class,
+            fallbackValue = "4004")
+    String debug;
+
+    @Argument
+    String script;
+}
+```
+
+```bash
+$ run --debug=5005 test.java   # debug = "5005" (parser consumed)
+$ run --debug 5005 test.java   # debug = "5005" (parser consumed)
+$ run --debug test.java        # debug = "4004" (parser skipped, fallback applied)
+$ run --debug                  # debug = "4004" (parser skipped, fallback applied)
+```
+
+The custom parser contract:
+
+| Parser action | Result |
+|---|---|
+| `option.addValue(x)` | Value is `x` -- no fallback applied |
+| `option.addValue("")` | Value is `""` -- no fallback applied (explicit empty) |
+| No `addValue()` call | Fallback chain runs (provider -> annotation -> default) |
+
+This eliminates the need for custom parsers to set sentinel values (like `""`) and handle fallback resolution manually.
 
 ### Multiple Default Values
 

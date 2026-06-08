@@ -346,6 +346,20 @@ SettingsBuilder.builder()
 
 See [Sub-Command Mode](/docs/aesh/sub-command-mode) for complete documentation.
 
+### Ghost Text and Tail Tips
+
+#### tailTipSuggestions(boolean)
+
+Enables tail tip suggestions -- dimmed parameter hints shown after the cursor in interactive mode. When enabled, remaining options and arguments are displayed as ghost text after each completed word. Only applies to `ReadlineConsole` (REPL mode), not `AeshRuntimeRunner`. Default: `false`
+
+```java
+SettingsBuilder.builder()
+        .tailTipSuggestions(true)
+        .build();
+```
+
+See [Ghost Text Suggestions](../ghost-text-suggestions#tailtipsuggestionprovider) for details on how tail tips work and how they interact with other suggestion providers.
+
 ### Additional Options
 
 #### readInputrc(boolean)
@@ -466,6 +480,7 @@ public CommandResult execute(CommandInvocation invocation) {
 | `setRedirection` | `boolean` | `true` | Enable redirection operators |
 | `readInputrc` | `boolean` | `true` | Read .inputrc configuration |
 | `echoCtrl` | `boolean` | `true` | Echo control characters |
+| `tailTipSuggestions` | `boolean` | `false` | Show parameter hints after cursor |
 | `subCommandModeSettings` | `SubCommandModeSettings` | defaults | Sub-command mode configuration |
 
 ## Best Practices

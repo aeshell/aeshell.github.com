@@ -80,7 +80,7 @@ Each generated page includes:
 | Section | Content |
 |---------|---------|
 | **NAME** | Command name and description |
-| **SYNOPSIS** | Formatted usage with options, arguments, and `[COMMAND]` placeholder for groups |
+| **SYNOPSIS** | Formatted usage with short flag clusters, negatable options, exclusive pipes, value placeholders, and `[COMMAND]` placeholder for groups. Consistent across all formats and `--help`. |
 | **DESCRIPTION** | Command description from the annotation |
 | **OPTIONS** | All visible options with short/long names, value placeholders, defaults, aliases, and negatable display |
 | **ARGUMENTS** | Positional parameters with labels |

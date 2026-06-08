@@ -146,6 +146,77 @@ console.setSuggestionProvider(myProvider);
 
 The `suggest` method receives the current input buffer and returns the text to display after the cursor as ghost text. Return `null` when there is no suggestion.
 
+## TailTipSuggestionProvider
+
+`TailTipSuggestionProvider` displays parameter hints after the cursor, showing remaining options and arguments that haven't been provided yet. Unlike `CommandSuggestionProvider` which completes the current word, tail tips show the full synopsis of what comes next.
+
+```
+myapp> deploy --force |[-e=<environment>] <app>
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^ remaining params (dimmed)
+```
+
+As the user fills in parameters, the tail tip updates to show only what's still needed:
+
+```
+myapp> deploy --force -e prod |<app>
+                               ^^^^^ only argument left (dimmed)
+```
+
+### How it works
+
+- Only activates when the buffer ends with a space (the user has finished typing a word)
+- Parses the current buffer to determine which options have already been provided
+- Builds a synopsis of remaining options and arguments
+- Uses the same formatting as `--help` synopsis (short flag clusters, exclusive pipes, value placeholders)
+- Caches the last result to avoid re-parsing on unchanged input
+
+### Setup
+
+Tail tips are opt-in via Settings and only apply to interactive `ReadlineConsole` mode (not `AeshRuntimeRunner`):
+
+```java
+Settings settings = SettingsBuilder.builder()
+        .tailTipSuggestions(true)   // default: false
+        .commandRegistry(registry)
+        .build();
+
+ReadlineConsole console = new ReadlineConsole(settings);
+console.start();
+```
+
+When enabled, the tail tip provider is automatically added as the lowest-priority provider in the suggestion chain. History suggestions and command auto-suggest take priority when they have a match.
+
+### Priority ordering
+
+When `tailTipSuggestions` is enabled and `setSuggestionProvider()` is also used, the chain is:
+
+1. History suggestions (if history is available)
+2. Your suggestion provider (e.g., `CommandSuggestionProvider`)
+3. Tail tip suggestions (only when others return null)
+
+This means mid-word typing gets auto-suggest, and after completing a word (trailing space), the tail tip shows remaining parameters.
+
+### Combining with CommandSuggestionProvider
+
+For the best experience, use both providers together:
+
+```java
+Settings settings = SettingsBuilder.builder()
+        .tailTipSuggestions(true)
+        .commandRegistry(registry)
+        .build();
+
+ReadlineConsole console = new ReadlineConsole(settings);
+console.setSuggestionProvider(
+        new CommandSuggestionProvider<>(console.getCommandRegistry()));
+console.start();
+```
+
+This gives:
+- History auto-suggest when a history entry matches
+- Command/option name completion while typing
+- Parameter hints after each completed word
+
 ## Ghost Text vs Tab Completion
 
 | Feature | Ghost Text | Tab Completion |
@@ -154,6 +225,6 @@ The `suggest` method receives the current input buffer and returns the text to d
 | **Display** | Inline dimmed text | List below prompt |
 | **Matches** | Single unambiguous only | Shows all matches |
 | **Accept** | Right arrow | Tab / Enter |
-| **Scope** | Commands, subcommands, options | Options, arguments, custom values |
+| **Scope** | Commands, subcommands, options, tail tips | Options, arguments, custom values |
 
 Both features complement each other. Ghost text gives fast inline suggestions for unambiguous matches, while tab completion helps explore all available options when there are multiple possibilities.
