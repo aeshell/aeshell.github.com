@@ -972,52 +972,122 @@ Connecting to john@dev-db.local:5434/myapp
 
 ### Dynamic Default Values
 
-For defaults that must be resolved at runtime (e.g., from configuration files, databases, or user profiles), use a `DefaultValueProvider`. The provider is registered on the command, not on individual options:
+For defaults and fallbacks that must be resolved at runtime (e.g., from configuration files, databases, or user profiles), use a `DefaultValueProvider`. The provider participates in the full value resolution chain, handling both "option omitted" and "option present but bare" cases.
+
+### Value Resolution Chain
+
+When determining an option's value, aesh follows this resolution chain (highest to lowest priority):
+
+| Priority | Source | When | Example |
+|----------|--------|------|---------|
+| 1 | **Explicit user value** | `--debug=5005` | Always wins |
+| 2 | **Provider `fallbackValue()`** | `--debug` (bare) | Dynamic fallback from config |
+| 3 | **Annotation `fallbackValue`** | `--debug` (bare) | Static fallback |
+| 4 | **Provider `defaultValue()`** | Option omitted | Dynamic default from config |
+| 5 | **Annotation `defaultValue`** | Option omitted | Static default |
+| 6 | **Field type default** | Option omitted | `null`, `0`, `false` |
+
+At each stage, returning `null` (or not setting a value) falls through to the next stage.
+
+### Basic DefaultValueProvider
+
+The provider is registered on the command via `@CommandDefinition(defaultValueProvider = ...)`:
 
 ```java
 public class AppConfigProvider implements DefaultValueProvider {
 
     @Override
     public String defaultValue(ProcessedOption option) {
-        // Build a hierarchical key from command + option name
+        // Called when option is NOT specified at all
         String key = option.parent().name() + "." + option.name();
-        return AppConfig.instance().get(key);  // null if not configured
+        return AppConfig.instance().get(key);  // null → falls through to annotation defaultValue
     }
 }
 
-@CommandDefinition(
-    name = "run",
-    description = "Run application",
-    defaultValueProvider = AppConfigProvider.class
-)
+@CommandDefinition(name = "run", description = "Run application",
+        defaultValueProvider = AppConfigProvider.class)
 public class RunCommand implements Command<CommandInvocation> {
 
     @Option(description = "Debug port", defaultValue = "4004")
     private String debug;
-
-    @Option(description = "JFR settings")
-    private String jfr;
-
-    @Override
-    public CommandResult execute(CommandInvocation invocation) {
-        // debug = config value if set, else "4004", unless user provided a value
-        return CommandResult.SUCCESS;
-    }
+    // Omitted → provider returns config value, or falls through to "4004"
 }
 ```
 
-If the provider returns `null` for an option, the static `defaultValue` from the annotation is used as a fallback. See [Command Definition - Dynamic Default Value Provider](/docs/aesh/command-definition#dynamic-default-value-provider) for more details.
+### Provider Fallback for Bare Flags
 
-### Priority Order
+The `fallbackValue()` method handles options used without a value (e.g., `--debug` without `=value`). This is useful for three-state options where "bare flag" should resolve from configuration:
 
-When determining option values, Æsh uses this priority (highest to lowest):
+```java
+public class JBangConfigProvider implements DefaultValueProvider {
 
-1. **Command-line argument** - Explicitly provided by user
-2. **Dynamic default** - From `DefaultValueProvider` (if non-null)
-3. **Static default / Environment variable / System property** - From `defaultValue` annotation
-4. **Fallback value** - Value after `:` in the `defaultValue` expression
-5. **Field initializer** - Java field initialization value
-6. **null** - If nothing else is set
+    @Override
+    public String defaultValue(ProcessedOption option) {
+        // Called when option is omitted entirely
+        return null;
+    }
+
+    @Override
+    public String fallbackValue(ProcessedOption option) {
+        // Called when option is present but bare (--debug without =value)
+        switch (option.name()) {
+            case "debug":
+                return Configuration.get("run.debug");  // null → falls through to "4004"
+            case "jfr":
+                return Configuration.get("run.jfr");    // null → falls through to ""
+            default:
+                return null;  // use annotation fallbackValue
+        }
+    }
+}
+
+@CommandDefinition(name = "run", description = "Run a script",
+        defaultValueProvider = JBangConfigProvider.class)
+public class RunCommand implements Command<CommandInvocation> {
+
+    @Option(name = "debug", fallbackValue = "4004",
+            description = "Enable debugging on port ${DEFAULT-VALUE}")
+    String debug;
+
+    @Option(name = "jfr", fallbackValue = "",
+            description = "Enable Java Flight Recorder")
+    String jfr;
+}
+```
+
+**How this resolves for `--debug`:**
+
+```bash
+# Explicit value — always wins (priority 1)
+$ myapp run --debug=5005
+# debug = "5005"
+
+# Bare flag, config has run.debug=9999 — provider fallback (priority 2)
+$ myapp run --debug
+# debug = "9999" (from provider.fallbackValue())
+
+# Bare flag, no config — annotation fallback (priority 3)
+$ myapp run --debug
+# debug = "4004" (from @Option(fallbackValue = "4004"))
+
+# Option omitted — field default (priority 6)
+$ myapp run
+# debug = null
+```
+
+### Backward Compatibility
+
+The `fallbackValue()` method is a `default` method returning `null`. Existing `DefaultValueProvider` implementations continue to work unchanged — the annotation `fallbackValue` is used as before when the provider doesn't override this method.
+
+### When to Use Each
+
+| Scenario | Use |
+|----------|-----|
+| Option always has a known default | `@Option(defaultValue = "4004")` |
+| Default comes from config/env at runtime | `DefaultValueProvider.defaultValue()` |
+| Bare flag (`--debug`) needs a static value | `@Option(fallbackValue = "4004")` |
+| Bare flag needs a value from config/env | `DefaultValueProvider.fallbackValue()` |
+| All of the above combined | Both annotation + provider, resolution chain handles priority |
 
 ### Multiple Default Values
 
