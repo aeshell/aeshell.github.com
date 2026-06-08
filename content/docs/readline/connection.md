@@ -82,6 +82,32 @@ and before `close()` is called. This is useful for determining which query metho
 - When `reading()` is true: Handler-based methods like `terminal().queryTerminal()` work
 - When `reading()` is false: Use synchronous methods like `TerminalColorDetector.queryColorCapability()`
 
+#### Checking Interactive Mode
+
+```java
+if (connection.isInteractive()) {
+    // Terminal is interactive — enable prompt, completion, colors
+} else {
+    // Piped or redirected — use simple line I/O, skip interactive features
+}
+```
+
+The `isInteractive()` method checks whether the connection is attached to a real terminal:
+- **Local terminals** (`TerminalConnection`): Uses native `isatty()` to check if stdin is a terminal. Returns `false` when input is piped or redirected.
+- **SSH/HTTP connections**: Always returns `true` since these are inherently interactive.
+
+Combine with `supportsAnsi()` for full environment detection:
+
+```java
+if (!connection.isInteractive()) {
+    // Piped/redirected — disable all interactive features
+} else if (!connection.supportsAnsi()) {
+    // Dumb terminal — disable colors and cursor movement
+} else {
+    // Full interactive terminal — enable everything
+}
+```
+
 ## Handlers
 
 ### Standard Input Handler

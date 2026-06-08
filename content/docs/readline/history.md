@@ -181,6 +181,43 @@ History fileHistory = new FileHistory(new File(".history"), 200);
 
 When the limit is reached, oldest entries are removed.
 
+## Ignore Patterns
+
+Commands matching ignore patterns are silently excluded from history. This is useful for preventing sensitive commands (passwords, tokens) from being persisted.
+
+Patterns support simple wildcards:
+
+| Pattern | Matches |
+|---------|---------|
+| `" *"` | Commands starting with a space (shell convention for private commands) |
+| `"*password*"` | Commands containing "password" anywhere |
+| `"*token*"` | Commands containing "token" anywhere |
+| `"exit"` | Exact match only |
+| `"sudo *"` | Commands starting with "sudo " |
+
+### Using ReadlineBuilder
+
+```java
+Readline readline = ReadlineBuilder.builder()
+        .enableHistory(true)
+        .historyIgnore(" *")           // ignore commands starting with space
+        .historyIgnore("*password*")   // ignore commands containing "password"
+        .historyIgnore("*token*")      // ignore commands containing "token"
+        .build();
+```
+
+### Programmatic Configuration
+
+```java
+History history = new InMemoryHistory(500);
+history.setIgnorePatterns(Arrays.asList(" *", "*password*", "*secret*"));
+
+history.push("git status");              // Added
+history.push(" secret command");         // Ignored (starts with space)
+history.push("set password mysecret");   // Ignored (contains "password")
+history.push("git push");               // Added
+```
+
 ## Empty Input
 
 Empty input is not added to history by default:
