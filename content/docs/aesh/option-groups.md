@@ -203,6 +203,21 @@ With `defaultValue = "true"`, `-Dverbose` produces `{"verbose": "true"}`.
 
 The same default value applies when `=` is present but the value is empty: `-Dkey=` also uses the default value.
 
+### Example: Java Agents
+
+A practical use case is JVM-style `--javaagent` options where the agent path is the key and agent options are an optional value:
+
+```java
+@OptionGroup(name = "javaagent", description = "Java agents", defaultValue = "")
+private Map<String, String> agents;
+```
+
+```bash
+$ run --javaagent=metrics.jar --javaagent=tracer.jar=debug --javaagent=profiler.jar
+```
+
+This produces `{"metrics.jar": "", "tracer.jar": "debug", "profiler.jar": ""}` with insertion order preserved.
+
 ## Differences from @OptionList
 
 | | `@OptionGroup` | `@OptionList` |
