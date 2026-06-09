@@ -870,16 +870,16 @@ If the environment variable is not set, the option will have no default value (n
 
 ### Environment Variables with Fallback
 
-Provide a fallback value after a colon (`:`) in case the environment variable is not set:
+Use the `:-` separator (bash-style) to provide a fallback value when the variable is not set:
 
 ```java
-@Option(defaultValue = "${PORT:8080}", description = "Server port")
+@Option(defaultValue = "${PORT:-8080}", description = "Server port")
 private int port;
 
-@Option(defaultValue = "${LOG_LEVEL:INFO}", description = "Log level")
+@Option(defaultValue = "${LOG_LEVEL:-INFO}", description = "Log level")
 private String logLevel;
 
-@Option(defaultValue = "${DATABASE_HOST:localhost}", description = "Database host")
+@Option(defaultValue = "${DATABASE_HOST:-localhost}", description = "Database host")
 private String dbHost;
 ```
 
@@ -887,28 +887,72 @@ If `PORT` is not set, the default will be `8080`. If `LOG_LEVEL` is not set, the
 
 ### System Properties
 
-Reference Java system properties using the same syntax:
+Reference Java system properties using the `sys:` prefix or bare name:
 
 ```java
-@Option(defaultValue = "${user.home}", description = "User home directory")
+@Option(defaultValue = "${sys:user.home}", description = "User home directory")
 private String userHome;
 
-@Option(defaultValue = "${user.name}", description = "Current user")
+@Option(defaultValue = "${user.name}", description = "Current user (sys prop, then env var)")
 private String userName;
 
-@Option(defaultValue = "${java.io.tmpdir}", description = "Temp directory")
+@Option(defaultValue = "${sys:java.io.tmpdir}", description = "Temp directory")
 private String tempDir;
 
-@Option(defaultValue = "${os.name}", description = "Operating system")
+@Option(defaultValue = "${sys:os.name}", description = "Operating system")
 private String osName;
 ```
 
 ### System Properties with Fallback
 
 ```java
-@Option(defaultValue = "${my.app.config:/etc/myapp/config}", description = "Config path")
+@Option(defaultValue = "${sys:my.app.config:-/etc/myapp/config}", description = "Config path")
 private String configPath;
 ```
+
+### Nested Fallback Chains
+
+Fallback values can themselves be variable expressions, enabling cascading resolution:
+
+```java
+// Try env var EDITOR, then sys prop editor.path, then literal "vim"
+@Option(defaultValue = "${env:EDITOR:-${sys:editor.path:-vim}}")
+private String editor;
+
+// Try env var DB_USER, then system user name
+@Option(defaultValue = "${env:DB_USER:-${sys:user.name}}")
+private String dbUser;
+```
+
+This works for `fallbackValue` too:
+
+```java
+// Bare --debug resolves port from env, then config, then literal 4004
+@Option(name = "debug", fallbackValue = "${env:DEBUG_PORT:-${sys:debug.port:-4004}}")
+private String debug;
+```
+
+### Escaping
+
+To use a literal `${...}` string without variable expansion, prefix with an extra `$`:
+
+```java
+@Option(defaultValue = "$${NOT_EXPANDED}", description = "Literal ${NOT_EXPANDED}")
+private String literal;
+```
+
+### Variable Syntax Reference
+
+| Syntax | Meaning | Example |
+|--------|---------|---------|
+| `${env:VAR}` | Environment variable | `${env:HOME}` |
+| `${sys:prop}` | System property | `${sys:user.home}` |
+| `${key}` | Sys prop first, then env var | `${HOME}` |
+| `${key:-fallback}` | Use fallback if not found | `${PORT:-8080}` |
+| `${a:-${b:-c}}` | Nested fallback chain | `${env:A:-${sys:B:-default}}` |
+| `$${...}` | Literal (no expansion) | `$${NOT_EXPANDED}` |
+
+Variable resolution applies to `defaultValue` and `fallbackValue` annotation attributes. It runs at option construction time, before `DefaultValueProvider` (which runs at parse time and takes priority over static defaults).
 
 ### Combined Example
 
@@ -918,28 +962,28 @@ public class ConnectCommand implements Command<CommandInvocation> {
 
     @Option(
         shortName = 'h',
-        defaultValue = "${DB_HOST:localhost}",
+        defaultValue = "${DB_HOST:-localhost}",
         description = "Database host"
     )
     private String host;
 
     @Option(
         shortName = 'p',
-        defaultValue = "${DB_PORT:5432}",
+        defaultValue = "${DB_PORT:-5432}",
         description = "Database port"
     )
     private int port;
 
     @Option(
         shortName = 'u',
-        defaultValue = "${DB_USER:${user.name}}",
+        defaultValue = "${env:DB_USER:-${sys:user.name}}",
         description = "Database user (defaults to system user)"
     )
     private String user;
 
     @Option(
         shortName = 'd',
-        defaultValue = "${DB_NAME:myapp}",
+        defaultValue = "${DB_NAME:-myapp}",
         description = "Database name"
     )
     private String database;
