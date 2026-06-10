@@ -23,6 +23,20 @@ Prompt prompt = new Prompt(new TerminalString("[user@host]$ ",
         new TerminalColor(Color.GREEN, Color.DEFAULT)));
 ```
 
+## ANSI Auto-Detection
+
+When creating a prompt with embedded ANSI escape codes, the visible length is calculated automatically:
+
+```java
+// ANSI codes are detected — visible length is 2 ("$ "), not 11
+Prompt prompt = new Prompt("\033[32m$\033[0m ");
+
+// Equivalent to the two-arg constructor:
+Prompt prompt = new Prompt("$ ", "\033[32m$\033[0m ");
+```
+
+This prevents cursor positioning issues that occur when the prompt length includes invisible escape sequences.
+
 ## Constructors
 
 ### Basic Prompt
@@ -30,6 +44,9 @@ Prompt prompt = new Prompt(new TerminalString("[user@host]$ ",
 ```java
 // Simple text prompt
 Prompt prompt = new Prompt("myapp> ");
+
+// With ANSI codes — length auto-detected
+Prompt prompt = new Prompt("\033[1;31mERROR>\033[0m ");
 ```
 
 ### Prompt with Mask

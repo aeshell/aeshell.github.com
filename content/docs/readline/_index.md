@@ -51,6 +51,12 @@ Think of it this way: Æsh is built **on top of** Æsh Readline. Æsh provides t
 - **[Hyperlinks](hyperlinks)** - Clickable OSC 8 hyperlinks in terminal output
 - **[Clipboard](clipboard)** - Automatic system clipboard integration via OSC 52
 - **[Mouse Tracking](mouse-tracking)** - Mouse event handling with SGR encoding and Windows console support
+- **[Focus Tracking](focus-tracking)** - Detect terminal focus gained/lost events
+- **[Right Prompt](right-prompt)** - Right-aligned prompt that auto-hides when input grows
+- **[Print Above](print-above)** - Print text above the prompt without disrupting input
+- **[Status Lines](status-lines)** - Persistent status display between output and prompt
+- **[Split Screen](split-screen)** - Independent scrolling regions (experimental)
+- **[Terminal Provider SPI](terminal-provider)** - Pluggable terminal implementations via ServiceLoader
 - **[VT Parser](vt-parser)** - Table-driven ANSI/VT escape sequence parser for input classification
 - **[Synchronized Output](synchronized-output)** - Tear-free rendering with DEC Mode 2026
 - **[POSIX Native Access](posix-native-access)** - Zero-subprocess terminal I/O via FFM on Java 22+
