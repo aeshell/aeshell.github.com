@@ -72,6 +72,28 @@ split.setSeparator("- ");   // dashed
 split.setSeparator(null);   // no separator
 ```
 
+## printAbove Integration
+
+When split screen is active, `connection.printAbove()` automatically routes to the top region:
+
+```java
+// During split screen, this writes to the top region
+connection.printAbove("[INFO] Build completed");
+
+// Direct region write also works
+split.topRegion().writeln("[DEBUG] Processing...");
+```
+
+This means existing code using `printAbove()` for async output will automatically use the top region when split screen is enabled.
+
+## Resize Handling
+
+The split screen automatically adjusts when the terminal is resized:
+- The split ratio is maintained
+- The separator is redrawn at the new position
+- Both regions are resized proportionally
+- If the terminal becomes too small (below 7 rows), the split is automatically suspended and restored when the terminal grows back
+
 ## Suspend and Resume
 
 When a command needs the full screen (editor, pager), suspend the split:
@@ -81,6 +103,8 @@ split.suspend();   // clears split, resets scroll region
 // ... full-screen command runs ...
 split.resume();    // restores split layout, redraws
 ```
+
+The split also auto-suspends when the terminal is resized too small, and auto-resumes when space is available again.
 
 ## Output Routing
 
@@ -94,6 +118,19 @@ connection.setCurrentRegion(null);  // reset to default
 connection.write("goes to terminal directly");
 ```
 
+## Terminal Cleanup
+
+The split screen registers a JVM shutdown hook to reset the terminal state (DECSTBM scroll region) on abnormal exit, preventing a corrupted terminal.
+
+## Tab Completion and History Search
+
+Tab completion and fuzzy history search (Ctrl+R) work normally within the bottom region. They are constrained to the bottom region's bounds automatically.
+
 ## Example
 
-See `SplitScreenExample` in the examples directory.
+See `SplitScreenExample` in the examples directory. Commands:
+- `log <msg>` — write to top region
+- `above <msg>` — test printAbove routing to top region
+- `clear` — clear top region
+- `help` — show commands
+- Tab completion and Ctrl+R work in the bottom region
