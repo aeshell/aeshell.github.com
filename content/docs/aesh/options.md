@@ -1022,16 +1022,56 @@ For defaults and fallbacks that must be resolved at runtime (e.g., from configur
 
 When determining an option's value, aesh follows this resolution chain (highest to lowest priority):
 
+**When the option is omitted entirely:**
+
 | Priority | Source | When | Example |
 |----------|--------|------|---------|
 | 1 | **Explicit user value** | `--debug=5005` | Always wins |
-| 2 | **Provider `fallbackValue()`** | `--debug` (bare) | Dynamic fallback from config |
-| 3 | **Annotation `fallbackValue`** | `--debug` (bare) | Static fallback |
-| 4 | **Provider `defaultValue()`** | Option omitted | Dynamic default from config |
-| 5 | **Annotation `defaultValue`** | Option omitted | Static default |
-| 6 | **Field type default** | Option omitted | `null`, `0`, `false` |
+| 2 | **Annotation `defaultValue` with resolved env/sys var** | `${env:VAR}` was set | Env var takes priority |
+| 3 | **Provider `defaultValue()`** | Option omitted, env var not set | Dynamic default from config |
+| 4 | **Annotation `defaultValue`** (static/fallback) | Provider returned null | Static default or `:-` fallback |
+| 5 | **Field type default** | Nothing resolved | `null`, `0`, `false` |
+
+**When the option is specified bare (e.g., `--debug` without value):**
+
+| Priority | Source | When | Example |
+|----------|--------|------|---------|
+| 1 | **Annotation `fallbackValue` with resolved env/sys var** | `${env:VAR}` was set | Env var takes priority |
+| 2 | **Provider `fallbackValue()`** | Env var not set | Dynamic fallback from config |
+| 3 | **Annotation `fallbackValue`** (static/fallback) | Provider returned null | Static fallback or `:-` portion |
+| 4 | **Annotation `defaultValue`** | No fallback available | Legacy fallback |
 
 At each stage, returning `null` (or not setting a value) falls through to the next stage.
+
+{{< callout type="info" >}}
+The env var priority only applies when the annotation `defaultValue` or `fallbackValue` uses `${env:...}` or `${sys:...}` syntax **and** the referenced variable is actually set. Options with literal defaults (e.g., `defaultValue = "4004"`) are unaffected — the provider takes priority as before.
+{{< /callout >}}
+
+#### Env Var > Config > Hardcoded Default
+
+This resolution chain enables the common "env var > config file > hardcoded default" pattern declaratively:
+
+```java
+@CommandDefinition(name = "edit", description = "Edit files",
+        defaultValueProvider = AppConfigProvider.class)
+public class EditCommand implements Command<CommandInvocation> {
+
+    // Priority: JBANG_EDITOR env var > config "edit.open" > (none)
+    @Option(name = "open", defaultValue = "${env:JBANG_EDITOR:-}")
+    String editor;
+}
+```
+
+```bash
+# Env var set: uses env var (priority 2)
+$ JBANG_EDITOR=code edit file.java    # editor = "code"
+
+# Env var not set, config has edit.open=vim: uses provider (priority 3)
+$ edit file.java                       # editor = "vim"
+
+# Env var not set, no config: uses fallback (priority 4)
+$ edit file.java                       # editor = ""
+```
 
 ### Basic DefaultValueProvider
 
@@ -1128,10 +1168,11 @@ The `fallbackValue()` method is a `default` method returning `null`. Existing `D
 | Scenario | Use |
 |----------|-----|
 | Option always has a known default | `@Option(defaultValue = "4004")` |
-| Default comes from config/env at runtime | `DefaultValueProvider.defaultValue()` |
+| Default from env var, higher priority than config | `@Option(defaultValue = "${env:MY_VAR:-}")` |
+| Default comes from config at runtime | `DefaultValueProvider.defaultValue()` |
 | Bare flag (`--debug`) needs a static value | `@Option(fallbackValue = "4004")` |
-| Bare flag needs a value from config/env | `DefaultValueProvider.fallbackValue()` |
-| All of the above combined | Both annotation + provider, resolution chain handles priority |
+| Bare flag needs a value from config | `DefaultValueProvider.fallbackValue()` |
+| Env var > config > hardcoded default | `@Option(defaultValue = "${env:VAR:-}")` + provider |
 
 ### Custom Parsers and the Fallback Chain
 
