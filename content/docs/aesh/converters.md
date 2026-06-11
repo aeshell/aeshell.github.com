@@ -26,7 +26,7 @@ The `ConverterInvocation` provides:
 - `String`
 - `int` / `Integer`, `long` / `Long`, `short` / `Short`, `byte` / `Byte`
 - `float` / `Float`, `double` / `Double`
-- `boolean` / `Boolean` (accepts `true`, `false`, `yes`, `no`)
+- `boolean` / `Boolean` (accepts `true`/`false`, `yes`/`no`, `1`/`0` — case-insensitive; rejects unrecognized values)
 - `char` / `Character`
 - `File`, `Path`, [`Resource`](../resources)
 - Any `Enum` type (matched by name, case-insensitive)
@@ -128,11 +128,24 @@ Timeout set to 300 seconds
 
 ## Error Handling
 
-When conversion fails, throw `OptionValidatorException` with a message describing what went wrong and what the user should provide instead. Æsh displays the message to the user and aborts command parsing:
+When conversion fails, throw `OptionValidatorException` with a message describing what went wrong and what the user should provide instead. Aesh displays the message to the user and aborts command parsing:
 
 ```
 $ timeout --duration abc
 Invalid duration: abc. Use format like: 30s, 5m, 2h, 1d
+```
+
+All built-in converters validate their input and throw `OptionValidatorException` with descriptive messages:
+
+```
+$ myapp --port abc
+Invalid integer value: 'abc'
+
+$ myapp --fresh=foobar
+Invalid boolean value: 'foobar'. Expected: true/false, yes/no, 1/0
+
+$ myapp --size 999999999999999999999
+Invalid long value: '999999999999999999999'
 ```
 
 ## Converter vs Validator

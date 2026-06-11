@@ -952,7 +952,9 @@ private String literal;
 | `${a:-${b:-c}}` | Nested fallback chain | `${env:A:-${sys:B:-default}}` |
 | `$${...}` | Literal (no expansion) | `$${NOT_EXPANDED}` |
 
-Variable resolution applies to `defaultValue` and `fallbackValue` annotation attributes. It runs at option construction time, before `DefaultValueProvider` (which runs at parse time and takes priority over static defaults).
+Variable resolution applies to `defaultValue` and `fallbackValue` annotation attributes. Variables are resolved initially at option construction time and **re-resolved on each parse cycle**, so environment variable changes between command invocations are picked up automatically. This makes `${env:...}` defaults fully testable — tests that set env vars after command construction will see the updated values.
+
+When a `${env:...}` or `${sys:...}` variable resolves successfully, it takes priority over `DefaultValueProvider` (see [Value Resolution Chain](#value-resolution-chain)). When the variable is not set, the provider gets a chance to supply a config-based default.
 
 ### Combined Example
 
