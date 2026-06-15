@@ -158,7 +158,7 @@ private List<String> commandNames;
 
 ## Shell Completion Script Generation
 
-Aesh can generate completion scripts for **bash**, **zsh**, and **fish** shells. Everything works automatically with the standard `AeshRuntimeRunner` pattern — no manual flag handling required.
+Aesh can generate completion scripts for **bash**, **zsh**, **fish**, and **PowerShell (pwsh)** shells. Everything works automatically with the standard `AeshRuntimeRunner` pattern — no manual flag handling required.
 
 ### Quick Start
 
@@ -185,6 +185,7 @@ $ myapp --aesh-completion
 $ myapp --aesh-completion bash
 $ myapp --aesh-completion zsh
 $ myapp --aesh-completion fish
+$ myapp --aesh-completion pwsh
 
 # Auto-detect shell, generate, and install to the standard directory
 $ myapp --aesh-completion-install
@@ -194,8 +195,8 @@ $ myapp --aesh-completion-install
 
 | Flag | Purpose |
 |------|---------|
-| `--aesh-completion [bash\|zsh\|fish]` | Generate completion script to stdout (dynamic by default) |
-| `--aesh-completion --static [bash\|zsh\|fish]` | Generate a static completion script (no JVM at tab-time) |
+| `--aesh-completion [bash\|zsh\|fish\|pwsh]` | Generate completion script to stdout (dynamic by default) |
+| `--aesh-completion --static [bash\|zsh\|fish\|pwsh]` | Generate a static completion script (no JVM at tab-time) |
 | `--aesh-completion-install` | Auto-detect shell, generate script, install with confirmation |
 | `--aesh-complete -- <args>` | Runtime callback used by the generated shell scripts |
 
@@ -219,6 +220,7 @@ By default, `--aesh-completion` generates **dynamic** scripts. Use `--static` fo
 | Bash | `BashCompletionGenerator` | `complete -F` functions with `compgen -W` |
 | Zsh | `ZshCompletionGenerator` | Native `compdef`/`_arguments` format |
 | Fish | `FishCompletionGenerator` | `complete -c` commands with conditions |
+| PowerShell | `PowerShellCompletionGenerator` | `Register-ArgumentCompleter -Native` with `CompletionResult` |
 
 ### Installing Completions
 
@@ -244,7 +246,35 @@ $ myapp --aesh-completion zsh > ~/.zsh/completions/_myapp
 
 # Fish
 $ myapp --aesh-completion fish > ~/.config/fish/completions/myapp.fish
+
+# PowerShell
+$ myapp --aesh-completion pwsh > myapp_complete.ps1
+# Then add to your $PROFILE:
+#   . /path/to/myapp_complete.ps1
 ```
+
+### PowerShell Setup
+
+PowerShell completions use `Register-ArgumentCompleter -Native`, which works with PowerShell 5.1+ (Windows PowerShell) and PowerShell 7+ (cross-platform).
+
+To set up completions permanently, add the generated script to your PowerShell profile:
+
+```powershell
+# Generate the completion script
+myapp --aesh-completion pwsh > "$HOME/.config/powershell/completions/myapp_complete.ps1"
+
+# Add to your $PROFILE (run once)
+Add-Content -Path $PROFILE -Value '. "$HOME/.config/powershell/completions/myapp_complete.ps1"'
+
+# Reload profile
+. $PROFILE
+```
+
+PowerShell completions include **tooltips** — descriptions from your `@Option(description = ...)` annotations are shown when the user browses completion candidates with Ctrl+Space.
+
+{{< callout type="info" >}}
+Unlike bash/zsh/fish where `--aesh-completion-install` auto-detects the shell and writes the file, PowerShell install writes the script file but requires you to source it from your `$PROFILE` manually. This is because modifying `$PROFILE` automatically could surprise users.
+{{< /callout >}}
 
 ### How Dynamic Completion Works
 
