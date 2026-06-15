@@ -5,9 +5,9 @@ title: 'Split Screen'
 weight: 27
 ---
 
-{{% alert context="warning" %}}
+{{< callout type="warning" >}}
 **Experimental API** — this feature is under active development and the API may change.
-{{% /alert %}}
+{{< /callout >}}
 
 Split the terminal into independently scrolling regions: a top region for output (logs, monitoring) and a bottom region for readline input.
 
