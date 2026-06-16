@@ -79,7 +79,7 @@ dependencies {
 
 The processor follows a **dual-mode** approach:
 
-1. At compile time, the processor scans classes annotated with `@CommandDefinition` (or the deprecated `@GroupCommandDefinition`) and generates a `_AeshMetadata` class for each command
+1. At compile time, the processor scans classes annotated with `@CommandDefinition` and generates a `_AeshMetadata` class for each command
 2. A single `_AeshMetadataRegistry` class is generated with a `switch` statement that maps command class names to their metadata providers
 3. The registry implements `MetadataRegistry` and is registered via `META-INF/services` (ServiceLoader)
 4. At runtime, when Aesh registers a command, ServiceLoader discovers the single registry class (not all 65+ individual providers). Only the requested command's metadata class is loaded and instantiated via the `switch` -- other commands remain untouched
@@ -235,8 +235,8 @@ public class RemoteCommand implements Command<CommandInvocation> {
 
 The processor generates metadata for the parent command and records its subcommand classes. At runtime, each subcommand is resolved lazily through its own provider (if available) or via the reflection fallback.
 
-{{< callout type="warning" >}}
-`@GroupCommandDefinition` is deprecated. Use `@CommandDefinition(groupCommands = {...})` instead. The processor supports both, but new code should use the unified annotation.
+{{< callout type="info" >}}
+Group commands use `@CommandDefinition(groupCommands = {...})` — the same annotation as regular commands, with the `groupCommands` attribute specifying subcommand classes.
 {{< /callout >}}
 
 ### Class Hierarchies

@@ -32,7 +32,7 @@ public class GitCommand implements Command<CommandInvocation> {
 A command becomes a group command simply by having a non-empty `groupCommands` array. All standard `@CommandDefinition` properties are available (`generateHelp`, `version`, `helpUrl`, `sortOptions`, etc.).
 
 {{< callout type="info" >}}
-The `@GroupCommandDefinition` annotation is deprecated. Use `@CommandDefinition` with `groupCommands` instead. Existing code using `@GroupCommandDefinition` continues to work.
+Group commands use the same `@CommandDefinition` annotation as regular commands, with the `groupCommands` attribute specifying subcommand classes.
 {{< /callout >}}
 
 ## Subcommands

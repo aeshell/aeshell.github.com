@@ -29,7 +29,7 @@ The `@CommandDefinition` annotation is used to define a command class.
 | `stopAtFirstPositional` | `boolean` | `false` | Stop option parsing after the first positional argument |
 | `sortOptions` | `boolean` | `false` | Sort help options alphabetically by name (after explicit option order) |
 | `helpUrl` | `String` | `""` | URL to documentation (shown in `--help` output) |
-| `groupCommands` | `Class<? extends Command>[]` | `{}` | Subcommand classes. Non-empty makes this a [group command](group-commands). Replaces the deprecated `@GroupCommandDefinition`. |
+| `groupCommands` | `Class<? extends Command>[]` | `{}` | Subcommand classes. Non-empty makes this a [group command](group-commands). |
 | `helpGroup` | `String` | `""` | Group heading when listed as a subcommand in parent's help |
 | `helpSectionProvider` | `Class<? extends HelpSectionProvider>` | `NullHelpSectionProvider.class` | Provider for dynamic help sections |
 
