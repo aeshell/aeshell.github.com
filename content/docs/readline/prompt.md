@@ -284,7 +284,51 @@ AeshConsoleRunner.builder()
 
 ### Dynamic Prompts
 
-Create prompts that change based on context:
+Prompts can change dynamically between readline cycles using `promptSupplier`. The supplier is called once at the start of each `readline()` invocation:
+
+```java
+// Readline-level: dynamic prompt via ReadlineRequest
+readline.readline(
+    ReadlineRequest.builder()
+        .connection(conn)
+        .promptSupplier(() -> {
+            String branch = getGitBranch();
+            return Prompt.builder()
+                .line("myapp on " + branch)
+                .line("❯ ")
+                .build();
+        })
+        .requestHandler(line -> { /* ... */ })
+        .build());
+```
+
+This is useful for starship-style prompts that show dynamic information:
+
+```java
+// Show command execution time in prompt
+AtomicLong lastDuration = new AtomicLong();
+
+ReadlineRequest.builder()
+    .connection(conn)
+    .promptSupplier(() -> {
+        long ms = lastDuration.getAndSet(0);
+        if (ms > 2000) {
+            return Prompt.builder()
+                .line("myapp took " + String.format("%.1fs", ms / 1000.0))
+                .line("❯ ")
+                .build();
+        }
+        return new Prompt("❯ ");
+    })
+    .requestHandler(line -> { /* ... */ })
+    .build();
+```
+
+If both `prompt` and `promptSupplier` are set, the supplier takes precedence.
+
+#### Aesh-Level Dynamic Prompts
+
+In Æsh, create prompts that change based on context:
 
 ```java
 public class DynamicPromptShell {
