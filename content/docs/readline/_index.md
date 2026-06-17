@@ -52,6 +52,7 @@ Think of it this way: Æsh is built **on top of** Æsh Readline. Æsh provides t
 - **[Clipboard](clipboard)** - Automatic system clipboard integration via OSC 52
 - **[Mouse Tracking](mouse-tracking)** - Mouse event handling with SGR encoding and Windows console support
 - **[Focus Tracking](focus-tracking)** - Detect terminal focus gained/lost events
+- **[Multi-Line Prompts](prompt#multi-line-prompts)** - Starship/powerlevel10k-style prompts with info lines above input
 - **[Right Prompt](right-prompt)** - Right-aligned prompt that auto-hides when input grows
 - **[Print Above](print-above)** - Print text above the prompt without disrupting input
 - **[Status Lines](status-lines)** - Persistent status display between output and prompt

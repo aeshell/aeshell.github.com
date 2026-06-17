@@ -23,6 +23,69 @@ Prompt prompt = new Prompt(new TerminalString("[user@host]$ ",
         new TerminalColor(Color.GREEN, Color.DEFAULT)));
 ```
 
+## Multi-Line Prompts
+
+Prompts can span multiple lines, with contextual information on upper lines and the input cursor on the last line — similar to [starship](https://starship.rs/) or [powerlevel10k](https://github.com/romkatv/powerlevel10k).
+
+```
+myapp on main via ☕ v21
+❯ user types here_
+```
+
+### Creating Multi-Line Prompts
+
+Use `\n` in the prompt string:
+
+```java
+Prompt prompt = new Prompt("myapp on main via ☕ v21\n❯ ");
+```
+
+Or use the builder with `line()`:
+
+```java
+Prompt prompt = Prompt.builder()
+    .line("myapp on main via ☕ v21")
+    .line("❯ ")
+    .build();
+```
+
+### With ANSI Colors
+
+Each line's ANSI codes are detected independently:
+
+```java
+Prompt prompt = new Prompt(
+    "\033[36mmyapp\033[0m on \033[32mmain\033[0m\n\033[1m❯\033[0m ");
+```
+
+Or with the builder:
+
+```java
+Prompt prompt = Prompt.builder()
+    .line("\033[36mmyapp\033[0m on \033[32mmain\033[0m via ☕ v21")
+    .line("\033[1m❯\033[0m ")
+    .rightPrompt("3.2s")
+    .build();
+```
+
+### Powerlevel10k Style
+
+```java
+Prompt prompt = Prompt.builder()
+    .line("┌─[myapp]─[git:main]─[took 3.2s]")
+    .line("└─$ ")
+    .build();
+```
+
+### How It Works
+
+- `length()` returns the visible length of the **last line only** — this is what matters for cursor positioning
+- `lineCount()` returns the number of lines in the prompt
+- Buffer cursor math operates relative to the last line
+- Upper prompt lines are rendered but don't affect cursor calculations
+- Right prompt aligns with the last line
+- `printAbove()` and status lines account for the extra prompt lines automatically
+
 ## ANSI Auto-Detection
 
 When creating a prompt with embedded ANSI escape codes, the visible length is calculated automatically:
