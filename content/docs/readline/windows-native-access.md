@@ -5,7 +5,7 @@ title: 'Windows Native Access'
 weight: 16
 ---
 
-On Windows, Æsh Readline needs access to the Windows Console API (Kernel32) for raw terminal input, console mode control, and terminal size detection. Starting with version 3.6, the `terminal-tty` module ships as a **multi-release JAR** with two implementations:
+On Windows, Æsh Readline needs access to the Windows Console API (Kernel32) for raw terminal input, console mode control, and terminal size detection. The `terminal-tty` module ships as a **multi-release JAR** with two implementations:
 
 | Java Version | Implementation | Native Code Required |
 |-------------|----------------|---------------------|

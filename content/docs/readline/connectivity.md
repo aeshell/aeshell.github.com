@@ -55,14 +55,14 @@ SSH (Secure Shell) provides encrypted, authenticated terminal access. This is th
 <dependency>
     <groupId>org.aesh</groupId>
     <artifactId>aesh-terminal-ssh</artifactId>
-    <version>3.6</version>
+    <version>3.15</version>
 </dependency>
 ```
 
 ### Gradle Dependency
 
 ```groovy
-implementation 'org.aesh:aesh-terminal-ssh:3.6'
+implementation 'org.aesh:terminal-ssh:3.15'
 ```
 
 ### Basic SSH Server
@@ -318,7 +318,7 @@ Telnet provides simple, unencrypted terminal access. **Use only for development 
 <dependency>
     <groupId>org.aesh</groupId>
     <artifactId>aesh-terminal-telnet</artifactId>
-    <version>3.6</version>
+    <version>3.15</version>
 </dependency>
 ```
 
@@ -398,7 +398,7 @@ The terminal-http module provides:
 <dependency>
     <groupId>org.aesh</groupId>
     <artifactId>terminal-http</artifactId>
-    <version>3.6</version>
+    <version>3.15</version>
 </dependency>
 ```
 

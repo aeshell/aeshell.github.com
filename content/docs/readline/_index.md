@@ -62,6 +62,7 @@ Think of it this way: Æsh is built **on top of** Æsh Readline. Æsh provides t
 - **[Synchronized Output](synchronized-output)** - Tear-free rendering with DEC Mode 2026
 - **[POSIX Native Access](posix-native-access)** - Zero-subprocess terminal I/O via FFM on Java 22+
 - **[Windows Native Access](windows-native-access)** - Pure Java console API access via FFM on Java 22+
+- **[GraalVM Native Image](native-image)** - Native compilation with ExecPty/JNI fallback
 
 ## Architecture
 
