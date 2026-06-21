@@ -27,6 +27,31 @@ $ myapp --aesh-doc asciidoc > docs/myapp.adoc
 
 No code changes needed — this works automatically with the standard `AeshRuntimeRunner` pattern.
 
+### Per-Command Help Format
+
+When `generateHelp = true` is set on a command, users can request formatted documentation directly from `--help` by appending a format value:
+
+```bash
+# Terminal help (unchanged default)
+$ myapp --help
+
+# AI skill-format documentation
+$ myapp --help=skill
+
+# Markdown documentation
+$ myapp --help=markdown
+$ myapp --help=md
+
+# AsciiDoc documentation
+$ myapp --help=asciidoc
+$ myapp --help=adoc
+
+# Works for subcommands too
+$ myapp run --help=skill
+```
+
+This generates documentation for the specific command (or subcommand) using the same `DocumentationGenerator` renderers as `--aesh-doc`, but scoped to a single command rather than the entire CLI. The `--help` (bare) and `--help=all` behaviors are unchanged.
+
 ## Programmatic API
 
 For build-time generation or more control, use the `DocumentationGenerator` builder:

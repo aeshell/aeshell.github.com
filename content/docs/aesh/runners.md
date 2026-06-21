@@ -70,6 +70,31 @@ AeshConsoleRunner.builder()
     // The exit command allows users to exit the shell gracefully
 ```
 
+#### Dynamic Prompt Supplier
+
+```java
+AeshConsoleRunner.builder()
+    // Dynamic prompt called before each readline cycle
+    .promptSupplier(() -> Prompt.builder()
+            .line("myapp on " + getGitBranch())
+            .line("> ")
+            .build())
+```
+
+When set, takes precedence over a static prompt. Enables starship-style prompts that change based on context.
+
+#### Command Execution Listener
+
+```java
+AeshConsoleRunner.builder()
+    // Callback after each command completes
+    .commandExecutionListener((commandLine, result, durationMs) -> {
+        System.out.println("Took " + durationMs + "ms");
+    })
+```
+
+Fires after each command finishes execution with the full command line, result, and wall-clock duration.
+
 #### Settings Configuration
 
 ```java

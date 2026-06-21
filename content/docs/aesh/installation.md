@@ -13,7 +13,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>aesh</artifactId>
-  <version>3.6.1</version>
+  <version>3.15.1</version>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ Add the dependency to your `build.gradle`:
 
 ```groovy
 dependencies {
-    implementation 'org.aesh:aesh:3.6.1'
+    implementation 'org.aesh:aesh:3.15.1'
 }
 ```
 
@@ -37,7 +37,7 @@ To generate command metadata at compile time (5-8x faster startup, no runtime re
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>aesh-processor</artifactId>
-  <version>3.6.1</version>
+  <version>3.15.1</version>
   <scope>provided</scope>
 </dependency>
 ```
@@ -46,8 +46,8 @@ To generate command metadata at compile time (5-8x faster startup, no runtime re
 
 ```groovy
 dependencies {
-    annotationProcessor 'org.aesh:aesh-processor:3.6.1'
-    compileOnly 'org.aesh:aesh-processor:3.6.1'
+    annotationProcessor 'org.aesh:aesh-processor:3.15.1'
+    compileOnly 'org.aesh:aesh-processor:3.15.1'
 }
 ```
 

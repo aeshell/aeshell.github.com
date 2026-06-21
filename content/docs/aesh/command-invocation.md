@@ -138,9 +138,13 @@ The `Shell` interface provides:
 | `write(String text)` | Write text directly to the terminal |
 | `writeln(String text)` | Write text with newline |
 | `clear()` | Clear the terminal screen |
-| `getSize()` | Get terminal dimensions (rows, columns) |
+| `size()` | Get terminal dimensions (rows, columns) |
 | `enableAlternateBuffer()` | Switch to alternate screen buffer |
 | `enableMainBuffer()` | Switch back to main screen buffer |
+| `printAbove(String text)` | Print text above the prompt without disrupting input (since 3.15) |
+| `registerStatusLine(int priority)` | Register a persistent status bar (since 3.15) |
+| `enableSplitScreen(double ratio)` | Divide terminal into scrolling output and prompt regions (since 3.15) |
+| `connection()` | Access the underlying terminal `Connection` |
 
 ### Reading User Input
 
@@ -195,6 +199,75 @@ public CommandResult execute(CommandInvocation invocation) {
     Shell shell = invocation.getShell();
     shell.clear();
     invocation.println("Screen cleared!");
+    return CommandResult.SUCCESS;
+}
+```
+
+### Printing Above the Prompt
+
+Print text above the current prompt without disrupting the user's input. Thread-safe -- can be called from background threads (e.g., async notifications, log streams).
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) throws InterruptedException {
+    Shell shell = invocation.getShell();
+
+    // Print a notification above the prompt
+    shell.printAbove("[INFO] Build started...");
+
+    // Can also be called from a background thread
+    new Thread(() -> {
+        try {
+            Thread.sleep(2000);
+            shell.printAbove("[INFO] Build complete!");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }).start();
+
+    return CommandResult.SUCCESS;
+}
+```
+
+When no readline session is active, the text is written directly to output. In non-interactive mode (`AeshRuntimeRunner`), this is a no-op.
+
+### Status Lines
+
+Register a persistent status bar displayed between scrolling output and the prompt. Status lines persist across commands and `printAbove()` calls.
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) throws InterruptedException {
+    Shell shell = invocation.getShell();
+    StatusLine status = shell.registerStatusLine(100);
+    if (status != null) {
+        status.setMessage("[Building] src/main/java...");
+        // Do work...
+        Thread.sleep(2000);
+        status.setMessage("[Ready] Build complete in 2.0s");
+        // Remove when done
+        status.close();
+    }
+    return CommandResult.SUCCESS;
+}
+```
+
+Priority controls ordering: lowest priority renders furthest from the prompt, highest renders closest. Returns `null` when status lines are not supported (non-interactive mode or connections without status line support).
+
+### Split Screen
+
+Divide the terminal into a scrolling output region (top) and a readline prompt region (bottom).
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) {
+    Shell shell = invocation.getShell();
+    SplitScreen split = shell.enableSplitScreen(0.7); // 70% top, 30% bottom
+    if (split != null) {
+        split.topRegion().writeln("Log output goes here");
+        invocation.println("Prompt region output");
+        // Later: split.close() to restore full terminal
+    }
     return CommandResult.SUCCESS;
 }
 ```

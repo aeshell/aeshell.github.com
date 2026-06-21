@@ -360,6 +360,56 @@ SettingsBuilder.builder()
 
 See [Ghost Text Suggestions](../ghost-text-suggestions#tailtipsuggestionprovider) for details on how tail tips work and how they interact with other suggestion providers.
 
+### Dynamic Prompt
+
+#### promptSupplier(Supplier&lt;Prompt&gt;)
+
+Set a dynamic prompt supplier that is called before each readline cycle. Enables prompts that change based on context (e.g., git branch, command duration, current directory). If set, takes precedence over a static prompt.
+
+```java
+SettingsBuilder.builder()
+        .promptSupplier(() -> Prompt.builder()
+                .line("myapp on " + getGitBranch())
+                .line("> ")
+                .rightPrompt(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")))
+                .build())
+        .build();
+```
+
+Multi-line prompts are created with `Prompt.builder().line("...").line("...").build()`. The cursor math uses only the last line's length. Right prompts are displayed right-aligned and disappear when input grows too long.
+
+### Command Execution Listener
+
+#### commandExecutionListener(CommandExecutionListener)
+
+Set a callback that fires after each command finishes execution. The listener receives the full command line, the `CommandResult`, and the wall-clock execution time in milliseconds.
+
+```java
+SettingsBuilder.builder()
+        .commandExecutionListener((commandLine, result, durationMs) -> {
+            System.out.println("Command '" + commandLine + "' completed in " + durationMs + "ms");
+        })
+        .build();
+```
+
+This combines well with `promptSupplier` for starship-style prompts that show the last command's duration:
+
+```java
+AtomicLong lastDuration = new AtomicLong();
+
+SettingsBuilder.builder()
+        .commandExecutionListener((line, result, ms) -> lastDuration.set(ms))
+        .promptSupplier(() -> {
+            long ms = lastDuration.getAndSet(0);
+            String dur = ms > 1000 ? String.format(" took %.1fs", ms / 1000.0) : "";
+            return Prompt.builder()
+                    .line("myapp" + dur)
+                    .line("> ")
+                    .build();
+        })
+        .build();
+```
+
 ### Additional Options
 
 #### readInputrc(boolean)
@@ -481,6 +531,8 @@ public CommandResult execute(CommandInvocation invocation) {
 | `readInputrc` | `boolean` | `true` | Read .inputrc configuration |
 | `echoCtrl` | `boolean` | `true` | Echo control characters |
 | `tailTipSuggestions` | `boolean` | `false` | Show parameter hints after cursor |
+| `promptSupplier` | `Supplier<Prompt>` | `null` | Dynamic prompt called before each readline cycle |
+| `commandExecutionListener` | `CommandExecutionListener` | `null` | Callback after each command execution with duration |
 | `subCommandModeSettings` | `SubCommandModeSettings` | defaults | Sub-command mode configuration |
 
 ## Best Practices

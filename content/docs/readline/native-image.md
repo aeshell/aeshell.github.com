@@ -15,7 +15,7 @@ Build a native image with:
 native-image \
   --no-fallback \
   --enable-native-access=ALL-UNNAMED \
-  -cp your-app.jar:readline-3.15.jar:terminal-tty-3.15.jar:terminal-api-3.15.jar:readline-api-3.15.jar:terminal-detect-3.15.jar \
+  -cp your-app.jar:readline-3.15.1.jar:terminal-tty-3.15.1.jar:terminal-api-3.15.1.jar:readline-api-3.15.1.jar:terminal-detect-3.15.1.jar \
   com.example.MyApp
 ```
 

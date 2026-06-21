@@ -15,7 +15,7 @@ Add the following dependency to your Maven project:
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>aesh</artifactId>
-  <version>3.6.1</version>
+  <version>3.15.1</version>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ For Gradle:
 
 ```groovy
 dependencies {
-    implementation 'org.aesh:aesh:3.6.1'
+    implementation 'org.aesh:aesh:3.15.1'
 }
 ```
 
@@ -288,7 +288,7 @@ A minimal `pom.xml` to get started:
         <dependency>
             <groupId>org.aesh</groupId>
             <artifactId>aesh</artifactId>
-            <version>3.6.1</version>
+            <version>3.15.1</version>
         </dependency>
     </dependencies>
 </project>
