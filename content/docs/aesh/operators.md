@@ -42,7 +42,7 @@ weight: 16
 
 ## Pipe
 
-The pipe operator passes the output of one command as input to the next. Commands in a pipeline run sequentially, with stdout flowing from left to right.
+The pipe operator passes the output of one command as input to the next. Commands in a pipeline run concurrently, with stdout streaming from left to right through a bounded buffer with automatic back-pressure -- matching Unix pipe semantics.
 
 ```bash
 # Filter output
@@ -107,6 +107,23 @@ public CommandResult execute(CommandInvocation invocation) {
 ```
 
 This is useful for commands like `ls` that show formatted tables on the terminal but emit plain filenames when piped.
+
+### Streaming and Back-Pressure
+
+Pipeline stages run concurrently in separate threads. Data flows through a bounded blocking queue (16 chunks of up to 8KB each). The producer blocks when the queue is full, and the consumer blocks when empty -- providing automatic back-pressure without buffering the entire output in memory.
+
+This means:
+- **Large data is safe**: `cat largefile | grep pattern` streams incrementally rather than loading the entire file into memory.
+- **Early termination works**: If the downstream command finishes (like a `head` command that reads only the first N lines), the upstream command receives a pipe-broken signal and stops -- similar to SIGPIPE in Unix.
+- **ANSI codes are preserved**: Unlike file redirection which strips ANSI escape codes, pipe output preserves all bytes. This allows color-aware downstream commands to process styled output.
+
+```bash
+# Large data streams through the pipe incrementally
+generate-data --rows 1000000 | filter --column status --value active | count
+
+# Early termination -- upstream stops when downstream is done
+generate-data --rows 1000000 | head --lines 10
+```
 
 ## Output Redirection
 

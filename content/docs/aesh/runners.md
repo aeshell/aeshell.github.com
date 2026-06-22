@@ -800,18 +800,21 @@ public CommandResult execute(CommandInvocation invocation) {
 
 ### Runtime Runner
 
-`AeshRuntimeRunner.execute()` returns a `CommandResult` with an exit code that reflects what happened:
+`AeshRuntimeRunner.execute()` returns a `CommandResult` with a POSIX-aligned exit code:
 
 | Scenario | Exit code | Constant |
 |----------|-----------|----------|
 | Command succeeds | `0` | `CommandResult.SUCCESS` |
-| Parse error (unknown option, missing required arg) | `2` | `CommandResult.valueOf(2)` |
-| Option validation error | `2` | `CommandResult.valueOf(2)` |
-| Command not found | `-1` | `CommandResult.FAILURE` |
-| Command execution error | `-1` | `CommandResult.FAILURE` |
-| Command validator error | `-1` | `CommandResult.FAILURE` |
+| Command execution error | `1` | `CommandResult.FAILURE` |
+| Command validator error | `1` | `CommandResult.FAILURE` |
+| Parse error (unknown option, missing required arg) | `2` | `CommandResult.USAGE_ERROR` |
+| Option validation error | `2` | `CommandResult.USAGE_ERROR` |
+| Command not found | `127` | `CommandResult.COMMAND_NOT_FOUND` |
+| Interrupted (Ctrl-C) | `130` | `CommandResult.INTERRUPTED` |
 
-Exit code 2 follows the POSIX convention for usage errors and matches the behavior of picocli and most CLI frameworks. This ensures scripts and CI pipelines correctly detect invalid input:
+All exit codes follow POSIX conventions (0-255). Use `getExitCode()` for safe `System.exit()` calls -- it clamps values to the 0-255 range.
+
+Exit code 2 matches the behavior of Bash, picocli, and most CLI frameworks for usage errors. This ensures scripts and CI pipelines correctly detect invalid input:
 
 ```bash
 mytool --unknown-option || echo "Failed with exit $?"
@@ -827,7 +830,7 @@ CommandResult result = AeshRuntimeRunner.builder()
         .execute();
 
 if (result != null && result.isFailure()) {
-    System.exit(result.getResultValue());
+    System.exit(result.getExitCode());
 }
 ```
 
