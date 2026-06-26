@@ -294,11 +294,26 @@ Custom validators, completers, converters, activators, renderers, result handler
 
 The processor automatically generates GraalVM native-image configuration files under `META-INF/native-image/org.aesh/<project>/`:
 
-- **`resource-config.json`** -- Always generated. Ensures the `META-INF/services/org.aesh.command.metadata.MetadataRegistry` ServiceLoader descriptor is included in the native image.
+- **`resource-config.json`** -- Always generated. Ensures the `META-INF/services/org.aesh.command.metadata.MetadataRegistry` ServiceLoader descriptor and the `META-INF/aesh/registry` discovery file are included in the native image.
 
-- **`reflect-config.json`** -- Generated only when commands have **private** annotated fields. Contains entries for each class with private `@Option`, `@Argument`, `@Mixin`, or `@ParentCommand` fields, enabling `getDeclaredField()` + `setAccessible()` in the generated code.
+- **`reflect-config.json`** -- Always generated (since 3.16). Contains the `_AeshMetadataRegistry` class with its no-arg constructor for ServiceLoader instantiation, plus entries for any classes with private annotated fields.
 
-Commands with only public/package-private fields produce **no reflection entries** -- the generated code accesses them directly.
+- **`META-INF/aesh/registry`** -- Plain-text resource file (since 3.16) containing the fully-qualified name of the generated `_AeshMetadataRegistry`. This enables metadata discovery without ServiceLoader, which is important for native images built with `-H:-UseServiceLoaderFeature`.
+
+### Using `-H:-UseServiceLoaderFeature`
+
+The GraalVM flag `-H:-UseServiceLoaderFeature` can significantly reduce native image size (up to 18%) by preventing reachability analysis from walking into transitive dependencies that have `ServiceLoader` registrations. Since 3.16, aesh supports this flag through three independent discovery mechanisms:
+
+1. **Resource-file discovery** -- `MetadataProviderRegistry` reads `META-INF/aesh/registry` via `ClassLoader.getResources()`, bypassing ServiceLoader entirely
+2. **Reflection config** -- `reflect-config.json` registers the registry class for reflective instantiation, so ServiceLoader works even without the auto-feature
+3. **Explicit registration** -- Call `MetadataProviderRegistry.register()` before command parsing:
+
+```java
+MetadataProviderRegistry.register(new _AeshMetadataRegistry());
+AeshRuntimeRunner.builder().command(MyCommand.class).args(args).execute();
+```
+
+All three approaches are backward-compatible with existing builds. If none apply, ServiceLoader discovery works as before.
 
 ### Processor Options
 
@@ -328,4 +343,4 @@ Example Maven configuration:
 - **No code changes required** -- Drop in the dependency and the processor runs automatically
 - **Fully backward compatible** -- Removing the dependency reverts to the reflection path with no behavior change
 - **Incremental** -- You can use the processor for some commands and not others; commands without a generated provider fall back to reflection
-- **Multi-module** -- Each module generates its own `_AeshMetadataRegistry`. ServiceLoader merges registries across JARs automatically
+- **Multi-module** -- Each module generates its own `_AeshMetadataRegistry`. Both ServiceLoader and the `META-INF/aesh/registry` resource file support multi-module discovery across JARs

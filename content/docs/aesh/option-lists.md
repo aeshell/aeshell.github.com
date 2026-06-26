@@ -61,6 +61,44 @@ private List<Integer> ports;
 
 Usage: `build --ports 8080:8081:8082`
 
+## Value Attachment Syntaxes
+
+`@OptionList` supports multiple ways to attach values, matching POSIX/GNU conventions:
+
+```bash
+# Space-separated (all shells)
+-R -Xmx4G -R -Xms4G
+
+# Equals-attached (short and long names)
+-R=-Xmx4G
+--runtime-option=-Xmx4G
+
+# Bare-attached (short names only, since 3.16)
+-R-Xmx4G -R-Xms4G
+```
+
+The bare-attached syntax (`-R-Xmx4G`) is common for JVM-style options where the value starts with a dash. This works for single-character short names without requiring `=` or a space:
+
+```java
+@OptionList(shortName = 'R', name = "runtime-option")
+private List<String> javaRuntimeOptions;
+```
+
+```bash
+# All equivalent:
+myapp -R-Xmx4G -R-Xms4G server.jar
+myapp -R=-Xmx4G -R=-Xms4G server.jar
+myapp -R -Xmx4G -R -Xms4G server.jar
+```
+
+When using a custom `valueSeparator` (e.g., comma), the separator is applied within the attached value:
+
+```bash
+# -o with valueSeparator=','
+myapp -ofoo,bar,baz    # three values: foo, bar, baz
+myapp -o=foo,bar       # two values: foo, bar
+```
+
 ## With Converter
 
 ```java

@@ -13,7 +13,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>readline</artifactId>
-  <version>3.15.1</version>
+  <version>3.16</version>
 </dependency>
 ```
 
@@ -27,7 +27,7 @@ For multi-module projects, the BOM ensures consistent versions across all aesh-r
     <dependency>
       <groupId>org.aesh</groupId>
       <artifactId>aesh-readline-bom</artifactId>
-      <version>3.15.1</version>
+      <version>3.16</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -48,7 +48,7 @@ Add the dependency to your `build.gradle`:
 
 ```groovy
 dependencies {
-    implementation 'org.aesh:readline:3.15.1'
+    implementation 'org.aesh:readline:3.16'
 }
 ```
 
@@ -56,7 +56,7 @@ Or with the BOM:
 
 ```groovy
 dependencies {
-    implementation platform('org.aesh:aesh-readline-bom:3.15.1')
+    implementation platform('org.aesh:aesh-readline-bom:3.16')
     implementation 'org.aesh:readline'
 }
 ```
@@ -81,7 +81,7 @@ Aesh Readline includes modules for remote connectivity:
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>terminal-ssh</artifactId>
-  <version>3.15.1</version>
+  <version>3.16</version>
 </dependency>
 ```
 
@@ -91,7 +91,7 @@ Aesh Readline includes modules for remote connectivity:
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>terminal-telnet</artifactId>
-  <version>3.15.1</version>
+  <version>3.16</version>
 </dependency>
 ```
 
@@ -101,7 +101,7 @@ Aesh Readline includes modules for remote connectivity:
 <dependency>
   <groupId>org.aesh</groupId>
   <artifactId>terminal-http</artifactId>
-  <version>3.15.1</version>
+  <version>3.16</version>
 </dependency>
 ```
 

@@ -196,7 +196,28 @@ Picocli commands use `System.out` directly. Aesh commands use `CommandInvocation
 
 ### Exit Codes
 
-Picocli commands return an `int` exit code from `Callable.call()`. Aesh commands return `CommandResult.SUCCESS`, `CommandResult.FAILURE`, or `CommandResult.valueOf(code)`. Parse errors automatically return exit code 2 (POSIX convention).
+Picocli commands return an `int` exit code from `Callable.call()`. Aesh commands return POSIX-aligned `CommandResult` constants:
+
+| Constant | Code | When |
+|---|---|---|
+| `CommandResult.SUCCESS` | 0 | Command succeeded |
+| `CommandResult.FAILURE` | 1 | General error |
+| `CommandResult.USAGE_ERROR` | 2 | Invalid arguments |
+| `CommandResult.COMMAND_NOT_FOUND` | 127 | Unknown command |
+| `CommandResult.INTERRUPTED` | 130 | Ctrl-C / SIGINT |
+
+Use `result.getExitCode()` for safe `System.exit()` calls (clamps to 0-255).
+
+### OptionList Attached Values
+
+Picocli supports `-R-Xmx4G` (attached short-name values). Aesh supports the same syntax since 3.16:
+
+```java
+@OptionList(shortName = 'R', name = "runtime-option")
+private List<String> javaRuntimeOptions;
+
+// All work: -R-Xmx4G, -R=-Xmx4G, -R -Xmx4G
+```
 
 ### Group Commands
 
