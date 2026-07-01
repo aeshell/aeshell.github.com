@@ -128,7 +128,7 @@ For each option, argument, and mixin field, the generated code provides:
 
 - **Public / package-private fields** -- The generated code uses direct field access (`((MyCommand) inst).myField = value`). No `java.lang.reflect.Field`, no `getDeclaredField()`, no `setAccessible()`. This is the fastest possible path and requires no GraalVM native-image reflection configuration.
 
-- **Private fields** -- The generated code resolves `Field` constants once in a `static {}` initializer and caches them for reuse. This avoids repeated class hierarchy walks but still uses `getDeclaredField()` + `setAccessible()` at class load time, and requires reflection entries in native-image configuration (which the processor generates automatically -- see [GraalVM Native Image](#graalvm-native-image) below).
+- **Private fields** -- The generated code resolves `Field` constants once in a `static {}` initializer and caches them for reuse. This avoids repeated class hierarchy walks but still uses `getDeclaredField()` + `setAccessible()` at class load time, and requires reflection entries in native-image configuration (which the processor generates automatically -- see [GraalVM Native Image](#graalvm-native-image) below). The processor emits a **compile-time warning** for private fields suggesting package-private visibility.
 
 ## Generated Code
 

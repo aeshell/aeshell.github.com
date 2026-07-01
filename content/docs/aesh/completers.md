@@ -373,3 +373,26 @@ String fishScript = ShellCompletionGenerator.generateDynamic(
 ShellCompletionGenerator generator = ShellCompletionGenerator.forShell(ShellType.ZSH);
 String script = generator.generate(parser, "myapp");
 ```
+
+### Shell Detection
+
+Use `AeshRuntimeRunner.detectShell()` to detect the current shell from environment variables. This is the same logic used by `--aesh-completion` and `--aesh-completion-install` for auto-detection.
+
+```java
+import org.aesh.AeshRuntimeRunner;
+import org.aesh.util.completer.ShellCompletionGenerator.ShellType;
+
+ShellType shell = AeshRuntimeRunner.detectShell();
+if (shell != null) {
+    System.out.println("Current shell: " + shell);
+} else {
+    System.out.println("Could not detect shell");
+}
+```
+
+Detection order:
+1. `PSModulePath` — PowerShell (checked first to avoid misdetection from bash wrapper scripts)
+2. `FISH_VERSION` — Fish
+3. `ZSH_VERSION` — Zsh
+4. `BASH_VERSION` — Bash
+5. `$SHELL` fallback — checks the path for fish/zsh/bash/pwsh
