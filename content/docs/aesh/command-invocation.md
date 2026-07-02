@@ -1014,17 +1014,87 @@ See [Advanced Topics - Custom Command Invocation](/docs/aesh/advanced-topics#cus
 
 The `CommandInvocation` object is **not thread-safe**. It should only be used within the `execute()` method on the thread that called it. Do not share the invocation object between threads.
 
+## Handling Ctrl-C (Interrupts)
+
+When the user presses Ctrl-C during command execution, aesh calls `Thread.interrupt()` on the command's thread. This sets the thread's interrupt flag and interrupts blocking operations.
+
+### What gets interrupted automatically
+
+- `Thread.sleep()` -- throws `InterruptedException`
+- `Shell.readLine()` / `Shell.read()` -- throws `InterruptedException`
+- `BlockingQueue.take()` / `put()` -- throws `InterruptedException`
+- `InterruptibleChannel` I/O (NIO) -- throws `ClosedByInterruptException`
+
+### What does NOT get interrupted
+
+- CPU-bound loops that don't check the interrupt flag
+- Traditional `InputStream.read()` / `OutputStream.write()` (blocking I/O)
+- External subprocesses forked via `ProcessBuilder`
+
+### Writing interruptible commands
+
+Declare `throws InterruptedException` on your `execute()` method. This allows blocking operations to propagate the interrupt cleanly, and aesh will set `CommandResult.INTERRUPTED` (exit code 130) automatically.
+
+```java
+@Override
+public CommandResult execute(CommandInvocation ci)
+        throws CommandException, InterruptedException {
+    ci.println("Working...");
+    Thread.sleep(5000); // Ctrl-C interrupts this cleanly
+    ci.println("Done.");
+    return CommandResult.SUCCESS;
+}
+```
+
+For commands with long-running loops, check `Thread.isInterrupted()` periodically:
+
+```java
+@Override
+public CommandResult execute(CommandInvocation ci)
+        throws CommandException, InterruptedException {
+    while (hasMoreWork()) {
+        if (Thread.currentThread().isInterrupted()) {
+            ci.println("Interrupted, cleaning up...");
+            return CommandResult.INTERRUPTED;
+        }
+        processNextItem();
+    }
+    return CommandResult.SUCCESS;
+}
+```
+
+For commands that fork external processes, destroy the subprocess on interrupt:
+
+```java
+@Override
+public CommandResult execute(CommandInvocation ci)
+        throws CommandException, InterruptedException {
+    Process process = new ProcessBuilder("long-task").start();
+    try {
+        int exitCode = process.waitFor(); // throws InterruptedException on Ctrl-C
+        return exitCode == 0 ? CommandResult.SUCCESS : CommandResult.FAILURE;
+    } catch (InterruptedException e) {
+        process.destroyForcibly();
+        return CommandResult.INTERRUPTED;
+    }
+}
+```
+
+{{< callout type="warning" >}}
+**Don't swallow InterruptedException.** If you catch it, either re-throw it, or set the interrupt flag back with `Thread.currentThread().interrupt()` and return `CommandResult.INTERRUPTED`. Swallowing the exception makes your command unresponsive to Ctrl-C.
+{{< /callout >}}
+
 ## Best Practices
 
-1. **Always use invocation for output** - Use `invocation.println()` instead of `System.out.println()` to ensure output goes to the correct terminal.
+1. **Always use invocation for output** -- Use `invocation.println()` instead of `System.out.println()` to ensure output goes to the correct terminal.
 
-2. **Handle InterruptedException** - Methods like `readLine()` throw `InterruptedException`. Always declare it in your method signature.
+2. **Declare `throws InterruptedException`** -- Always declare it on your `execute()` method so blocking operations propagate Ctrl-C cleanly. See [Handling Ctrl-C](#handling-ctrl-c-interrupts) above.
 
-3. **Check for null stdin** - `getStdin()` returns `null` when there's no piped or redirected input. Use `hasStdin()` for a lightweight check.
+3. **Check for null stdin** -- `getStdin()` returns `null` when there's no piped or redirected input. Use `hasStdin()` for a lightweight check.
 
-4. **Use Prompt for sensitive input** - Always use `Prompt` with a mask character for passwords and other sensitive data.
+4. **Use Prompt for sensitive input** -- Always use `Prompt` with a mask character for passwords and other sensitive data.
 
-5. **Clear sensitive data** - Zero out password character arrays after use.
+5. **Clear sensitive data** -- Zero out password character arrays after use.
 
 ```java
 char[] password = shell.readLine(new Prompt("Password: ", '*')).toCharArray();

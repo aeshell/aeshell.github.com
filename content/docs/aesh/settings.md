@@ -442,6 +442,26 @@ SettingsBuilder.builder()
         .build();
 ```
 
+#### setInterruptHandler(Consumer&lt;Void&gt;)
+
+Set a custom handler that is called when Ctrl-C is pressed **outside** of command execution (i.e., at the prompt). During command execution, Ctrl-C is handled by the command's thread interrupt mechanism (see [Handling Ctrl-C](../command-invocation/#handling-ctrl-c-interrupts)).
+
+```java
+SettingsBuilder.builder()
+        .setInterruptHandler(v -> System.out.println("Interrupted at prompt"))
+        .build();
+```
+
+#### redrawPromptOnInterrupt(boolean)
+
+Controls whether the prompt is redrawn after Ctrl-C at the prompt. Default: `false`
+
+```java
+SettingsBuilder.builder()
+        .redrawPromptOnInterrupt(true)
+        .build();
+```
+
 ## Complete Example
 
 ```java
