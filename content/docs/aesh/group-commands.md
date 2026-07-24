@@ -378,6 +378,68 @@ Set<String> subcommands = registry.getSubcommandNames("git");
 
 See [Command Registry - getSubcommandNames](/docs/aesh/command-registry#getsubcommandnamesstring-parentcommandname) for more details.
 
+## Subcommand Not Found
+
+When a group command receives an unrecognized subcommand name, aesh throws a `SubcommandNotFoundException` (a subclass of `CommandLineParserException`) with the unknown subcommand, the parent command name, and the list of available subcommands.
+
+The default error message includes the available subcommands:
+
+```
+'git bogus' is not a subcommand of 'git'. Available: commit, push, pull. See 'git --help'.
+```
+
+### "Did You Mean?" Suggestions
+
+Register a `CommandNotFoundHandler` to implement Levenshtein-based or fuzzy suggestions. The handler's enhanced method receives the unknown subcommand and available names:
+
+```java
+AeshRuntimeRunner.builder()
+    .command(GitCommand.class)
+    .commandNotFoundHandler(new CommandNotFoundHandler() {
+        @Override
+        public void handleCommandNotFound(String line, Consumer<String> output) {
+            output.accept("Unknown: " + line);
+        }
+
+        @Override
+        public void handleCommandNotFound(String line, Consumer<String> output,
+                String unknownCommand, Collection<String> availableCommands) {
+            // Find the closest match using Levenshtein distance
+            String closest = availableCommands.stream()
+                    .min((a, b) -> Integer.compare(
+                            levenshtein(unknownCommand, a),
+                            levenshtein(unknownCommand, b)))
+                    .orElse(null);
+            if (closest != null && levenshtein(unknownCommand, closest) <= 3) {
+                output.accept("'" + unknownCommand + "' is not a command. "
+                        + "Did you mean '" + closest + "'?");
+            } else {
+                output.accept("'" + unknownCommand + "' is not a known subcommand.");
+            }
+        }
+    })
+    .args(args)
+    .execute();
+```
+
+This works at any nesting depth. For `app alias ad`, the handler receives `unknownCommand = "ad"` and `availableCommands = ["add", "list", "remove"]`, enabling the suggestion `"Did you mean 'add'?"`.
+
+### Catching SubcommandNotFoundException
+
+You can also catch the exception directly when using `AeshCommandRuntime`:
+
+```java
+try {
+    runtime.executeCommand("git bogus");
+} catch (SubcommandNotFoundException e) {
+    System.out.println("Unknown: " + e.getUnknownSubcommand());
+    System.out.println("Parent: " + e.getParentCommand());
+    System.out.println("Available: " + e.getAvailableSubcommands());
+}
+```
+
+See [Runners - Command Not Found Handler](/docs/aesh/runners#command-not-found-handler) for handler registration details.
+
 ## Best Practices
 
 1. **Use meaningful group names** - Group names should clearly indicate the category of commands they contain.

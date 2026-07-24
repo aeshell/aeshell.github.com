@@ -95,6 +95,48 @@ AeshConsoleRunner.builder()
 
 Fires after each command finishes execution with the full command line, result, and wall-clock duration.
 
+#### Command Not Found Handler
+
+```java
+AeshConsoleRunner.builder()
+    // Simple handler — just the line and output consumer
+    .commandNotFoundHandler((line, output) -> {
+        output.accept("Unknown command: " + line);
+    })
+```
+
+For "did you mean?" suggestions, override the enhanced method that provides the unknown command name and the list of available commands:
+
+```java
+import org.aesh.command.CommandNotFoundHandler;
+import java.util.Collection;
+import java.util.function.Consumer;
+
+AeshConsoleRunner.builder()
+    .settings(SettingsBuilder.builder()
+        .commandNotFoundHandler(new CommandNotFoundHandler() {
+            @Override
+            public void handleCommandNotFound(String line, Consumer<String> output) {
+                output.accept("Unknown: " + line);
+            }
+
+            @Override
+            public void handleCommandNotFound(String line, Consumer<String> output,
+                    String unknownCommand, Collection<String> availableCommands) {
+                String closest = findClosest(unknownCommand, availableCommands);
+                if (closest != null) {
+                    output.accept("'" + unknownCommand + "' is not a command. "
+                            + "Did you mean '" + closest + "'?");
+                } else {
+                    output.accept("Unknown command: " + unknownCommand);
+                }
+            }
+        })
+        .build())
+```
+
+The handler is also called for **nested subcommand typos** — when a group command receives an invalid subcommand, the handler receives the unknown subcommand name and the available subcommand names at that level. See [Group Commands - Subcommand Not Found](/docs/aesh/group-commands#subcommand-not-found) for details.
+
 #### Settings Configuration
 
 ```java
@@ -202,6 +244,46 @@ AeshRuntimeRunner runner = AeshRuntimeRunner.builder()
     
     .build();
 ```
+
+#### Command Not Found Handler
+
+```java
+AeshRuntimeRunner.builder()
+    .command(MyGroupCommand.class)
+    .commandNotFoundHandler((line, output) -> {
+        output.accept("Unknown: " + line);
+    })
+    .args(args)
+    .execute();
+```
+
+The enhanced handler receives the unknown command name and available commands for "did you mean?" suggestions:
+
+```java
+AeshRuntimeRunner.builder()
+    .command(MyGroupCommand.class)
+    .commandNotFoundHandler(new CommandNotFoundHandler() {
+        @Override
+        public void handleCommandNotFound(String line, Consumer<String> output) {
+            output.accept("Unknown: " + line);
+        }
+
+        @Override
+        public void handleCommandNotFound(String line, Consumer<String> output,
+                String unknownCommand, Collection<String> availableCommands) {
+            String closest = findClosest(unknownCommand, availableCommands);
+            if (closest != null) {
+                output.accept("Did you mean '" + closest + "'?");
+            } else {
+                handleCommandNotFound(line, output);
+            }
+        }
+    })
+    .args(args)
+    .execute();
+```
+
+In `AeshRuntimeRunner`, the `output` consumer writes to `System.err`. For subcommand typos, the handler is called first, then the command's help is displayed.
 
 ### Executing Commands
 
@@ -835,6 +917,8 @@ if (result != null && result.isFailure()) {
 ```
 
 For **group commands**, when a parse error occurs on a subcommand, the error message is followed by the subcommand's help (not the root group's help). This works with nested groups as well — `docker container start --badopt` shows help for `start`, not for `docker`.
+
+When a **subcommand is not found** (e.g., a typo like `git comit` instead of `git commit`), the error message includes the available subcommands. If a `CommandNotFoundHandler` is registered, it is called with the unknown subcommand name and the list of available subcommands, enabling "did you mean?" suggestions. See [Group Commands - Subcommand Not Found](/docs/aesh/group-commands#subcommand-not-found) for details.
 
 ## Working Examples
 
