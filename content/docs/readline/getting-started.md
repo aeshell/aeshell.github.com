@@ -34,7 +34,7 @@ A simple readline example:
 ```java
 import org.aesh.readline.Readline;
 import org.aesh.readline.ReadlineBuilder;
-import org.aesh.tty.terminal.TerminalConnection;
+import org.aesh.terminal.tty.TerminalConnection;
 
 public class SimpleExample {
 
