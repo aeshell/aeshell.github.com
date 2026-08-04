@@ -30,6 +30,7 @@ The `@CommandDefinition` annotation is used to define a command class.
 | `sortOptions` | `boolean` | `false` | Sort help options alphabetically by name (after explicit option order) |
 | `helpUrl` | `String` | `""` | URL to documentation (shown in `--help` output) |
 | `groupCommands` | `Class<? extends Command>[]` | `{}` | Subcommand classes. Non-empty makes this a [group command](group-commands). |
+| `completeFallback` | `CompletionFallback` | `DEFAULT` | Default [completion fallback](/docs/aesh/completers#command-level-default) for all options/arguments. Individual options can override. |
 | `helpGroup` | `String` | `""` | Group heading when listed as a subcommand in parent's help |
 | `helpSectionProvider` | `Class<? extends HelpSectionProvider>` | `NullHelpSectionProvider.class` | Provider for dynamic help sections |
 

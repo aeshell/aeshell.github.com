@@ -331,6 +331,31 @@ public class JdkInstallCommand implements Command<CommandInvocation> {
 }
 ```
 
+### Command-Level Default
+
+For commands where most options are not file paths, setting `completeFallback = NONE` on every `String` option is tedious. Instead, set it once at the command level on `@CommandDefinition`:
+
+```java
+@CommandDefinition(name = "deploy", description = "Deploy app",
+        completeFallback = CompletionFallback.NONE)
+public class DeployCommand implements Command<CommandInvocation> {
+    @Option String environment;  // NONE (from command-level default)
+    @Option String region;       // NONE (from command-level default)
+    @Option String version;      // NONE (from command-level default)
+
+    @Argument(completeFallback = CompletionFallback.FILES)
+    String artifact;             // FILES (explicit option-level override)
+}
+```
+
+The resolution order is:
+
+1. **Option-level** `completeFallback` (most specific) -- always wins
+2. **Command-level** `completeFallback` on `@CommandDefinition` -- used when option is `DEFAULT`
+3. **Type-based heuristic** -- used when both are `DEFAULT` (String/File/Path -> FILES, Enum -> NONE)
+
+The command-level default applies to `@Option`, `@Argument`, and `@Arguments` fields. Options that explicitly set their own `completeFallback` are never affected by the command-level value.
+
 ### GraalVM Native Images
 
 Dynamic callback completion is ideal for GraalVM native images. Since native binaries start in ~10ms, tab completion feels instant:
