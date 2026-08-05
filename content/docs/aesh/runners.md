@@ -137,6 +137,42 @@ AeshConsoleRunner.builder()
 
 The handler is also called for **nested subcommand typos** — when a group command receives an invalid subcommand, the handler receives the unknown subcommand name and the available subcommand names at that level. See [Group Commands - Subcommand Not Found](/docs/aesh/group-commands#subcommand-not-found) for details.
 
+#### Shell Escape (Native Commands)
+
+Enable the `!` prefix to run native OS commands directly from the REPL:
+
+```java
+AeshConsoleRunner.builder()
+    .command(MyCommand.class)
+    .enableShellEscape(true)
+    .addExitCommand()
+    .start();
+```
+
+Users can then run any OS command by prefixing it with `!`:
+
+```
+[myshell]$ !ls -la
+total 42
+drwxr-xr-x  5 user user 4096 Aug  4 14:00 .
+...
+[myshell]$ !docker ps
+CONTAINER ID   IMAGE     STATUS
+abc123         myapp     Up 2 hours
+[myshell]$ deploy --env staging
+Deployed to staging.
+```
+
+On Unix/macOS, commands run via `sh -c`. On Windows, commands run via `cmd /c`, which supports `.bat` and `.cmd` files natively.
+
+Shell escape is **disabled by default** for security. It only applies to interactive console mode (`AeshConsoleRunner`), not `AeshRuntimeRunner`. You can also enable it via `SettingsBuilder`:
+
+```java
+SettingsBuilder.builder()
+    .enableShellEscape(true)
+    .build();
+```
+
 #### Settings Configuration
 
 ```java
