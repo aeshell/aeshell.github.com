@@ -213,6 +213,59 @@ conn.write(image.encode());
 - `zIndex(int)` - Layer ordering
 - `suppressResponse(boolean)` - Suppress terminal responses (default: true)
 
+### Kitty Image Placement
+
+For animation and repositioning, the Kitty protocol supports a **transmit-once / place-many** pattern. Instead of re-sending the full image data on every frame, you transmit the image data once with an ID and then place it at different positions using lightweight placement commands.
+
+```java
+KittyImage image = new KittyImage(imageData).widthCells(30);
+
+// Transmit image data to terminal memory (~500KB, once)
+conn.write(image.transmit(1));
+
+// Place at cursor position (~30 bytes per frame)
+conn.write("\u001B[10;5H");  // move cursor
+conn.write(image.place(1));  // place by ID
+
+// Move to a new position — delete old placement, then re-place
+conn.write(KittyImage.deletePlacement(1));  // removes visual placement, keeps data
+conn.write("\u001B[20;10H");  // new cursor position
+conn.write(image.place(1));   // re-place at new position
+
+// When done, delete the image data from terminal memory
+conn.write(KittyImage.delete(1));
+```
+
+**Placement Methods:**
+
+| Method | Description | Data sent |
+|--------|-------------|-----------|
+| `transmit(imageId)` | Send image data to terminal memory without displaying | Full Base64 payload (~500KB) |
+| `place(imageId)` | Display at cursor position by ID | ~30 bytes |
+| `place(imageId, placementId)` | Place with ID for flicker-free updates | ~30 bytes |
+| `deletePlacement(imageId)` | Remove visual placement, keep data in memory | ~30 bytes |
+| `delete(imageId)` | Remove data and all placements | ~30 bytes |
+
+**Checking Placement Support:**
+
+```java
+TerminalImage image = TerminalImageBuilder.builder(imageProtocol)
+    .data(imageData).widthCells(30).build();
+
+if (image.supportsPlacement()) {
+    // Kitty: use transmit/place for efficient animation
+    conn.write(image.transmit(1));
+    conn.write(image.place(1));
+} else {
+    // iTerm2/Sixel: use encode() for each display
+    conn.write(image.encode());
+}
+```
+
+{{< callout type="warning" >}}
+**Important:** `ESC[2J` (clear screen) destroys transmitted image data in both Kitty and Ghostty terminals. For animation, use `deletePlacement()` to remove the visual placement without deleting the image data, then `place()` at the new position. Do not clear the entire screen between frames.
+{{< /callout >}}
+
 ### Sixel Graphics
 
 Sixel is a legacy but widely supported protocol:

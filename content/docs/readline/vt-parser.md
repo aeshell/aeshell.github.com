@@ -107,9 +107,25 @@ parser.advance(byteOrCodePoint);
 
 Code points above 255 are treated as printable in the ground state and ignored in other states.
 
-## Integration with ActionDecoder
+## Integration with the Input Pipeline
 
-The `ActionDecoder` uses `VtParser` as a fallback when the `KeyMappingTrie` has no match for an escape sequence. Previously, unknown sequences (like mouse events or DA responses) would leak byte-by-byte as individual key actions. Now:
+VtParser is used in two places in the input pipeline:
+
+### EventDecoder Sequence Filtering
+
+The `EventDecoder` uses a single `VtParser` instance to classify and filter terminal sequences from the input stream. When a handler is registered (theme change, mouse, focus), the VtParser identifies matching CSI sequences via its `csiDispatch` callback:
+
+- **Theme DSR** (`CSI ? 997 ; Ps n`) -- dispatched to the theme change handler
+- **Mouse SGR** (`CSI < Pb ; Px ; Py M/m`) -- dispatched to the mouse handler
+- **Focus events** (`CSI I` / `CSI O`) -- dispatched to the focus handler
+
+Non-matching sequences are re-emitted as regular input. The VtParser naturally handles sequences split across input buffer boundaries, and a fast-path ESC scan skips VtParser processing entirely when no ESC byte is present in the input (the >99% common case for keystrokes).
+
+For text between escape sequences, the filter uses bulk `System.arraycopy` to skip per-byte VtParser processing, keeping overhead minimal for mixed input.
+
+### ActionDecoder Sequence Measurement
+
+The `ActionDecoder` uses `VtParser` as a fallback when the `KeyMappingTrie` has no match for an escape sequence:
 
 1. `KeyMappingTrie` is checked first (handles known keys like arrow keys, function keys)
 2. If no match and no prefix, and the buffer starts with ESC, `VtParser` measures the complete sequence length
@@ -132,6 +148,7 @@ The table-driven design provides consistent per-byte cost regardless of sequence
 
 ## See Also
 
-- [Mouse Tracking](mouse-tracking) -- uses VtParser for SGR mouse event classification
+- [Focus Tracking](focus-tracking) -- focus events (`CSI I` / `CSI O`) are filtered by VtParser
+- [Mouse Tracking](mouse-tracking) -- SGR mouse events are filtered by VtParser
 - [Device Attributes](device-attributes) -- DA1/DA2 responses are CSI sequences parsed by VtParser
 - Paul Flo Williams, [A parser for DEC's ANSI-compatible video terminals](https://vt100.net/emu/dec_ansi_parser)

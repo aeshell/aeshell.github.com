@@ -29,7 +29,7 @@ Focus tracking uses the terminal's `ESC [ ? 1004 h` mode:
 - `ESC [ I` is sent when the terminal gains focus
 - `ESC [ O` is sent when the terminal loses focus
 
-The `EventDecoder` intercepts these sequences and routes them to the focus handler, preventing them from appearing as input.
+The `EventDecoder` uses the VtParser-based sequence filter to intercept these sequences and route them to the focus handler, preventing them from appearing as input. The filter correctly handles sequences split across input buffer boundaries -- if `ESC` arrives in one read and `[ I` in the next, the focus event is still detected.
 
 ## With Readline
 

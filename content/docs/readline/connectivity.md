@@ -45,6 +45,35 @@ All remote terminals use the same `Connection` abstraction as local terminals, s
 └─────────┘ └───────┘ └────────────┘
 ```
 
+## Threading Model
+
+Each remote connection gets its own **per-connection readline executor** -- a single-threaded `ScheduledExecutorService` that handles all input processing (decoding, event filtering, action parsing, readline operations, and output echo). This keeps the Netty IO thread free for network I/O:
+
+```
+Netty IO Thread                      Per-Connection Readline Thread
+─────────────────                    ─────────────────────────────
+Network bytes arrive                 
+  → Copy bytes (fast)                
+  → Dispatch to executor ──────────→ Decoder → EventDecoder →
+Return immediately                     ActionDecoder → EditMode →
+(IO thread free)                       Completion → Output
+```
+
+This architecture ensures that:
+- **Long-running operations** (completion with file I/O, history search) don't block other connections
+- **Multiple SSH/Telnet/WebSocket sessions** sharing the same Netty event loop are isolated from each other
+- **Size change events** (WINCH/NAWS/resize) are dispatched to the readline executor to avoid racing with input processing
+
+### Backpressure
+
+Each transport implements backpressure to prevent a fast client from overwhelming the readline executor's task queue:
+
+| Transport | Mechanism |
+|-----------|-----------|
+| **SSH** | Uses SSHD's channel window flow control -- `data()` returns 0 (bytes not consumed), `channel.getLocalWindow().release()` after processing |
+| **Telnet** | Netty `channel.config().setAutoRead(false/true)` with high/low water marks on the pending task counter |
+| **WebSocket** | Same Netty autoRead mechanism as Telnet |
+
 ## SSH Connectivity
 
 SSH (Secure Shell) provides encrypted, authenticated terminal access. This is the recommended protocol for production use.

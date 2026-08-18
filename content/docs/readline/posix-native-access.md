@@ -75,9 +75,12 @@ On macOS, `STDIN_FILENO` is used instead of opening `/dev/tty` because `poll()` 
 `FfmPty` provides an `InputStream` that uses `poll()` + `read()` for terminal input:
 
 - `poll()` with 100ms timeout for responsiveness to close()
+- Bulk reads using a 1024-byte native buffer -- reads as many bytes as the kernel provides in a single `read()` syscall
 - `read()` retries on EINTR (signal interruption between poll and read)
 - POLLHUP/POLLERR detection for EOF
 - No reader thread needed for the poll-based path (though the existing `TerminalConnection` read loop still runs in a thread)
+
+The bulk read buffer matches the typical maximum bytes returned by a single PTY master read (1 KiB on macOS, up to 4 KiB on Linux). A 6-byte escape sequence like Ctrl+Up costs 2 syscalls (1 poll + 1 read) rather than 12.
 
 ## Fallback Behavior
 
