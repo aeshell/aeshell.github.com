@@ -86,6 +86,49 @@ Prompt prompt = Prompt.builder()
 - Right prompt aligns with the last line
 - `printAbove()` and status lines account for the extra prompt lines automatically
 
+## Continuation Prompt
+
+When the user enters a line ending with a backslash (`\`) or containing an unclosed quote, readline continues reading on the next line with a **continuation prompt**. This is equivalent to `PS2` in bash/zsh.
+
+By default, the continuation prompt is `"> "`. You can customize it via `ReadlineRequest.builder()`:
+
+```java
+ReadlineRequest.builder()
+    .connection(conn)
+    .prompt(new Prompt("$ "))
+    .continuationPrompt("... ")
+    .requestHandler(line -> { /* ... */ })
+    .build();
+```
+
+Example session with the default continuation prompt:
+
+```
+$ echo "hello \
+> world"
+hello world
+```
+
+With a custom continuation prompt:
+
+```
+$ echo "hello \
+... world"
+hello world
+```
+
+The continuation prompt also accepts a `Prompt` object for styled prompts:
+
+```java
+ReadlineRequest.builder()
+    .connection(conn)
+    .prompt(new Prompt("$ "))
+    .continuationPrompt(new Prompt(
+        new TerminalString("... ", new TerminalColor(Color.YELLOW, Color.DEFAULT))))
+    .requestHandler(line -> { /* ... */ })
+    .build();
+```
+
 ## ANSI Auto-Detection
 
 When creating a prompt with embedded ANSI escape codes, the visible length is calculated automatically:

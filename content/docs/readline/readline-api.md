@@ -204,6 +204,8 @@ readline.readline(request);
 | `connection(Connection)` | `Connection` | Terminal connection (required) |
 | `prompt(Prompt)` | `Prompt` | Prompt to display (required) |
 | `prompt(String)` | `String` | Prompt string (convenience, creates a Prompt) |
+| `continuationPrompt(Prompt)` | `Prompt` | Prompt for continuation lines (default: `"> "`) |
+| `continuationPrompt(String)` | `String` | Continuation prompt string (convenience) |
 | `requestHandler(Consumer<String>)` | `Consumer` | Input handler callback (required) |
 | `completions(List<Completion>)` | `List` | Tab completions |
 | `preProcessors(List<Function<String, Optional<String>>>)` | `List` | Input transformers |
