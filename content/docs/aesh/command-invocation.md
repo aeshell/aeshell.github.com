@@ -293,6 +293,51 @@ public class ExitCommand implements Command<CommandInvocation> {
 
 **Note:** For most applications, using the built-in exit command via `.addExitCommand()` is recommended.
 
+## Programmatic Command Execution
+
+Commands can invoke other commands programmatically from within their `execute()` method.
+
+### executeCommand(String input)
+
+Executes a command string through the full parsing pipeline, the same way a user would type it:
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) throws Exception {
+    // Invoke another registered command by string
+    invocation.executeCommand("greet --name Alice");
+    return CommandResult.SUCCESS;
+}
+```
+
+Since the input goes through `LineParser`, arguments containing spaces, quotes, or shell operator characters (`|`, `;`, `>`) must be properly escaped.
+
+### executeCommand(String commandName, String... args)
+
+Executes a command with pre-tokenized arguments, bypassing shell-like string parsing. Arguments are passed directly to the command parser without quoting or escaping, so special characters (`$`, `"`, `{`, `|`) are preserved as-is:
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) throws Exception {
+    // JQ-style expression — no quoting needed
+    invocation.executeCommand("node", "add", "jq", "majorMinor",
+            ".config.VERSION | split(\".\") | .[0:2] | join(\".\")");
+    return CommandResult.SUCCESS;
+}
+```
+
+This is the preferred approach when constructing commands programmatically, since it avoids all quoting edge cases. The arguments are passed directly to the option parser.
+
+### buildExecutor(String commandName, String[] args)
+
+Like `executeCommand(String, String...)` but defers execution, allowing the caller to inspect the parsed command before running it:
+
+```java
+Executor<? extends CommandInvocation> executor =
+        invocation.buildExecutor("mycommand", new String[]{"--flag", "value"});
+// executor can be used to execute the command later
+```
+
 ## Help System
 
 ### getHelpInfo()

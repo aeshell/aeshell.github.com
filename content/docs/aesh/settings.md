@@ -392,6 +392,27 @@ SettingsBuilder.builder()
         .build();
 ```
 
+The listener also fires for pre-Process errors (command not found, parse errors), giving consumers a complete view of all command outcomes.
+
+To receive the exception that caused a failure, override the 4-arg default method:
+
+```java
+SettingsBuilder.builder()
+        .commandExecutionListener(new CommandExecutionListener() {
+            @Override
+            public void onCommandComplete(String commandLine, CommandResult result, long durationMs) {}
+
+            @Override
+            public void onCommandComplete(String commandLine, CommandResult result,
+                    long durationMs, Throwable error) {
+                if (error != null) {
+                    System.err.println("Command failed: " + error.getMessage());
+                }
+            }
+        })
+        .build();
+```
+
 This combines well with `promptSupplier` for starship-style prompts that show the last command's duration:
 
 ```java
@@ -409,6 +430,20 @@ SettingsBuilder.builder()
         })
         .build();
 ```
+
+#### commandOutputHandler(Consumer&lt;String&gt;)
+
+Capture what commands write via `invocation.println()` / `invocation.print()`, separately from readline chrome, prompt drawing, and ANSI escape sequences. Output is teed to both the terminal and the handler. When not set (the default), no overhead is added to the output path.
+
+```java
+StringBuilder capturedOutput = new StringBuilder();
+
+SettingsBuilder.builder()
+        .commandOutputHandler(capturedOutput::append)
+        .build();
+```
+
+This is primarily useful for test frameworks that need clean command output without parsing the full terminal buffer.
 
 ### Additional Options
 
@@ -552,7 +587,8 @@ public CommandResult execute(CommandInvocation invocation) {
 | `echoCtrl` | `boolean` | `true` | Echo control characters |
 | `tailTipSuggestions` | `boolean` | `false` | Show parameter hints after cursor |
 | `promptSupplier` | `Supplier<Prompt>` | `null` | Dynamic prompt called before each readline cycle |
-| `commandExecutionListener` | `CommandExecutionListener` | `null` | Callback after each command execution with duration |
+| `commandExecutionListener` | `CommandExecutionListener` | `null` | Callback after each command execution (and pre-Process errors) with duration and optional error |
+| `commandOutputHandler` | `Consumer<String>` | `null` | Captures command output separately from readline chrome; zero overhead when null |
 | `subCommandModeSettings` | `SubCommandModeSettings` | defaults | Sub-command mode configuration |
 
 ## Best Practices

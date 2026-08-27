@@ -87,13 +87,76 @@ When set, takes precedence over a static prompt. Enables starship-style prompts 
 
 ```java
 AeshConsoleRunner.builder()
-    // Callback after each command completes
+    // Callback after each command completes (3-arg form)
     .commandExecutionListener((commandLine, result, durationMs) -> {
         System.out.println("Took " + durationMs + "ms");
     })
 ```
 
 Fires after each command finishes execution with the full command line, result, and wall-clock duration.
+Also fires for pre-Process errors (command not found, parse errors) so consumers get a complete view of all command outcomes.
+
+To receive the exception that caused a failure, override the 4-arg default method:
+
+```java
+AeshConsoleRunner.builder()
+    .commandExecutionListener(new CommandExecutionListener() {
+        @Override
+        public void onCommandComplete(String commandLine, CommandResult result, long durationMs) {
+            // called for success and non-exception failures
+        }
+
+        @Override
+        public void onCommandComplete(String commandLine, CommandResult result,
+                long durationMs, Throwable error) {
+            if (error != null) {
+                log.error("Command '{}' failed: {}", commandLine, error.getMessage());
+            }
+        }
+    })
+```
+
+The `error` parameter is `null` on success and carries the exception on failure. Existing 3-arg lambdas continue to work unchanged via the default delegation.
+
+#### Command Output Handler
+
+Capture what commands write via `invocation.println()` / `invocation.print()`, separately from readline chrome, prompt drawing, and ANSI escape sequences:
+
+```java
+StringBuilder capturedOutput = new StringBuilder();
+
+AeshConsoleRunner.builder()
+    .command(MyCommand.class)
+    .commandOutputHandler(capturedOutput::append)
+    .addExitCommand()
+    .start();
+```
+
+Output is teed to both the terminal and the handler. When not set (the default), no overhead is added to the output path. This is primarily useful for test frameworks that need clean command output without parsing the full terminal buffer.
+
+#### onReady Callback
+
+`start()` blocks until the console exits, so test frameworks and embedders that start the REPL on a background thread need a reliable signal that readline is armed before sending the first command:
+
+```java
+CountDownLatch ready = new CountDownLatch(1);
+CountDownLatch done = new CountDownLatch(1);
+
+new Thread(() -> {
+    AeshConsoleRunner.builder()
+        .command(MyCommand.class)
+        .addExitCommand()
+        .commandExecutionListener((line, result, durationMs) -> done.countDown())
+        .onReady(ready::countDown)   // fires after readline is armed, before blocking
+        .start();
+}).start();
+
+ready.await(5, TimeUnit.SECONDS);   // guaranteed: readline is now accepting input
+connection.read("mycommand" + Config.getLineSeparator());
+done.await(5, TimeUnit.SECONDS);
+```
+
+Without `onReady`, the only alternative is a `Thread.sleep()` which is fragile on slow CI environments.
 
 #### Command Not Found Handler
 
@@ -930,7 +993,14 @@ public CommandResult execute(CommandInvocation invocation) {
 | Command not found | `127` | `CommandResult.COMMAND_NOT_FOUND` |
 | Interrupted (Ctrl-C) | `130` | `CommandResult.INTERRUPTED` |
 
-All exit codes follow POSIX conventions (0-255). Use `getExitCode()` for safe `System.exit()` calls -- it clamps values to the 0-255 range.
+All exit codes follow POSIX conventions (0-255). Use `getExitCode()` for safe `System.exit()` calls -- it clamps values to the 0-255 range. Negative values become 1, values above 255 become 255.
+
+Custom exit codes are supported via `CommandResult.valueOf(int)`:
+
+```java
+// Command returning a custom POSIX exit code
+return CommandResult.valueOf(42);
+```
 
 Exit code 2 matches the behavior of Bash, picocli, and most CLI frameworks for usage errors. This ensures scripts and CI pipelines correctly detect invalid input:
 
@@ -939,7 +1009,7 @@ mytool --unknown-option || echo "Failed with exit $?"
 # Failed with exit 2
 ```
 
-In code, check the result:
+In code, check the result using `isFailure()` (any non-zero code) or `isSuccess()` (zero):
 
 ```java
 CommandResult result = AeshRuntimeRunner.builder()
@@ -950,6 +1020,18 @@ CommandResult result = AeshRuntimeRunner.builder()
 if (result != null && result.isFailure()) {
     System.exit(result.getExitCode());
 }
+```
+
+`isFailure()` returns `true` for any non-zero exit code, consistent with POSIX shell semantics. Multi-line execution via `executeCommand(String... lines)` short-circuits on the first non-zero result.
+
+The `commandExecutionListener` fires for all command outcomes, including pre-Process errors (command not found, parse errors). This gives a complete view for test frameworks using `CountDownLatch`:
+
+```java
+// Works correctly even if a command fails before execution starts
+CountDownLatch latch = new CountDownLatch(1);
+Settings settings = SettingsBuilder.builder()
+        .commandExecutionListener((line, result, durationMs) -> latch.countDown())
+        .build();
 ```
 
 For **group commands**, when a parse error occurs on a subcommand, the error message is followed by the subcommand's help (not the root group's help). This works with nested groups as well — `docker container start --badopt` shows help for `start`, not for `docker`.
