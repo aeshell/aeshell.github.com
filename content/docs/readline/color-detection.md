@@ -808,3 +808,53 @@ TerminalColor adapted = brandColor.forCapability(cap);
 ```
 
 This ensures your colors always work, even on limited terminals. See [Terminal Colors](terminal-colors) for more details on `TerminalColor` RGB and formatting features.
+
+## Terminal Mode Detection
+
+In addition to colors, the `TerminalCapabilities` class detects support for DEC private modes. These probes are included in the same batched query as the color detection — zero additional startup cost.
+
+### Detected Modes
+
+| Mode | Method | Description |
+|---|---|---|
+| Mode 2026 | `synchronizedOutputSupport()` | Synchronized output (BSU/ESU) — prevents screen tearing |
+| Mode 2027 | `graphemeClusterSupport()` | Grapheme cluster segmentation — correct emoji width |
+
+### Three-State Detection
+
+Each mode returns a `ModeSupport` enum with three states:
+
+| State | Meaning |
+|---|---|
+| `SUPPORTED` | Terminal responded positively to the DECRQM probe |
+| `NOT_SUPPORTED` | Terminal responded to DA1 (speaks escape sequences) but does not support this mode |
+| `NO_RESPONSE` | Terminal did not respond at all (dumb terminal — no further probes safe) |
+
+```java
+TerminalCapabilities caps = TerminalCapabilities.detectAsync();
+caps.awaitColors(500, TimeUnit.MILLISECONDS);
+
+ModeSupport sync = caps.synchronizedOutputSupport();
+if (sync == ModeSupport.SUPPORTED) {
+    // Safe to use Mode 2026 for flicker-free updates
+}
+
+ModeSupport grapheme = caps.graphemeClusterSupport();
+if (grapheme == ModeSupport.SUPPORTED) {
+    // Terminal handles emoji width correctly
+}
+```
+
+### Native Grapheme Clustering
+
+Some terminals natively group grapheme clusters (correct emoji width) without supporting Mode 2027. The `detectFull()` method includes a cursor-position probe that detects this:
+
+```java
+TerminalCapabilities caps = TerminalCapabilities.detectFull();
+Boolean nativeGC = caps.nativeGraphemeClustering();
+if (nativeGC != null && nativeGC) {
+    // Terminal groups emoji correctly even without Mode 2027
+}
+```
+
+The cursor probe writes a test emoji, measures the cursor advance, and cleans up. It only runs when DA1 responded but Mode 2027 is not supported — never on dumb terminals.

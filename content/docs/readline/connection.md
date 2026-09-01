@@ -93,20 +93,38 @@ if (connection.isInteractive()) {
 ```
 
 The `isInteractive()` method checks whether the connection is attached to a real terminal:
-- **Local terminals** (`TerminalConnection`): Uses native `isatty()` to check if stdin is a terminal. Returns `false` when input is piped or redirected.
+- **Local terminals** (`TerminalConnection`): Uses POSIX `isatty(STDIN_FILENO)` to check if stdin is a terminal. Returns `false` when input is piped or redirected.
 - **SSH/HTTP connections**: Always returns `true` since these are inherently interactive.
 
-Combine with `supportsAnsi()` for full environment detection:
+`supportsAnsi()` checks whether ANSI escape codes should be written to output:
+- Returns `false` when stdout is not a TTY (redirected to file or piped to another program)
+- Returns `false` for `ExternalTerminal` (piped/redirected stdin)
+- This follows the same convention as `ls --color=auto` and `grep --color=auto`
+
+Combine both for full environment detection:
 
 ```java
 if (!connection.isInteractive()) {
-    // Piped/redirected — disable all interactive features
+    // Piped/redirected stdin — disable interactive features
+    // Input arrives as complete lines from file/pipe, EOF closes connection
 } else if (!connection.supportsAnsi()) {
-    // Dumb terminal — disable colors and cursor movement
+    // Interactive but stdout redirected — disable colors and cursor movement
+    // User types interactively, but output goes to a file
 } else {
     // Full interactive terminal — enable everything
 }
 ```
+
+Common piped/redirected scenarios and how aesh-readline handles them:
+
+| Scenario | `isInteractive()` | `supportsAnsi()` | Terminal type |
+|---|---|---|---|
+| Normal interactive | `true` | `true` | PosixSysTerminal / WinSysTerminal |
+| `echo "cmd" \| java ...` | `false` | `false` | ExternalTerminal |
+| `java ... < file.txt` | `false` | `false` | ExternalTerminal |
+| `java ... > output.txt` | `true` | `false` | PosixSysTerminal (stdin is TTY) |
+| `java ... \| tee log.txt` | `true` | `false` | PosixSysTerminal (stdin is TTY) |
+| `java ... < in.txt > out.txt` | `false` | `false` | ExternalTerminal |
 
 ## Handlers
 
