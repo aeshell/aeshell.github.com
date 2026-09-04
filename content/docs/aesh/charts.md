@@ -15,14 +15,14 @@ Add the `aesh-charts` dependency alongside `aesh`:
 <dependency>
     <groupId>org.aesh</groupId>
     <artifactId>aesh-charts</artifactId>
-    <version>3.17.3</version>
+    <version>3.17.5</version>
 </dependency>
 ```
 
 Gradle:
 
 ```groovy
-implementation 'org.aesh:aesh-charts:3.17.3'
+implementation 'org.aesh:aesh-charts:3.17.5'
 ```
 
 ## Chart Types

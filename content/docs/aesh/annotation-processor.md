@@ -337,6 +337,12 @@ Example Maven configuration:
 </plugin>
 ```
 
+## CDI / Framework Proxy Support
+
+When CDI frameworks (Quarkus ArC, WildFly) create interceptor subclasses of commands (e.g., for `@Transactional`), the annotation processor still works correctly. The generated metadata is keyed by the original command class name. At runtime, the metadata registry walks the class hierarchy to match proxy subclasses to their original class's generated metadata.
+
+This is automatic -- no configuration needed. `@CommandDefinition` is annotated with `@Inherited`, so both the reflection and processor paths find the annotation on the parent class.
+
 ## Compatibility
 
 - **Java 8+** -- The processor targets source version 8
@@ -344,3 +350,4 @@ Example Maven configuration:
 - **Fully backward compatible** -- Removing the dependency reverts to the reflection path with no behavior change
 - **Incremental** -- You can use the processor for some commands and not others; commands without a generated provider fall back to reflection
 - **Multi-module** -- Each module generates its own `_AeshMetadataRegistry`. Both ServiceLoader and the `META-INF/aesh/registry` resource file support multi-module discovery across JARs
+- **CDI-compatible** -- Interceptor subclasses are resolved to the original command class automatically

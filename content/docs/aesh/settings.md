@@ -445,6 +445,25 @@ SettingsBuilder.builder()
 
 This is primarily useful for test frameworks that need clean command output without parsing the full terminal buffer.
 
+#### inputLineResponses(String...)
+
+Pre-load responses for `commandInvocation.inputLine()` calls. When a command calls `inputLine()`, the queue is checked first. If non-empty, the next entry is returned immediately without blocking. This enables test frameworks to provide answers to interactive prompts without timing dependencies.
+
+```java
+SettingsBuilder.builder()
+        .inputLineResponses("y", "Alice", "secret123")
+        .build();
+```
+
+Responses are consumed in order. The queue can be refilled between commands:
+
+```java
+settings.setInputLineResponses(
+        new ConcurrentLinkedQueue<>(Arrays.asList("new-answer")));
+```
+
+In non-interactive mode, if `inputLine()` is called with an empty queue, an `IllegalStateException` is thrown instead of deadlocking.
+
 ### Additional Options
 
 #### readInputrc(boolean)
@@ -589,6 +608,7 @@ public CommandResult execute(CommandInvocation invocation) {
 | `promptSupplier` | `Supplier<Prompt>` | `null` | Dynamic prompt called before each readline cycle |
 | `commandExecutionListener` | `CommandExecutionListener` | `null` | Callback after each command execution (and pre-Process errors) with duration and optional error |
 | `commandOutputHandler` | `Consumer<String>` | `null` | Captures command output separately from readline chrome; zero overhead when null |
+| `inputLineResponses` | `Queue<String>` | `null` | Pre-canned responses for `inputLine()` calls; consumed in order |
 | `subCommandModeSettings` | `SubCommandModeSettings` | defaults | Sub-command mode configuration |
 
 ## Best Practices

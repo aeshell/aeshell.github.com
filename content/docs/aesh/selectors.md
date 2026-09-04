@@ -14,8 +14,12 @@ Selectors provide interactive input prompts that go beyond simple text entry. Th
 | `INPUT` | Text input prompt | Type text, press Enter |
 | `PASSWORD` | Masked password input | Type text (shown as `*`), press Enter |
 | `SELECT` | Single selection from a list | Arrow keys to move, Enter to select |
-| `SELECTIONS` | Multiple selection from a list | Arrow keys to move, Space to toggle, Enter to finish |
+| `MULTI_SELECT` | Multiple selection from a list | Arrow keys to move, Space to toggle, Enter to finish |
+| `CONFIRM` | Yes/no confirmation | Press y/n or Enter for default |
+| `EXPAND` | Key-based expandable choice | Press key matching a choice, `?` for help |
 | `NO_OP` | No selector (default) | Standard option parsing |
+
+`SELECTIONS` is deprecated -- use `MULTI_SELECT` instead.
 
 ## Using Selectors with @Option
 
@@ -208,7 +212,7 @@ public class NewProjectCommand implements Command<CommandInvocation> {
         String lang = langSelect.doSelect(shell).get(0);
 
         // Step 3: Features (multi-select)
-        Selector featureSelect = new Selector(SelectorType.SELECTIONS,
+        Selector featureSelect = new Selector(SelectorType.MULTI_SELECT,
             new String[]{"tests", "ci", "docker", "docs"},
             "Features:");
         List<String> features = featureSelect.doSelect(shell);
@@ -219,3 +223,84 @@ public class NewProjectCommand implements Command<CommandInvocation> {
     }
 }
 ```
+
+## CommandInvocation Convenience Methods
+
+Since 3.17.5, `CommandInvocation` provides convenience methods for interactive prompts, so you don't need to create `Selector` objects directly:
+
+### confirm()
+
+```java
+boolean deploy = ci.confirm("Deploy to production?", false);
+// Shows: ? Deploy to production? (y/N)
+// Returns: true for y/Y, false for n/N, default on Enter
+```
+
+### select()
+
+```java
+String env = ci.select("Choose environment:",
+        List.of("development", "staging", "production"));
+// Shows arrow-key navigable list with ❯ indicator
+// Returns the selected value
+```
+
+### multiSelect()
+
+```java
+List<String> features = ci.multiSelect("Enable features:",
+        List.of("logging", "metrics", "tracing"));
+// Shows checkboxes (◉/◯) with Space to toggle
+// Returns list of selected values
+```
+
+### prompt() and prompt(validator)
+
+```java
+// Simple text prompt
+String name = ci.prompt("Project name:");
+
+// Text prompt with validation (re-prompts until valid)
+String name = ci.prompt("Project name:", input ->
+        input.matches("[a-z][a-z0-9-]*") ? null : "Must be lowercase with hyphens");
+// Shows ✗ error message and re-prompts on invalid input
+```
+
+### Wizard example with convenience methods
+
+The project init wizard from above is much simpler with convenience methods:
+
+```java
+@Override
+public CommandResult execute(CommandInvocation ci) throws InterruptedException {
+    String name = ci.prompt("Project name:", input ->
+            input.matches("[a-z][a-z0-9-]*") ? null : "Must be lowercase");
+
+    String lang = ci.select("Language:",
+            List.of("java", "kotlin", "scala"));
+
+    List<String> features = ci.multiSelect("Features:",
+            List.of("tests", "ci", "docker", "docs"));
+
+    boolean confirm = ci.confirm("Create project '" + name + "'?", true);
+    if (!confirm) return CommandResult.SUCCESS;
+
+    ci.println("Creating " + lang + " project '" + name
+            + "' with: " + String.join(", ", features));
+    return CommandResult.SUCCESS;
+}
+```
+
+### Rendering
+
+Selectors render with Unicode indicators when available:
+- `❯` focused item marker (ASCII fallback: `>`)
+- `◉` selected checkbox (ASCII fallback: `[*]`)
+- `◯` unselected checkbox (ASCII fallback: `[ ]`)
+- Bold text for focused items, green for selected items
+
+When `NO_COLOR` is set, selectors fall back to ASCII indicators and no ANSI styling.
+
+### Non-interactive fallback
+
+When `ci.isInteractive()` returns false (piped input), the convenience methods consume from the `inputLineResponses()` queue if available. See [Settings](/docs/aesh/settings) for details.

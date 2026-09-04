@@ -36,12 +36,22 @@ public interface CommandInvocation {
     // Shell access
     Shell getShell();
 
+    // Interactive detection
+    boolean isInteractive();
+
     // Control methods
     void stop();
 
     // Help system
     String getHelpInfo();
     String getHelpInfo(String commandName);
+
+    // Interactive prompts
+    boolean confirm(String message, boolean defaultValue);
+    String select(String message, List<String> choices);
+    List<String> multiSelect(String message, List<String> choices);
+    String prompt(String message);
+    String prompt(String message, Function<String, String> validator);
 
     // Configuration access
     CommandInvocationConfiguration getConfiguration();
@@ -271,6 +281,32 @@ public CommandResult execute(CommandInvocation invocation) {
     return CommandResult.SUCCESS;
 }
 ```
+
+## Interactive Detection
+
+### isInteractive()
+
+Check if the command is running in an interactive terminal. Returns `false` when stdin is piped or redirected.
+
+```java
+@Override
+public CommandResult execute(CommandInvocation ci) throws InterruptedException {
+    if (ci.isInteractive()) {
+        // Show progress bars, spinners, interactive prompts
+        boolean confirm = ci.confirm("Delete all files?", false);
+        if (!confirm) return CommandResult.SUCCESS;
+    }
+    // In non-interactive mode, proceed without prompts
+    deleteFiles();
+    return CommandResult.SUCCESS;
+}
+```
+
+This is useful for commands that should behave differently when input is piped (e.g., `echo "delete" | java -jar mycli.jar`).
+
+## Interactive Prompts
+
+Commands can show interactive prompts from within their `execute()` method. See [Selectors - CommandInvocation Convenience Methods](/docs/aesh/selectors#commandinvocation-convenience-methods) for details on `confirm()`, `select()`, `multiSelect()`, and `prompt()`.
 
 ## Control Methods
 

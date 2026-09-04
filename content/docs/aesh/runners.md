@@ -884,6 +884,49 @@ class CommandTest {
 }
 ```
 
+## Non-Interactive / Piped Input Mode
+
+When stdin is piped or redirected (`echo "cmd" | java ...` or `java ... < script.txt`), aesh automatically adapts its behavior:
+
+- **Prompt display is skipped** -- no prompt written to stdout
+- **Tab completion is disabled** -- no completion overhead
+- **History recording is skipped** -- piped commands aren't user history
+- **Commands run synchronously** -- each command completes before the next line is read, eliminating input loss
+
+This is detected automatically via `Connection.isInteractive()`. Commands can check this to adapt their behavior:
+
+```java
+@Override
+public CommandResult execute(CommandInvocation ci) throws InterruptedException {
+    if (ci.isInteractive()) {
+        boolean confirm = ci.confirm("Delete all files?", false);
+        if (!confirm) return CommandResult.SUCCESS;
+    }
+    // proceed with deletion
+    return CommandResult.SUCCESS;
+}
+```
+
+### Pre-canned inputLine() Responses
+
+When a command calls `inputLine()` in non-interactive mode, it would deadlock (the synchronous execution blocks the only thread that could deliver input). Use `inputLineResponses()` to provide answers:
+
+```java
+SettingsBuilder.builder()
+    .inputLineResponses("y", "Alice", "secret123")
+    .build();
+```
+
+Responses are consumed in order by each `inputLine()` call. The queue can be refilled between commands via `settings.setInputLineResponses()`. If the queue is empty when `inputLine()` is called in non-interactive mode, an `IllegalStateException` is thrown with a clear message.
+
+This is primarily useful for test frameworks. See [Settings - inputLineResponses](/docs/aesh/settings#inputlineresponses) for details.
+
+## CDI / Framework Integration
+
+Aesh supports CDI interceptor and proxy subclasses out of the box. When a CDI framework (Quarkus, WildFly) wraps a command class with an interceptor subclass (e.g., for `@Transactional`), aesh walks the class hierarchy to find `@CommandDefinition` on the original class.
+
+This works automatically -- no configuration needed. `@CommandDefinition` is annotated with `@Inherited`, so `getAnnotation()` finds it on the parent class. The annotation processor's metadata registry also walks superclasses to match proxy class names.
+
 ## Choosing Between Runners
 
 ### Use AeshConsoleRunner when:
