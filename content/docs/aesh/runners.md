@@ -499,6 +499,29 @@ Verbose mode enabled
 
 The `.args(args)` method automatically parses the command-line arguments and passes them to the registered command. When combined with `.execute()`, it provides a complete single-call execution pattern.
 
+### Lazy Startup
+
+By default, `AeshRuntimeRunner` instantiates the registered command when it is registered. With `.lazyStartup(true)`, registration only records the command class: the command is instantiated when `execute()` runs, and for group commands only the selected subcommand path is constructed. Unselected subcommands are never instantiated.
+
+```java
+AeshRuntimeRunner.builder()
+        .lazyStartup(true)
+        .command(MyGroupCommand.class)
+        .args(args)
+        .execute();
+```
+
+Measured on a group with 1 root + 20 subcommands executing one child: eager mode constructs 21 commands, lazy mode constructs 2, with mean execution time dropping from ~72 µs to ~26 µs.
+
+Rules:
+
+- Call `.lazyStartup(true)` before `.command(...)`; lazy mode supports a single root command. Calling `.lazyStartup(false)` afterwards reverts to eager construction.
+- Registration errors (for example a malformed command) surface at `execute()` instead of at `.command(...)`.
+- Unknown subcommands fail without constructing any command; the `commandNotFoundHandler` still receives the unknown name and available subcommands.
+- Registry default value providers apply only to constructed commands; per-command providers take precedence.
+- Custom container builders must extend `AeshCommandContainerBuilder`.
+- `--help`, shell completion, and documentation generation still resolve the full command tree.
+
 #### Arguments with Special Characters
 
 Arguments containing spaces, embedded quotes, backslashes, newlines, or shell operator characters (`|`, `;`, `>`) are fully supported. The args are passed directly to the command parser without string reconstruction or re-parsing, so their content is preserved exactly:
