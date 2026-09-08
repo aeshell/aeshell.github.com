@@ -501,11 +501,10 @@ The `.args(args)` method automatically parses the command-line arguments and pas
 
 ### Lazy Startup
 
-By default, `AeshRuntimeRunner` instantiates the registered command when it is registered. With `.lazyStartup(true)`, registration only records the command class: the command is instantiated when `execute()` runs, and for group commands only the selected subcommand path is constructed. Unselected subcommands are never instantiated.
+`AeshRuntimeRunner` is lazy by default: registering a command only records its class. The command is instantiated when `execute()` runs, and for group commands only the selected subcommand path is constructed — unselected subcommands are never instantiated. Unknown subcommands fail without constructing anything, including full help output. Call `.lazyStartup(false)` to revert to eager construction.
 
 ```java
 AeshRuntimeRunner.builder()
-        .lazyStartup(true)
         .command(MyGroupCommand.class)
         .args(args)
         .execute();
@@ -521,9 +520,9 @@ Falls back to full construction (same output as eager) for `--help=<format>` doc
 
 Rules:
 
-- Call `.lazyStartup(true)` before `.command(...)`; lazy mode supports a single root command. Calling `.lazyStartup(false)` afterwards reverts to eager construction.
+- `AeshRuntimeRunner` supports a single root command; a second `.command(...)` call fails fast in both modes. Call `.lazyStartup(false)` before `.execute()` to revert to eager construction.
 - Registration errors (for example a malformed command) surface at `execute()` instead of at `.command(...)`.
-- Unknown subcommands fail without constructing any command; the `commandNotFoundHandler` still receives the unknown name and available subcommands.
+- Unknown subcommands fail without constructing any command; the `commandNotFoundHandler` still receives the unknown name and available subcommands, followed by the full help output.
 - Registry default value providers apply only to constructed commands; per-command providers take precedence.
 - Custom container builders must extend `AeshCommandContainerBuilder`.
 - Shell completion and `--aesh-doc` documentation generation still resolve the full command tree.
