@@ -513,6 +513,12 @@ AeshRuntimeRunner.builder()
 
 Measured on a group with 1 root + 20 subcommands executing one child: eager mode constructs 21 commands, lazy mode constructs 2, with mean execution time dropping from ~72 µs to ~26 µs.
 
+### Lazy `--help` and `--version`
+
+`--help` and `--version` render without instantiating any command class: help is built purely from static command metadata. On the same 1+20 group, `--help` constructs 21 commands eagerly and 0 lazily (144 µs vs 99 µs mean), with byte-identical output — including nested `root sub --help`, `--help=all`, and custom `HelpSectionProvider` sections (provider classes themselves are still instantiated).
+
+Falls back to full construction (same output as eager) for `--help=<format>` documentation requests and hierarchies with dynamic `GroupCommand` children, which cannot be known without an instance.
+
 Rules:
 
 - Call `.lazyStartup(true)` before `.command(...)`; lazy mode supports a single root command. Calling `.lazyStartup(false)` afterwards reverts to eager construction.
@@ -520,7 +526,7 @@ Rules:
 - Unknown subcommands fail without constructing any command; the `commandNotFoundHandler` still receives the unknown name and available subcommands.
 - Registry default value providers apply only to constructed commands; per-command providers take precedence.
 - Custom container builders must extend `AeshCommandContainerBuilder`.
-- `--help`, shell completion, and documentation generation still resolve the full command tree.
+- Shell completion and `--aesh-doc` documentation generation still resolve the full command tree.
 
 #### Arguments with Special Characters
 
