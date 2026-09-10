@@ -7,6 +7,10 @@ weight: 11
 
 Activators control whether options or entire commands are available. Deactivated options are hidden from tab completion and help, and deactivated commands are invisible to the user.
 
+{{< callout type="info" >}}
+Deactivation applies to **all** completion paths: interactive tab completion, dynamic `--aesh-complete` callbacks, and static shell completion scripts (static scripts honor activators since 3.18). For options that should still parse when typed but never be suggested, use `OptionVisibility.HIDDEN` instead of an activator.
+{{< /callout >}}
+
 ## OptionActivator
 
 Enable or disable an option based on conditions. The `ParsedCommand` gives you access to the current command and the values of other options that have been parsed so far:
@@ -115,6 +119,39 @@ public class ShutdownCommand implements Command<CommandInvocation> {
 ```
 
 The `shutdown` command only appears in tab completion and help when `user.role` is `admin`. Users without admin role cannot discover or execute it.
+
+### Platform-Conditional Commands
+
+A common use case is a cross-platform CLI where some commands only exist on one platform (e.g. a `vm` appliance command that is macOS-only because the managed runtime runs natively on Linux). Gate it with a `CommandActivator` behind a single command tree instead of maintaining one top-level command per platform:
+
+```java
+import org.aesh.command.activator.CommandActivator;
+import org.aesh.command.impl.internal.ParsedCommand;
+
+public class MacOnly implements CommandActivator {
+
+    @Override
+    public boolean isActivated(ParsedCommand command) {
+        return Platform.isMacOS();
+    }
+}
+```
+
+```java
+@CommandDefinition(
+    name = "vm",
+    description = "Manage the VM appliance (macOS only)",
+    activator = MacOnly.class,
+    groupCommands = { VmStartCommand.class, VmStopCommand.class }
+)
+public class VmCommand implements Command<CommandInvocation> { }
+```
+
+On Linux, `isx vm` is rejected at execution time and never appears in `--help`, tab completion, or generated shell completion scripts — no post-filtering of the scripts required.
+
+{{< callout type="warning" >}}
+An activator hides the command at runtime, but the class still ships in the binary. If the code must be **absent** from a native-image build entirely (GraalVM dead-code elimination via build-time-folded constants), register a separate top-level command per platform instead, and use a [`CompletionFilter`](../completers#filtering-generated-completions) to keep generated completions in step.
+{{< /callout >}}
 
 ## Conditional Required Options
 

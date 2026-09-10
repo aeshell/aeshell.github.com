@@ -295,6 +295,8 @@ The generators introspect the command model and produce:
 - **Subcommand names** for group commands
 - **Positional argument completion** (file completion for `@Argument`/`@Arguments` with file types)
 
+Commands and options gated by a [`CommandActivator`/`OptionActivator`](../activators) (where `isActivated()` returns `false`) and options marked `OptionVisibility.HIDDEN` are excluded from both static and dynamic completions (since 3.18). Before 3.18, the static generators ignored these gates — only dynamic `--aesh-complete` respected them.
+
 ### Completion Fallback Control
 
 By default, when no completion candidates are available for an argument, the shell falls back to file/path completion for `String`, `File`, and `Path` types, and no fallback for enum types. You can override this per-argument using `completeFallback`:
@@ -398,6 +400,34 @@ String fishScript = ShellCompletionGenerator.generateDynamic(
 ShellCompletionGenerator generator = ShellCompletionGenerator.forShell(ShellType.ZSH);
 String script = generator.generate(parser, "myapp");
 ```
+
+### Filtering Generated Completions
+
+By default, static generation applies the same gates as dynamic completion: deactivated commands/options and `HIDDEN` options are excluded. For rules beyond activators — e.g. a platform-specific command group that is unregistered on some builds — pass a `CompletionFilter` (since 3.18):
+
+```java
+import org.aesh.util.completer.CompletionFilter;
+
+CompletionFilter noVm = new CompletionFilter() {
+    public boolean includeCommand(ProcessedCommand<?, ?> cmd) {
+        return !"vm".equals(cmd.name());
+    }
+    public boolean includeOption(ProcessedCommand<?, ?> cmd, ProcessedOption opt) {
+        return true;
+    }
+};
+
+// One-shot generation with a filter
+String bashScript = ShellCompletionGenerator.generate(
+        ShellType.BASH, TopCommand.class, "isx",
+        CompletionFilter.defaults().and(noVm));
+
+// Or via the strategy interface
+ShellCompletionGenerator generator = ShellCompletionGenerator.forShell(ShellType.ZSH);
+String script = generator.generate(parser, "myapp", CompletionFilter.defaults().and(noVm));
+```
+
+`CompletionFilter.defaults()` is the built-in activator + `HIDDEN` check, `allowAll()` includes everything, and `and()` combines filters. For the common case of platform-conditional commands, prefer a [`CommandActivator`](../activators#platform-conditional-commands) over a custom filter — the command is then gated in help, parsing, and completions with no extra wiring.
 
 ### Shell Detection
 

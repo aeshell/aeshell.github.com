@@ -114,6 +114,19 @@ Line 2
 Line 3
 ```
 
+### printErr(String message)
+
+Writes to the error channel. Without redirection this behaves like `println`; with `2>`, `2>>`, `|&`, or `2>&1` it follows the error routing instead of stdout.
+
+```java
+@Override
+public CommandResult execute(CommandInvocation invocation) {
+    invocation.println("Processing done");
+    invocation.printErr("Warning: used default config");
+    return CommandResult.SUCCESS;
+}
+```
+
 ### Formatted Output
 
 Combine with `String.format()` for formatted output:
@@ -457,12 +470,18 @@ public CommandResult execute(CommandInvocation invocation) {
 |----------|--------|-------------|
 | `NONE` | - | No operator, normal execution |
 | `PIPE` | `\|` | Output piped to next command |
+| `PIPE_AND_ERROR` | `\|&` | Output and errors piped to next command |
 | `REDIRECT_OUT` | `>` | Output redirected to file |
 | `REDIRECT_OUT_APPEND` | `>>` | Output appended to file |
+| `REDIRECT_OUT_ERROR` | `2>` | Errors redirected to file |
+| `APPEND_OUT_ERROR` | `2>>` | Errors appended to file |
+| `REDIRECT_OUT_ALL` | `2>&1` | Errors merged into the output destination |
 | `REDIRECT_IN` | `<` | Input from file |
 | `AND` | `&&` | Execute next if success |
 | `OR` | `\|\|` | Execute next if failure |
 | `END` | `;` | Execute next unconditionally |
+
+`2>`, `2>>`, and `|&` need a command that writes via `printErr`. `2>&1` merges errors into whatever stdout currently targets, so `cmd > out.txt 2>&1` puts both streams in the file.
 
 ## Standard Input (Pipes and Redirects)
 
