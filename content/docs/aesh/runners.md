@@ -226,7 +226,20 @@ abc123         myapp     Up 2 hours
 Deployed to staging.
 ```
 
-On Unix/macOS, commands run via `sh -c`. On Windows, commands run via `cmd /c`, which supports `.bat` and `.cmd` files natively.
+On Unix/macOS, commands run via `sh -c`. On Windows, commands run via `cmd /c`, which supports `.bat` and `.cmd` files natively (PowerShell `.ps1` scripts are not supported yet).
+
+Terminal input is forwarded to the native process stdin while it runs, so interactive commands work:
+
+```
+[myshell]$ !python
+Python 3.12.0
+>>> print("hello")
+hello
+>>> exit()
+[myshell]$
+```
+
+Input semantics: typed input is echoed back (readline is not line-editing during native execution), Ctrl-C interrupts the process instead of reaching its stdin, and Ctrl-D closes process stdin (EOF). There is no pseudo-terminal — full-screen programs like `vim` will not render correctly.
 
 Shell escape is **disabled by default** for security. It only applies to interactive console mode (`AeshConsoleRunner`), not `AeshRuntimeRunner`. You can also enable it via `SettingsBuilder`:
 
