@@ -1076,6 +1076,7 @@ public CommandResult execute(CommandInvocation invocation) {
 | Option validation error | `2` | `CommandResult.USAGE_ERROR` |
 | Command not found | `127` | `CommandResult.COMMAND_NOT_FOUND` |
 | Interrupted (Ctrl-C) | `130` | `CommandResult.INTERRUPTED` |
+| Abandoned after ignored interrupts | `137` | `CommandResult.KILLED` (since 3.18) |
 
 All exit codes follow POSIX conventions (0-255). Use `getExitCode()` for safe `System.exit()` calls -- it clamps values to the 0-255 range. Negative values become 1, values above 255 become 255.
 
@@ -1121,6 +1122,10 @@ Settings settings = SettingsBuilder.builder()
 For **group commands**, when a parse error occurs on a subcommand, the error message is followed by the subcommand's help (not the root group's help). This works with nested groups as well — `docker container start --badopt` shows help for `start`, not for `docker`.
 
 When a **subcommand is not found** (e.g., a typo like `git comit` instead of `git commit`), the error message includes the available subcommands. If a `CommandNotFoundHandler` is registered, it is called with the unknown subcommand name and the list of available subcommands, enabling "did you mean?" suggestions. See [Group Commands - Subcommand Not Found](/docs/aesh/group-commands#subcommand-not-found) for details.
+
+#### Repeated Ctrl-C Escalation
+
+The first Ctrl-C interrupts cooperatively (`INTERRUPTED`, exit 130). If the command ignores it, a second Ctrl-C re-asserts the interrupt and arms a 2-second grace period; a third Ctrl-C — or grace expiry — abandons the job with `CommandResult.KILLED` (exit 137, since 3.18) and returns the prompt. Subprocesses are force-killed; pure-Java workers that never yield are left as leaked daemon threads (a warning is logged), since the JVM cannot force-stop a thread. Pipeline upstream stages get the same treatment: one re-interrupt plus a bounded second join before the stage is marked failed.
 
 ## Working Examples
 
