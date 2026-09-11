@@ -226,7 +226,7 @@ abc123         myapp     Up 2 hours
 Deployed to staging.
 ```
 
-On Unix/macOS, commands run via `sh -c`. On Windows, commands run via `cmd /c`, which supports `.bat` and `.cmd` files natively (PowerShell `.ps1` scripts are not supported yet).
+On Unix/macOS, commands run via `sh -c`. On Windows, commands run via `cmd /c`, which supports `.bat` and `.cmd` files natively. PowerShell `.ps1` scripts are dispatched to `pwsh -File` when PowerShell Core is installed, otherwise to `powershell -File` (with `-ExecutionPolicy Bypass`) on Windows; on Unix, `.ps1` uses `pwsh -File` when available and falls back to `sh -c`.
 
 Terminal input is forwarded to the native process stdin while it runs, so interactive commands work:
 
