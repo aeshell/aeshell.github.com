@@ -152,3 +152,17 @@ Terminal routing by environment:
 | MSYS2/Cygwin with pipes (mintty for native processes) | `CygwinPty` + `stty.exe` | `FileInputStream` on stdin |
 
 `WinSysTerminal` (priority 100) and the Cygwin provider (priority 75) are mutually exclusive via the detection above, so exactly one claims the console. `WinSysTerminal` never enables `ENABLE_VIRTUAL_TERMINAL_INPUT` — it caused duplicate key events — and instead translates Windows virtual key codes to ANSI escape sequences in Java.
+
+## Console Encoding
+
+Console output avoids codepage issues by construction: whenever the output handle is a real console, everything is written via `WriteConsoleW` in UTF-16, which no console codepage setting can garble — regardless of whether VT interpretation is on. This holds for both the JNI (`aesh-console.dll`) and FFM implementations.
+
+Only two paths still depend on charset agreement, and both are safe by construction:
+
+| Path | Encoding | Correct when |
+|------|----------|--------------|
+| Console output (valid handle) | UTF-16 via `WriteConsoleW` | Always |
+| Piped output (no console) | JVM default charset bytes | Always — the pipe reader, not a console codepage, interprets them |
+| Console input (`ReadConsoleInputW`) | UTF-16 → JVM charset round trip | Always — both sides use the JVM charset |
+
+Deliberately *not* done: forcing the console output codepage to UTF-8 (`SetConsoleOutputCP(65001)`). That would mutate shared global console state visible to the parent shell and concurrent processes. The UTF-16 output path makes it unnecessary.
