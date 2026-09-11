@@ -14,6 +14,12 @@ On Windows, Æsh Readline needs access to the Windows Console API (Kernel32) for
 
 On Java 22+, the Foreign Function & Memory API calls Kernel32 directly from pure Java -- no DLL, no native compilation, no cross-compiler toolchain.
 
+## Do Not Call System.console() on Windows
+
+Calling `System.console()` on Windows initializes the JDK's internal JLine terminal (`jdk.internal.le`), which starts its own input pump thread on the same console input handle that Æsh Readline reads. Two readers on one Windows console input queue split the event stream, causing intermittent lost keystrokes — especially when keys overlap or arrive in quick succession.
+
+Æsh Readline itself never calls `System.console()` on Windows: TTY detection uses `GetConsoleMode` via `WinConsoleNative`, and terminal provider selection relies on that check. **Embedders must follow the same rule** — do not call `System.console()` anywhere in a process that uses Æsh Readline on Windows.
+
 ## Runtime Requirements
 
 ### Java 22+
@@ -58,6 +64,8 @@ Both implementations wrap these Windows Console API functions:
 | `GetConsoleScreenBufferInfo` | Query terminal width and height |
 | `ReadConsoleInputW` | Read key events, mouse events, and window resize events |
 | `WriteConsoleW` | Write Unicode output to the console |
+| `WaitForSingleObject` | Poll the input pump with timeout for clean shutdown |
+| `GetNumberOfConsoleInputEvents` | Drain pending events in batches |
 
 ## Building from Source
 
@@ -119,6 +127,28 @@ To avoid breaking builds on older JDKs, use a profile:
 </profile>
 ```
 
+## Console Mode Management
+
+When entering raw mode, Æsh Readline builds the console input mode **from scratch** starting at `ENABLE_WINDOW_INPUT` and adding only the needed flags (`ECHO`, `LINE`, `PROCESSED` input as the attributes require, plus mouse/extended flags when mouse tracking is on). It deliberately does not preserve stale flags from the OS default — most importantly `ENABLE_QUICK_EDIT_MODE`, which blocks `ReadConsoleInputW` while text selection is active and would otherwise swallow keystrokes.
+
+The original input *and* output modes are saved at terminal construction and restored on `close()`, so the console is left exactly as it was found.
+
+## CRLF Input Handling
+
+Cooked-mode line discipline (MSYS2/Cygwin pipes and consoles, pasted CRLF text) delivers CR LF per ENTER keypress. `EventDecoder` collapses an LF immediately following a CR into a single submit, so one ENTER yields one line — including when the pair is split across read chunks. Lone CR, lone LF, and repeated sequences pass through unchanged, so explicit blank lines still submit.
+
 ## Cygwin and MSYS2
 
 When running under Cygwin or MSYS2, Æsh Readline detects the POSIX-compatible environment and uses PTY-based terminal access instead of the Windows Console API. Neither JNI nor FFM is used in this case.
+
+Detection checks `MSYSTEM` (MSYS2/Git-Bash), the `CYGWIN` variable, `TERM_PROGRAM=mintty`, and a `PWD` starting with `/` — a single heuristic fails when these environments are launched from `cmd.exe`, IDEs, or CI where variables differ.
+
+Terminal routing by environment:
+
+| Environment | Provider | Input Path |
+|-------------|----------|------------|
+| Native console (conhost, PowerShell, Windows Terminal) | `WinSysTerminal` | `ReadConsoleInputW` console API |
+| MSYS2/Cygwin with a real console (ConPTY) | `CygwinPty` + direct console mode | Win32 console mode calls, `stty.exe` as fallback |
+| MSYS2/Cygwin with pipes (mintty for native processes) | `CygwinPty` + `stty.exe` | `FileInputStream` on stdin |
+
+`WinSysTerminal` (priority 100) and the Cygwin provider (priority 75) are mutually exclusive via the detection above, so exactly one claims the console. `WinSysTerminal` never enables `ENABLE_VIRTUAL_TERMINAL_INPUT` — it caused duplicate key events — and instead translates Windows virtual key codes to ANSI escape sequences in Java.

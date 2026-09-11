@@ -131,7 +131,7 @@ When no mouse handler is registered, mouse escape sequences pass through to the 
 
 ## Windows Support
 
-On Windows, mouse events are delivered through the VT input path when `ENABLE_VIRTUAL_TERMINAL_INPUT` is active. The `MouseTracking.enable()` / `enableEncoding()` sequences tell the console to start sending SGR mouse reports, which are intercepted by the `EventDecoder` mouse filter.
+On Windows, mouse events are read as native `MOUSE_EVENT` records via `ReadConsoleInputW` — `ENABLE_VIRTUAL_TERMINAL_INPUT` is deliberately never enabled (it caused duplicate key events, see the troubleshooting note below). `WinSysTerminal` translates the native records into SGR mouse sequences internally, so downstream handling is identical to POSIX terminals.
 
 When `connection.setMouseHandler()` is called on a `TerminalConnection` backed by a Windows terminal, it automatically:
 - Enables `ENABLE_MOUSE_INPUT` on the console input handle
@@ -140,7 +140,7 @@ When `connection.setMouseHandler()` is called on a `TerminalConnection` backed b
 ### Known Limitations on Windows
 
 - **SHIFT modifier is not detected.** The Windows console does not encode the SHIFT bit in the SGR mouse button byte. This affects all SGR-based mouse tracking on Windows, not just Æsh Readline. Ctrl and Alt modifiers work correctly.
-- **Legacy consoles** without VT input support may not receive mouse events via the SGR path.
+- **Legacy consoles** without `ReadConsoleInputW` mouse support (very old conhost versions) may not deliver mouse events at all.
 
 ## Terminal Support
 
@@ -155,8 +155,8 @@ Most modern terminal emulators support SGR mouse encoding:
 | WezTerm | Yes | |
 | iTerm2 | Yes | |
 | GNOME Terminal (VTE) | Yes | |
-| Windows Terminal | Yes | Via VT input mode |
-| Windows Console | Yes | Requires VT input support (Windows 10 1809+) |
+| Windows Terminal | Yes | Via native `MOUSE_EVENT` records |
+| Windows Console | Yes | Via native `MOUSE_EVENT` records (Windows 10+) |
 | tmux | Yes | Requires `set -g mouse on` |
 | Linux console | No | No mouse support |
 
