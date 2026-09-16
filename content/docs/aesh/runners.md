@@ -1076,7 +1076,7 @@ public CommandResult execute(CommandInvocation invocation) {
 | Option validation error | `2` | `CommandResult.USAGE_ERROR` |
 | Command not found | `127` | `CommandResult.COMMAND_NOT_FOUND` |
 | Interrupted (Ctrl-C) | `130` | `CommandResult.INTERRUPTED` |
-| Abandoned after ignored interrupts | `137` | `CommandResult.KILLED` (since 3.18) |
+| Abandoned after ignored interrupts | `137` | `CommandResult.KILLED` (since 3.19) |
 
 All exit codes follow POSIX conventions (0-255). Use `getExitCode()` for safe `System.exit()` calls -- it clamps values to the 0-255 range. Negative values become 1, values above 255 become 255.
 

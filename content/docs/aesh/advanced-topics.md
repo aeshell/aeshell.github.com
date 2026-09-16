@@ -508,6 +508,17 @@ export
 unset MY_VAR
 ```
 
+### Substitution Rules
+
+Expansion follows bash conventions (since 3.19):
+
+- `$NAME` and `${NAME}` substitute defined variables; **undefined names expand to empty** (`echo $MISSING` prints an empty line)
+- `\$` is a literal dollar; `'...'` single quotes suppress expansion (`"$NAME"` still expands)
+- `$?` is the previous command's exit code; `$$` is the JVM process id; `$1`–`$9` expand to empty (no positionals in a REPL)
+- A stray `$` (end of line, before a space) passes through literally — a line is never dropped because of it
+
+Expansion applies to interactive console input only. Programmatic `AeshRuntimeRunner` arguments are passed literally (no expansion), and export processing can be turned off entirely with `enableExport(false)`.
+
 ### Accessing Exports in Commands
 
 Commands can read exported variables through `AeshContext`:
