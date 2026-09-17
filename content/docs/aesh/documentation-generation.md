@@ -23,9 +23,17 @@ $ myapp --aesh-doc skill
 
 # Save to a file
 $ myapp --aesh-doc asciidoc > docs/myapp.adoc
+
+# Write one file per command/subcommand into an existing directory,
+# so the cross-links between pages resolve (since 3.19)
+$ myapp --aesh-doc asciidoc --output-dir docs/
 ```
 
 No code changes needed — this works automatically with the standard `AeshRuntimeRunner` pattern.
+
+{{< callout type="info" >}}
+`--aesh-doc` documents the whole command tree in one invocation — there is no per-subcommand form (`myapp sub --aesh-doc …` fails with "unknown option"). Use `--output-dir` when you need the individual `myapp-sub.adoc` pages. The target directory must already exist; aesh never creates it.
+{{< /callout >}}
 
 ### Per-Command Help Format
 
