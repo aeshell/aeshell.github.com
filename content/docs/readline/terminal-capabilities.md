@@ -63,7 +63,8 @@ Two live-query transports exist for different contexts — use, don't merge:
   the normal input pipeline (stdin-handler hijack + latch).
 - **`TerminalColorQuery` via `detectFull()`/`detectAsync()`**: standalone
   probing with no connection (startup, CLIs, embedders). Opens `/dev/tty`
-  directly with its own raw-mode handling.
+  directly with its own raw-mode handling — direct syscalls via FFM on
+  Java 22+ (no subprocess), `stty` subprocesses on older runtimes.
 
 ### Custom probe transports
 
