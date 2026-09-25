@@ -53,8 +53,29 @@ of depending on the CI environment.
 - **Images**: `imageProtocol()` — Kitty, iTerm2, Sixel, or none. See
   [Terminal Images](terminal-images) for rendering once chosen.
 
-## Old vs New API
+## Which Query Path When
 
+Two live-query transports exist for different contexts — use, don't merge:
+
+- **`TerminalFeatures` (in-band over the `Connection`)**: mid-session
+  queries (cursor position, single OSC colors, mode probes) where a
+  connection with a reader loop already exists. Responses arrive through
+  the normal input pipeline (stdin-handler hijack + latch).
+- **`TerminalColorQuery` via `detectFull()`/`detectAsync()`**: standalone
+  probing with no connection (startup, CLIs, embedders). Opens `/dev/tty`
+  directly with its own raw-mode handling.
+
+## Environment Detection Split
+
+Emulator identity (`TerminalEnvironment`: terminal type, JetBrains/VSCode
+detection, multiplexer state, OSC support) and capability inputs
+(`TerminalDetector`: TERM/TERM_PROGRAM/COLORTERM/KITTY/WT_SESSION and
+friends) parse overlapping variable sets by design: the former answers
+*which emulator*, the latter feeds *what it supports*. They share no
+code (dependency direction forbids it) — treat overlap as parallel
+evolution, not a bug, unless a concrete divergence is reported.
+
+## Old vs New API
 Two generations coexist, sharing the `TerminalTheme` enum:
 
 - **New** (`org.aesh.terminal.detect`, this page): the detection engine.

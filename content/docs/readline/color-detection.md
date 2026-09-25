@@ -9,7 +9,7 @@ weight: 9
 
 ## Overview
 
-The `TerminalColorDetector` API detects:
+The `TerminalCapabilities` API detects:
 
 - **Color Depth** - How many colors the terminal supports (8, 16, 256, or true color)
 - **Theme** - Whether the terminal has a light or dark background
@@ -40,31 +40,56 @@ if (cap.getTheme().isDark()) {
 For more accurate detection that queries the terminal:
 
 ```java
-import org.aesh.readline.terminal.TerminalColorDetector;
-import org.aesh.readline.tty.terminal.TerminalConnection;
+import org.aesh.terminal.detect.TerminalCapabilities;
 
-TerminalConnection connection = new TerminalConnection();
-TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal());
+TerminalCapabilities caps = TerminalCapabilities.detectFull();
 
-System.out.println("Theme: " + cap.getTheme());
-System.out.println("Color depth: " + cap.getColorDepth());
+System.out.println("Theme: " + caps.theme());
+System.out.println("True color: " + caps.supportsTrueColor());
 ```
 
 ### Cached Detection
 
-For repeated access without re-detection overhead:
+Full detection populates the shared instance — repeat calls return the
+cached capabilities instead of re-probing. Call `invalidate()` first to
+force a fresh probe (e.g. after a theme change reported via a
+theme-change event):
 
 ```java
-// Detects once and caches for 5 minutes
-TerminalColorCapability cap = TerminalColorDetector.detectCached(connection.terminal());
+// First call probes, later calls are free
+TerminalCapabilities a = TerminalCapabilities.detectFull();
+TerminalCapabilities b = TerminalCapabilities.detectFull(); // same instance
+
+// Environment changed mid-session: drop the cache, next access re-detects
+TerminalCapabilities.invalidate();
 ```
+
+### Migrating from TerminalColorDetector
+
+`TerminalColorDetector` was removed; `TerminalCapabilities` is its
+replacement. Mapping for existing callers:
+
+| Before | After |
+|--------|-------|
+| `detect(terminal)` | `detectFull()` (env + platform + live queries) |
+| `detectCached(terminal)` | `detectFull()` (shared-instance cache) + `invalidate()` to refresh |
+| `detectThemeFromEnvironment()` | `detect().theme()` |
+| `isRunningInTmux()` | `TerminalEnvironment.getInstance().isInTmux()` |
+| `queryColors(t, ms)` / `queryAnsi16Colors(t, ms)` | `detectFull().paletteColors()` (batched internally) |
+| `queryColorsWithFallback(t, ms)` | `detectFull()` (falls back through theme → platform → env) |
+| `isDarkColor(rgb)` | `theme()` + `isDark()` (unknown counts as dark) |
+| `queryThemeColors(t, ms)` | `detectAsync()` + `awaitColors(ms, MILLISECONDS)` |
 
 ## TerminalColorCapability
 
-The `TerminalColorCapability` class encapsulates all detected information:
+`TerminalColorCapability` remains as the presentation layer consumed by
+`ANSIBuilder` (theme-aware suggested codes, hex conversion). Obtain
+instances via `detectFromEnvironment()`, the `builder()`, or detect
+first with `TerminalCapabilities` above:
 
 ```java
-TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal());
+TerminalColorCapability cap =
+        TerminalColorCapability.from(TerminalCapabilities.detectFull());
 
 // Theme detection
 TerminalTheme theme = cap.getTheme();        // DARK, LIGHT, or UNKNOWN
@@ -100,7 +125,8 @@ The `detect()` method queries (in priority order):
 Get ANSI color codes that work well with the detected theme:
 
 ```java
-TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal());
+TerminalColorCapability cap =
+        TerminalColorCapability.from(TerminalCapabilities.detectFull());
 
 // These return appropriate codes for the detected background
 int normalText = cap.getSuggestedForegroundCode();  // 30 (black) or 37 (white)
@@ -140,7 +166,8 @@ You can override the default suggested colors using the `Builder`:
 
 ```java
 // Start with detected capability and customize specific colors
-TerminalColorCapability detected = TerminalColorDetector.detect(connection.terminal());
+TerminalColorCapability detected =
+        TerminalColorCapability.from(TerminalCapabilities.detectFull());
 TerminalColorCapability custom = TerminalColorCapability.builder(detected)
     .errorCode(196)      // Custom 256-color bright red
     .successCode(46)     // Custom 256-color green
@@ -280,7 +307,7 @@ if (connection.terminal().supportsThemeQuery()) {
 | VTE / GNOME Terminal | 0.82.0+ | Full support |
 | Foot | — | Full support |
 
-The `TerminalColorDetector` tries this method first when the terminal supports it, then falls back to OSC queries and environment detection.
+`detectFull()` tries this method first when the terminal supports it, then falls back to OSC queries and environment detection.
 
 ### 2. OSC Color Queries (Most Accurate Fallback)
 
@@ -320,57 +347,45 @@ String result = connection.terminal().queryOsc(oscCode, "?", 500, responseParser
 
 #### Batch Color Queries
 
-For better performance when querying multiple colors, use batch queries. This reduces latency from O(n × timeout) to O(timeout) by sending all queries at once:
+Querying colors one round-trip at a time costs O(n × timeout). The
+detection API batches internally: a single `detectFull()` (or
+`detectAsync()` + `awaitColors()`) issues foreground, background,
+palette, mode, and image queries together:
 
 ```java
-import org.aesh.terminal.tty.TerminalColorDetector;
-import org.aesh.terminal.utils.ANSI;
+import org.aesh.terminal.detect.TerminalCapabilities;
 
-// Query foreground, background, and cursor in one operation (~50-100ms vs ~600ms)
-Map<Integer, int[]> colors = TerminalColorDetector.queryColors(connection.terminal(), 500);
+TerminalCapabilities caps = TerminalCapabilities.detectFull();
 
-int[] fg = colors.get(ANSI.OSC_FOREGROUND);   // OSC 10
-int[] bg = colors.get(ANSI.OSC_BACKGROUND);   // OSC 11
-int[] cursor = colors.get(ANSI.OSC_CURSOR_COLOR);  // OSC 12
-
-// Query multiple palette colors at once
-Map<Integer, int[]> palette = TerminalColorDetector.queryPaletteColors(
-    connection.terminal(), 500, 0, 1, 2, 3, 4, 5, 6, 7);
-
-// Query all 16 ANSI colors
-Map<Integer, int[]> ansi16 = TerminalColorDetector.queryAnsi16Colors(connection.terminal(), 500);
+int[] fg = caps.foregroundRGB();      // OSC 10, null if unqueryable
+int[] bg = caps.backgroundRGB();      // OSC 11, null if unqueryable
+Map<Integer, int[]> palette = caps.paletteColors(); // OSC 4, empty if unqueryable
 ```
 
 #### Fallback When OSC Not Supported
 
-Not all terminals support OSC queries. Use `queryColorsWithFallback()` for graceful degradation:
+Not all terminals support OSC queries. `detectFull()` degrades
+gracefully through theme → platform sources → environment, so callers
+only ever see one shape:
 
 ```java
-// Always returns colors - actual or estimated based on environment
-Map<Integer, int[]> colors = TerminalColorDetector.queryColorsWithFallback(connection.terminal(), 500);
+TerminalCapabilities caps = TerminalCapabilities.detectFull();
 
-int[] bg = colors.get(ANSI.OSC_BACKGROUND);
-// bg is never null - will be estimated if OSC queries failed
-
-// Check if it's a dark theme
-boolean isDark = TerminalColorDetector.isDarkColor(bg);
+// bg is null when unqueryable — theme still resolves via platform/env
+int[] bg = caps.backgroundRGB();
+boolean isDark = caps.theme().isDark(); // UNKNOWN counts as dark
 ```
 
 You can also check support before querying:
 
 ```java
 // Check if OSC queries are supported
-if (TerminalColorDetector.isOscColorQuerySupported(connection.terminal())) {
-    // OSC queries will work
-    Map<Integer, int[]> colors = TerminalColorDetector.queryColors(connection.terminal(), 500);
+if (connection.terminal().supportsOscQueries()) {
+    // OSC queries will work — batch them via detectFull()
+    TerminalCapabilities caps = TerminalCapabilities.detectFull();
 } else {
     // Use environment-based detection
-    TerminalTheme theme = TerminalColorDetector.detectThemeFromEnvironment();
-}
-
-// Check palette query support specifically
-if (connection.terminal().supportsPaletteQuery()) {
-    Map<Integer, int[]> palette = TerminalColorDetector.queryAnsi16Colors(connection.terminal(), 500);
+    TerminalCapabilities caps = TerminalCapabilities.detect();
 }
 ```
 
@@ -491,10 +506,6 @@ if (env.isTmuxPassthroughEnabled()) {
     System.out.println("OSC passthrough is enabled");
 }
 
-// Legacy static methods still work
-if (TerminalColorDetector.isRunningInTmux()) {
-    System.out.println("Running inside tmux");
-}
 ```
 
 ### tmux Passthrough
@@ -577,8 +588,8 @@ See the [Connection](connection#theme-mode-queries) documentation for the comple
 Here's a complete example that adapts colors based on detection:
 
 ```java
-import org.aesh.readline.terminal.TerminalColorDetector;
-import org.aesh.readline.tty.terminal.TerminalConnection;
+import org.aesh.terminal.detect.TerminalCapabilities;
+import org.aesh.terminal.tty.TerminalConnection;
 import org.aesh.terminal.utils.TerminalColorCapability;
 
 public class AdaptiveColorApp {
@@ -586,7 +597,8 @@ public class AdaptiveColorApp {
     
     public static void main(String[] args) throws Exception {
         TerminalConnection connection = new TerminalConnection();
-        TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal());
+        TerminalColorCapability cap =
+        TerminalColorCapability.from(TerminalCapabilities.detectFull());
         
         // Get theme-appropriate colors
         int error = cap.getSuggestedErrorCode();
@@ -637,7 +649,8 @@ public class MyApp {
     
     public static void main(String[] args) {
         TerminalConnection conn = new TerminalConnection();
-        colors = TerminalColorDetector.detectCached(conn.terminal());
+        caps = TerminalCapabilities.detectFull(); // shared-instance cached
+    colors = TerminalColorCapability.from(caps);
         // Use 'colors' throughout the application
     }
 }
@@ -688,13 +701,18 @@ If the detected theme doesn't match your terminal:
 
 If detection seems to hang:
 
-1. **Reduce timeout**: Use `detect(connection, 100)` for shorter timeout
-2. **Use fast detection**: `detectFast(connection)` skips OSC queries
+1. **Bound the wait**: query in the background with an explicit timeout
+2. **Use fast detection**: `detect()` skips OSC queries entirely
 3. **Check terminal**: Some terminals don't respond to OSC queries
 
 ```java
-// With custom timeout (milliseconds)
-TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal(), 100);
+// Background query with explicit timeout (milliseconds)
+import java.util.concurrent.TimeUnit;
+
+TerminalCapabilities caps = TerminalCapabilities.detectAsync();
+if (caps.awaitColors(100, TimeUnit.MILLISECONDS)) {
+    TerminalColorCapability cap = TerminalColorCapability.from(caps);
+}
 ```
 
 ## Using TerminalColor with Detection
@@ -709,7 +727,8 @@ Use semantic factory methods that automatically adjust for the detected terminal
 import org.aesh.readline.terminal.formatting.TerminalColor;
 import org.aesh.terminal.utils.TerminalColorCapability;
 
-TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal());
+TerminalColorCapability cap =
+        TerminalColorCapability.from(TerminalCapabilities.detectFull());
 
 // These methods automatically choose appropriate colors for the theme
 TerminalColor error = TerminalColor.forError(cap);          // Red, bright on dark
@@ -727,7 +746,8 @@ On **dark themes**, these return bright variants for readability. On **light the
 ### Example: Adaptive Status Messages
 
 ```java
-TerminalColorCapability cap = TerminalColorDetector.detectCached(connection.terminal());
+TerminalCapabilities caps = TerminalCapabilities.detectFull(); // shared-instance cached
+TerminalColorCapability cap = TerminalColorCapability.from(caps);
 
 // Create semantic colors once
 TerminalColor errorColor = TerminalColor.forError(cap);
@@ -749,7 +769,8 @@ connection.write(infoMsg.toString() + "\n");
 Use `ANSIBuilder` for rich log-style output with timestamps:
 
 ```java
-TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal());
+TerminalColorCapability cap =
+        TerminalColorCapability.from(TerminalCapabilities.detectFull());
 ANSIBuilder builder = ANSIBuilder.builder(cap);
 
 // Log line with timestamp, level, and message
