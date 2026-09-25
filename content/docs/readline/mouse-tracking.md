@@ -69,6 +69,8 @@ The encoding controls how mouse coordinates are transmitted:
 
 **SGR is recommended.** It has no coordinate limits (supports terminals wider/taller than 223 columns/rows), and distinguishes press (`M`) from release (`m`) with explicit button identification.
 
+Parsed report encodings: **SGR** (full modifier support) and **URXVT** (`CSI Pb;Px;Py M` — releases arrive without button ID). The legacy byte encodings (`X10`, `UTF8`) are accepted by `MouseTracking.enableEncoding` for terminal setup but their reports are not parsed — enable SGR (or URXVT) to receive events. Bare `CSI M` sequences with fewer than 3 parameters (e.g. Delete Lines) always pass through untouched.
+
 ## How It Works
 
 ### Enabling

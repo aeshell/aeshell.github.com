@@ -48,6 +48,41 @@ import org.aesh.terminal.tty.TerminalConnection;
 Connection connection = new TerminalConnection();
 ```
 
+### Stream-Backed Connection (Pipe-Driven Embedders)
+
+Test harnesses and protocol bridges driving an interactive session over
+pipes use `StreamConnection` — plain streams with no terminal, PTY, or
+native-signal setup:
+
+```java
+import java.nio.charset.StandardCharsets;
+import org.aesh.terminal.StreamConnection;
+
+PipedOutputStream testOut = new PipedOutputStream();
+PipedInputStream testIn = new PipedInputStream(testOut, 4096);
+ByteArrayOutputStream captured = new ByteArrayOutputStream();
+
+StreamConnection connection =
+        new StreamConnection(StandardCharsets.UTF_8, testIn, captured);
+connection.openNonBlocking();
+// ... write commands to testOut, observe captured ...
+connection.close();
+```
+
+Semantics that matter:
+
+- `isInteractive()` returns `true`, so embedders stay in async mode
+  instead of dropping to synchronous piped handling.
+- Input bytes go through `Decoder` into the `EventDecoder`: multi-byte
+  sequences split across reads decode whole, and input arriving with no
+  handler set is buffered, not dropped.
+- `supportsAnsi()` is `false` and the device reports type `"dumb"`.
+- `close()` stops the reader without closing the caller-owned streams.
+- A clean writer-close with no trailing bytes is *not* delivered as
+  EOF — close the connection explicitly to end the session.
+- `setReaderDeathHook(...)` fires if the reader thread dies
+  unexpectedly (a silent reader wedges every later command).
+
 ### Opening Connections
 
 #### Blocking Mode
@@ -139,6 +174,26 @@ connection.setStdinHandler(input -> {
 
 Consumer<int[]> handler = connection.stdinHandler();
 ```
+
+### Scoped Stdin Leases
+
+Temporary handler swaps (terminal queries, subprocess I/O) should use
+`captureStdin` instead of hand-rolled save/set/restore — the previous
+handler is restored automatically, including on exceptions:
+
+```java
+try (StdinLease lease = connection.captureStdin(response -> {
+    // handle the temporary input
+})) {
+    connection.write("\u001B[c"); // send query, await response
+} // previous handler restored here
+```
+
+Ownership rule: the readline session owns the steady-state handler;
+every other consumer leases. Leases are last-in-first-out — closing
+overlapping leases out of order restores a stale handler (logged, not
+prevented). Restoring also redelivers any input queued while the lease
+was held.
 
 ### Standard Output Handler
 
