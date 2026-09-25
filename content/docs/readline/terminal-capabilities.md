@@ -65,6 +65,27 @@ Two live-query transports exist for different contexts — use, don't merge:
   probing with no connection (startup, CLIs, embedders). Opens `/dev/tty`
   directly with its own raw-mode handling.
 
+### Custom probe transports
+
+The built-in probe transport (`/dev/tty` + `stty`) is POSIX-only. On
+native Windows — or any environment without `/dev/tty` — inject a
+platform-native transport instead:
+
+```java
+TerminalCapabilities.setProbeTransport(new Win32ProbeTransport());
+TerminalCapabilities.invalidate(); // re-probe if already detected
+TerminalCapabilities caps = TerminalCapabilities.detectFull();
+```
+
+Implement `TerminalProbeTransport` (raw-mode `open()` returning a
+`TerminalProbeSession` with `write()`/`input()`, `close()` restoring
+terminal state). The interfaces live in the zero-dependency
+`terminal-detect` module, so providers elsewhere can implement them
+without inverting dependencies. An injected transport replaces the
+built-in one exclusively — no silent `/dev/tty` fallback that could
+steal input from an embedder's reader loop. Pass `null` to restore
+the default.
+
 ## Environment Detection Split
 
 Emulator identity (`TerminalEnvironment`: terminal type, JetBrains/VSCode
