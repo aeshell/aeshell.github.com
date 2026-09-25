@@ -510,7 +510,7 @@ unset MY_VAR
 
 ### Substitution Rules
 
-Expansion follows bash conventions (since 3.19):
+Expansion follows bash conventions (since 3.18):
 
 - `$NAME` and `${NAME}` substitute defined variables; **undefined names expand to empty** (`echo $MISSING` prints an empty line)
 - `\$` is a literal dollar; `'...'` single quotes suppress expansion (`"$NAME"` still expands)

@@ -8,7 +8,7 @@ weight: 11
 Activators control whether options or entire commands are available. Deactivated options are hidden from tab completion and help, and deactivated commands are invisible to the user.
 
 {{< callout type="info" >}}
-Deactivation applies to **all** completion paths: interactive tab completion, dynamic `--aesh-complete` callbacks, and static shell completion scripts (static scripts honor activators since 3.19). For options that should still parse when typed but never be suggested, use `OptionVisibility.HIDDEN` instead of an activator.
+Deactivation applies to **all** completion paths: interactive tab completion, dynamic `--aesh-complete` callbacks, and static shell completion scripts (static scripts honor activators since 3.18). For options that should still parse when typed but never be suggested, use `OptionVisibility.HIDDEN` instead of an activator.
 {{< /callout >}}
 
 ## OptionActivator

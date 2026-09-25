@@ -295,7 +295,7 @@ The generators introspect the command model and produce:
 - **Subcommand names** for group commands
 - **Positional argument completion** (file completion for `@Argument`/`@Arguments` with file types)
 
-Commands and options gated by a [`CommandActivator`/`OptionActivator`](../activators) (where `isActivated()` returns `false`) and options marked `OptionVisibility.HIDDEN` are excluded from both static and dynamic completions (since 3.19). Before 3.19, the static generators ignored these gates — only dynamic `--aesh-complete` respected them.
+Commands and options gated by a [`CommandActivator`/`OptionActivator`](../activators) (where `isActivated()` returns `false`) and options marked `OptionVisibility.HIDDEN` are excluded from both static and dynamic completions (since 3.18). Before 3.18, the static generators ignored these gates — only dynamic `--aesh-complete` respected them.
 
 ### Completion Fallback Control
 
@@ -403,7 +403,7 @@ String script = generator.generate(parser, "myapp");
 
 ### Filtering Generated Completions
 
-By default, static generation applies the same gates as dynamic completion: deactivated commands/options and `HIDDEN` options are excluded. For rules beyond activators — e.g. a platform-specific command group that is unregistered on some builds — pass a `CompletionFilter` (since 3.19):
+By default, static generation applies the same gates as dynamic completion: deactivated commands/options and `HIDDEN` options are excluded. For rules beyond activators — e.g. a platform-specific command group that is unregistered on some builds — pass a `CompletionFilter` (since 3.18):
 
 ```java
 import org.aesh.util.completer.CompletionFilter;

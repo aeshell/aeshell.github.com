@@ -25,7 +25,7 @@ $ myapp --aesh-doc skill
 $ myapp --aesh-doc asciidoc > docs/myapp.adoc
 
 # Write one file per command/subcommand into an existing directory,
-# so the cross-links between pages resolve (since 3.19)
+# so the cross-links between pages resolve (since 3.18)
 $ myapp --aesh-doc asciidoc --output-dir docs/
 ```
 
@@ -226,12 +226,15 @@ The `skill` format produces structured Markdown with YAML front matter following
 
 ```markdown
 ---
+command: deploy
 name: deploy
 description: >-
   Deploy applications to cloud environments. Use when the user wants
   to ship code to production or staging.
 license: Apache-2.0
 ---
+
+# deploy
 
 ## Usage
 
@@ -241,26 +244,28 @@ deploy [-f] [-e=<environment>] [-D <key>=<value>] <application>
 
 ## Options
 
-| Option | Type | Required | Default | Description |
-|--------|------|----------|---------|-------------|
-| `--environment`, `-e` | String | no | `dev` | Target environment |
-| `--force`, `-f` | boolean | no | - | Force deployment |
-| `--secret` | boolean | no | - | Internal flag |
+| Forms | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `--environment, -e=<environment>` | string | no | `dev` | Target environment |
+| `--force, -f` | flag | no | - | Force deployment |
+| `--secret` | flag | no | - | **hidden** Internal flag |
 
 ## Arguments
 
-| Argument | Type | Required | Description |
-|----------|------|----------|-------------|
-| `<application>` | String | yes | Application name |
+| Argument | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `<application>` | string | yes | - | Application name |
 ```
 
 Key differences from the regular Markdown format:
 
-- **YAML front matter** with `name` and `description` fields per agentskills.io spec
-- **Options in a table** with Type, Required, Default columns (structured, easy for LLMs to parse)
-- **All options included** including `HIDDEN` options (AI agents may need them)
-- **Subcommands in a table** (not links to separate files)
+- **YAML front matter** with `command` (full invocation path) and `name` fields per agentskills.io spec
+- **Options in a table** with Forms, Type, Required, Default columns (structured, easy for LLMs to parse)
+- **CLI-facing type labels**: `flag`, `string`, `integer`, `number`, `list`, `map`, `path` instead of Java class names
+- **All options included** including `HIDDEN` options (labeled `**hidden**`) since AI agents may need them
+- **Subcommands with full invocation paths** in a table (e.g., `app deploy` not just `deploy`)
 - **Single document** with all subcommand details inline
+- **`.skill.md` extension** avoids collision with regular Markdown files
 - **Format-specific content** from `HelpSectionProvider` (see below)
 
 ## Format-Aware HelpSectionProvider
