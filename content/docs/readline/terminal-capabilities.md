@@ -68,9 +68,10 @@ Two live-query transports exist for different contexts — use, don't merge:
 
 ### Custom probe transports
 
-The built-in probe transport (`/dev/tty` + `stty`) is POSIX-only. On
-native Windows — or any environment without `/dev/tty` — inject a
-platform-native transport instead:
+The built-in probe transport covers POSIX (`/dev/tty`, FFM syscalls on
+Java 22+, `stty` otherwise) and native Windows consoles (Win32 Console
+API via FFM on Java 22+). Only inject a custom transport for
+environments with neither — or to override the built-ins:
 
 ```java
 TerminalCapabilities.setProbeTransport(new Win32ProbeTransport());
