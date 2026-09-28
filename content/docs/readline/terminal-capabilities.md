@@ -15,7 +15,7 @@ the answers.
 | Method | Cost | What it does |
 |--------|------|--------------|
 | `detect()` | ~1-2ms | Environment variables only. No subprocesses, no terminal I/O. |
-| `detectFull()` | 10-50ms+ | `detect()` plus platform theme probing (macOS defaults, GNOME/KDE settings, Windows registry) and live terminal queries (OSC colors/palette, DA1, modes 2026/2027, sixel, grapheme clustering) — skipped under tmux/screen. |
+| `detectFull()` | 10-50ms+ | `detect()` plus IDE settings files (JetBrains, VSCode, Windows Terminal), platform theme probing (macOS defaults, GNOME/KDE settings, Windows registry) and live terminal queries (OSC colors/palette, DA1, modes 2026/2027, sixel, grapheme clustering) — skipped under tmux/screen. |
 | `detectAsync()` | returns immediately | Heuristics now, real colors in the background via a daemon thread. `awaitColors(timeout, unit)` blocks for the result; RGB accessors return `null` until it lands. On Windows, pipes, containers, or tmux without passthrough the background query completes immediately with no results. |
 
 ```java

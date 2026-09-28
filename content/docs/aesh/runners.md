@@ -158,6 +158,30 @@ done.await(5, TimeUnit.SECONDS);
 
 Without `onReady`, the only alternative is a `Thread.sleep()` which is fragile on slow CI environments.
 
+#### Driving aesh Over Pipes
+
+Test harnesses and embedders driving an interactive session over plain JDK streams should use readline's `org.aesh.terminal.StreamConnection` — no hand-rolled connection needed:
+
+```java
+PipedInputStream pipeIn = new PipedInputStream(4096);
+PipedOutputStream testOut = new PipedOutputStream(pipeIn);
+ByteArrayOutputStream consoleOut = new ByteArrayOutputStream();
+StreamConnection connection = new StreamConnection(StandardCharsets.UTF_8, pipeIn, consoleOut);
+connection.setReaderDeathHook(death -> log.error("reader died", death));
+
+AeshConsoleRunner.builder()
+    .connection(connection)
+    .command(MyCommand.class)
+    .start();
+```
+
+Semantics worth knowing:
+
+- The connection reports interactive, so the console runs in async mode; `isInteractive() == false` (e.g. `TerminalConnection` over pipes) would drop to synchronous handling instead.
+- Input written immediately after a completion fires is safe: bytes arriving between readline cycles are buffered in the decoder and delivered on re-arm (post-#634 the re-arm itself cannot be skipped silently, so no readiness gate is needed between commands).
+- `close()` interrupts the reader and fires the close handler but never closes caller-owned streams — close `pipeIn`/`testOut` explicitly.
+- A dead reader wedges every later command silently, so in tests assert the death hook stayed quiet for the whole session.
+
 #### Command Not Found Handler
 
 ```java
