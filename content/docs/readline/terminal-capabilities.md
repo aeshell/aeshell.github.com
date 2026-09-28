@@ -112,6 +112,17 @@ The check queries colors and grapheme clustering and verifies exact input
 and output console-mode restoration. In Windows Terminal it additionally
 requires an OSC background response. It fails if no real console is attached.
 
+A live run reported on 2026-09-28 produced these results:
+
+| Host | Shell | Console modes | Background query | Grapheme probe |
+|------|-------|---------------|------------------|----------------|
+| Windows Terminal | PowerShell | restored | received | true |
+| Windows Terminal | cmd | restored | received | true |
+| Windows Console Host | not specified | restored | no OSC background response | false |
+
+The conhost result is a graceful no-response case, not a detected
+background color. Hosted CI still cannot repeat this interactive check.
+
 ## Environment Detection Split
 
 Emulator identity (`TerminalEnvironment`: terminal type, JetBrains/VSCode
