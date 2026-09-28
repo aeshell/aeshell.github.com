@@ -390,7 +390,7 @@ public class AdaptiveApp {
 | `Device` | Terminal capabilities interface | Yes (default methods) |
 | `TerminalColorCapability` | Color detection | Yes |
 | `ImageProtocolDetector` | Image protocol detection | Yes |
-| `TerminalColorDetector` | Full color detection with queries | Yes (for heuristics) |
+| `TerminalCapabilities` | Standalone capability and color probing | No (own environment scan) |
 
 `TerminalEnvironment` provides the heuristic detection layer, while `DeviceAttributes` (via DA1/DA2 queries) provides authoritative detection. Use both for best results:
 

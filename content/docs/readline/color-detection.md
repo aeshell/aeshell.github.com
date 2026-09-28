@@ -51,16 +51,16 @@ System.out.println("True color: " + caps.supportsTrueColor());
 ### Cached Detection
 
 Full detection populates the shared instance — repeat calls return the
-cached capabilities instead of re-probing. Call `invalidate()` first to
-force a fresh probe (e.g. after a theme change reported via a
-theme-change event):
+cached capabilities instead of re-probing. A theme-change notification
+updates its theme and discards previously queried RGB automatically. Call
+`invalidate()` when you need to re-query actual RGB after such an event:
 
 ```java
 // First call probes, later calls are free
 TerminalCapabilities a = TerminalCapabilities.detectFull();
 TerminalCapabilities b = TerminalCapabilities.detectFull(); // same instance
 
-// Environment changed mid-session: drop the cache, next access re-detects
+// Re-probe after an environment change or to refresh RGB
 TerminalCapabilities.invalidate();
 ```
 
@@ -113,12 +113,11 @@ if (cap.hasPaletteColors()) {
 }
 ```
 
-The `detect()` method queries (in priority order):
-- Theme mode (CSI ? 996 n) - if supported by the terminal
-- Foreground color (OSC 10)
-- Background color (OSC 11)
-- Cursor color (OSC 12) - if supported
-- ANSI 16 palette colors (OSC 4, indices 0-15) - if supported
+`TerminalCapabilities.detect()` uses environment variables only.
+`detectFull()` batches foreground (OSC 10), background (OSC 11), and
+palette queries (OSC 4, indices 0-15 and 255) with DA1 and terminal-mode
+probes. For cursor color (OSC 12) or queries during an active connection,
+use `connection.terminal()` instead.
 
 ### Suggested Color Codes
 
@@ -724,7 +723,7 @@ The `TerminalColor` class integrates seamlessly with color detection, providing 
 Use semantic factory methods that automatically adjust for the detected terminal theme:
 
 ```java
-import org.aesh.readline.terminal.formatting.TerminalColor;
+import org.aesh.terminal.formatting.TerminalColor;
 import org.aesh.terminal.utils.TerminalColorCapability;
 
 TerminalColorCapability cap =

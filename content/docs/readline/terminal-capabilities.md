@@ -16,7 +16,7 @@ the answers.
 |--------|------|--------------|
 | `detect()` | ~1-2ms | Environment variables only. No subprocesses, no terminal I/O. |
 | `detectFull()` | 10-50ms+ | `detect()` plus IDE settings files (JetBrains, VSCode, Windows Terminal), platform theme probing (macOS defaults, GNOME/KDE settings, Windows registry) and live terminal queries (OSC colors/palette, DA1, modes 2026/2027, sixel, grapheme clustering) — skipped under tmux/screen. |
-| `detectAsync()` | returns immediately | Heuristics now, real colors in the background via a daemon thread. `awaitColors(timeout, unit)` blocks for the result; RGB accessors return `null` until it lands. On Windows, pipes, containers, or tmux without passthrough the background query completes immediately with no results. |
+| `detectAsync()` | returns immediately | Heuristics now, real colors in the background via a daemon thread. `awaitColors(timeout, unit)` blocks for the result; RGB accessors return `null` until it lands. Without an attached console or `/dev/tty` (pipes, containers, headless Windows), the query completes with no colors. |
 
 ```java
 import org.aesh.terminal.detect.TerminalCapabilities;
@@ -40,6 +40,11 @@ if (async.awaitColors(500, TimeUnit.MILLISECONDS)) {
 A shared instance exists for tests and embedders: `getInstance()` /
 `setInstance(caps)` lets test harnesses inject fixed capabilities instead
 of depending on the CI environment.
+
+Theme notifications handled by `EventDecoder` update the shared theme and
+discard old foreground/background RGB. Other cached capabilities remain
+available. Call `invalidate()` and re-detect when fresh RGB values are
+needed; do standalone re-probing before starting a connection reader.
 
 ## What You Get
 
@@ -71,22 +76,41 @@ Two live-query transports exist for different contexts — use, don't merge:
 The built-in probe transport covers POSIX (`/dev/tty`, FFM syscalls on
 Java 22+, `stty` otherwise) and native Windows consoles (Win32 Console
 API via FFM on Java 22+). Only inject a custom transport for
-environments with neither — or to override the built-ins:
+environments with neither — or to override the built-ins. For ordinary
+use, selection is automatic:
 
 ```java
-TerminalCapabilities.setProbeTransport(new Win32ProbeTransport());
-TerminalCapabilities.invalidate(); // re-probe if already detected
 TerminalCapabilities caps = TerminalCapabilities.detectFull();
 ```
 
-Implement `TerminalProbeTransport` (raw-mode `open()` returning a
+`Win32ProbeTransport` is internal and cannot be constructed from an
+application. To supply your own transport, implement
+`TerminalProbeTransport` (raw-mode `open()` returning a
 `TerminalProbeSession` with `write()`/`input()`, `close()` restoring
 terminal state). The interfaces live in the zero-dependency
 `terminal-detect` module, so providers elsewhere can implement them
 without inverting dependencies. An injected transport replaces the
 built-in one exclusively — no silent `/dev/tty` fallback that could
-steal input from an embedder's reader loop. Pass `null` to restore
-the default.
+steal input from an embedder's reader loop. Register yours with
+`TerminalCapabilities.setProbeTransport(transport)` and call
+`TerminalCapabilities.invalidate()` if a result was already cached.
+Pass `null` to restore the default.
+
+### Live Windows probe check
+
+GitHub-hosted Windows runners have no interactive console. After building
+with Java 22+ from a Windows command prompt, run this **directly** in both
+conhost and Windows Terminal (Surefire redirects the console handles):
+
+```powershell
+mvn -pl terminal-detect -am clean test
+java --enable-native-access=ALL-UNNAMED -cp "terminal-detect\target\test-classes;terminal-detect\target\classes" org.aesh.terminal.detect.Win32ProbeLiveCheck conhost
+# From Windows Terminal, use windows-terminal instead of conhost.
+```
+
+The check queries colors and grapheme clustering and verifies exact input
+and output console-mode restoration. In Windows Terminal it additionally
+requires an OSC background response. It fails if no real console is attached.
 
 ## Environment Detection Split
 
@@ -98,14 +122,13 @@ friends) parse overlapping variable sets by design: the former answers
 code (dependency direction forbids it) — treat overlap as parallel
 evolution, not a bug, unless a concrete divergence is reported.
 
-## Old vs New API
-Two generations coexist, sharing the `TerminalTheme` enum:
+## Related APIs
 
-- **New** (`org.aesh.terminal.detect`, this page): the detection engine.
-  Zero dependencies — usable standalone, even outside aesh. Prefer for
-  all new code.
-- **Old** (`TerminalColorDetector` / `TerminalColorCapability` in
-  `org.aesh.terminal.utils`, see [Color Detection](color-detection)):
-  the previous presentation layer, still used internally (e.g. by
-  `ANSIBuilder`). No migration needed for existing users; new code
-  should start here.
+- `TerminalCapabilities` performs standalone detection (this page).
+- `connection.terminal()` provides `TerminalFeatures` for live queries
+  through an active connection.
+- `TerminalColorCapability` in `org.aesh.terminal.utils` is the
+  presentation type used by `ANSIBuilder`. Construct it with
+  `TerminalColorCapability.from(TerminalCapabilities.detectFull())` at
+  startup, or see [Color Detection](color-detection) for migration from
+  the removed detector.

@@ -206,7 +206,7 @@ public class SshShell {
 
 ```java
 import org.aesh.terminal.tty.Size;
-import org.aesh.readline.terminal.formatting.TerminalString;
+import org.aesh.terminal.formatting.TerminalString;
 import org.aesh.utils.ANSI;
 
 public class SnakeGame {

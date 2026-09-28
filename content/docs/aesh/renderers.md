@@ -59,11 +59,11 @@ public class LoginCommand implements Command<CommandInvocation> {
 ## Colorized Output
 
 ```java
-import org.aesh.readline.terminal.formatting.TerminalColor;
-import org.aesh.readline.terminal.formatting.TerminalString;
-import org.aesh.readline.terminal.formatting.TerminalTextStyle;
-import org.aesh.readline.terminal.formatting.CharacterType;
-import org.aesh.readline.terminal.formatting.Color;
+import org.aesh.terminal.formatting.TerminalColor;
+import org.aesh.terminal.formatting.TerminalString;
+import org.aesh.terminal.formatting.TerminalTextStyle;
+import org.aesh.terminal.formatting.CharacterType;
+import org.aesh.terminal.formatting.Color;
 
 public class ColorizedRenderer implements OptionRenderer<ProcessedOption> {
 
@@ -84,9 +84,8 @@ public class ColorizedRenderer implements OptionRenderer<ProcessedOption> {
 For colors that adapt to the terminal's light or dark theme, use the semantic color methods with detected terminal capabilities:
 
 ```java
-import org.aesh.readline.terminal.TerminalColorDetector;
-import org.aesh.readline.terminal.formatting.TerminalColor;
-import org.aesh.readline.terminal.formatting.TerminalString;
+import org.aesh.terminal.formatting.TerminalColor;
+import org.aesh.terminal.formatting.TerminalString;
 import org.aesh.terminal.utils.TerminalColorCapability;
 
 public class AdaptiveRenderer implements OptionRenderer<ProcessedOption> {

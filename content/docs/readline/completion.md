@@ -173,7 +173,7 @@ List<Completion> networkCompletions = Arrays.asList(
 ## Terminal Styled Completions
 
 ```java
-import org.aesh.readline.terminal.formatting.TerminalColor;
+import org.aesh.terminal.formatting.TerminalColor;
 
 Completion colored = new Completion(
     "important-option",

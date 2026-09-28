@@ -108,14 +108,16 @@ Reads input in a separate thread, allowing the current thread to continue.
 if (connection.reading()) {
     // Handler-based queries work (setStdinHandler)
 } else {
-    // Use synchronous methods like TerminalColorDetector.queryColorCapability()
+    // Use environment-only capabilities or standalone detection at startup
 }
 ```
 
 The `reading()` method returns `true` after `openBlocking()` or `openNonBlocking()` is called
-and before `close()` is called. This is useful for determining which query methods to use:
+until the reader exits or `close()` is called. This helps choose query methods:
 - When `reading()` is true: Handler-based methods like `terminal().queryTerminal()` work
-- When `reading()` is false: Use synchronous methods like `TerminalColorDetector.queryColorCapability()`
+- When `reading()` is false: Use `TerminalCapabilities.detect()` for a fast
+  environment-based result, or `detectFull()` before starting the reader
+  for standalone terminal queries
 
 #### Checking Interactive Mode
 
@@ -563,15 +565,15 @@ Map<Integer, int[]> ansi16 = terminal.queryAnsi16Colors(500);
 Map<Integer, int[]> results = terminal.queryBatchOsc(500, 10, 11, 12);
 ```
 
-For higher-level access with automatic fallbacks, use `TerminalColorDetector`:
+For a fallback theme when OSC does not answer, use the cached standalone
+capabilities. An absent RGB value stays `null`; it is not estimated:
 
 ```java
-import org.aesh.terminal.tty.TerminalColorDetector;
+import org.aesh.terminal.detect.TerminalCapabilities;
+import org.aesh.terminal.utils.TerminalColorCapability;
 
-// Query with automatic fallback to environment-based detection
-Map<Integer, int[]> colors = TerminalColorDetector.queryColorsWithFallback(
-    connection.terminal(), 500);
-// Always returns colors - actual if OSC works, estimated if not
+TerminalColorCapability cap = TerminalColorCapability.from(
+    TerminalCapabilities.getInstance()); // environment/theme fallback
 ```
 
 ## Theme Mode Queries
@@ -612,10 +614,13 @@ Enable real-time notifications when the user switches dark/light mode:
 // One-call setup: register handler and enable notifications
 connection.terminal().enableThemeChangeNotification(theme -> {
     System.out.println("Theme changed to: " + theme);
-    // Update cached colors
-    capability = new TerminalColorCapability(capability.getColorDepth(), theme);
+    // The shared TerminalCapabilities theme is already updated.
+    // Previously queried RGB is cleared until explicitly re-probed.
 });
 ```
+
+Calling `enableThemeChangeNotification()` without a callback also
+intercepts notifications and refreshes the shared theme cache.
 
 Or step by step:
 
@@ -654,7 +659,7 @@ connection.setThemeChangeHandler(null);
 
 ```java
 import org.aesh.terminal.tty.TerminalConnection;
-import org.aesh.terminal.utils.TerminalTheme;
+import org.aesh.terminal.detect.TerminalTheme;
 
 TerminalConnection connection = new TerminalConnection();
 
@@ -840,6 +845,7 @@ if (depth.supportsTrueColor()) {
     // Use 256-color palette
 }
 
-// Use TerminalColorDetector for comprehensive detection with fallbacks
-TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal());
+// Presentation colors from cached standalone capabilities
+TerminalColorCapability cap = TerminalColorCapability.from(
+    TerminalCapabilities.getInstance());
 ```

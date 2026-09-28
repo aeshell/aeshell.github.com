@@ -22,8 +22,8 @@ The `TerminalColor` class provides comprehensive support for terminal text color
 Use the `Color` enum for standard ANSI colors:
 
 ```java
-import org.aesh.readline.terminal.formatting.Color;
-import org.aesh.readline.terminal.formatting.TerminalColor;
+import org.aesh.terminal.formatting.Color;
+import org.aesh.terminal.formatting.TerminalColor;
 
 // Simple foreground and background
 TerminalColor redOnBlack = new TerminalColor(Color.RED, Color.BLACK);
@@ -224,20 +224,18 @@ The semantic factory methods automatically choose appropriate colors based on th
 ### Semantic Color Methods
 
 ```java
-import org.aesh.readline.terminal.TerminalColorDetector;
+import org.aesh.terminal.detect.TerminalCapabilities;
+import org.aesh.terminal.formatting.TerminalColor;
 import org.aesh.terminal.utils.TerminalColorCapability;
 
-// Detect terminal capabilities
-TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal());
+// Fast environment detection does not compete with an active reader.
+TerminalColorCapability cap = TerminalColorCapability.from(TerminalCapabilities.getInstance());
 
 // Get theme-appropriate colors for log levels
 TerminalColor error = TerminalColor.forError(cap);          // Red
 TerminalColor success = TerminalColor.forSuccess(cap);      // Green
 TerminalColor warning = TerminalColor.forWarning(cap);      // Yellow
 TerminalColor info = TerminalColor.forInfo(cap);            // Cyan/Blue
-TerminalColor debug = TerminalColor.forDebug(cap);          // White/Gray (subdued)
-TerminalColor trace = TerminalColor.forTrace(cap);          // Gray (least prominent)
-
 // Other semantic colors
 TerminalColor highlight = TerminalColor.forHighlight(cap);  // Emphasized
 TerminalColor muted = TerminalColor.forMuted(cap);          // Dimmed
@@ -253,21 +251,21 @@ TerminalColor message = TerminalColor.forMessage(cap);      // Magenta (for high
 | `forSuccess()` | Bright green | Normal green | Success messages |
 | `forWarning()` | Bright yellow | Normal yellow | Warnings |
 | `forInfo()` | Bright cyan | Normal blue | Info messages |
-| `forDebug()` | White | Gray | Debug messages (subdued) |
-| `forTrace()` | 256-color gray | Gray | Trace messages (least prominent) |
 | `forHighlight()` | Bright white | Black | Emphasized text |
 | `forMuted()` | Normal white | Normal black | Secondary text |
 | `forTimestamp()` | Bright cyan | Normal cyan | Log timestamps |
 | `forMessage()` | Bright magenta | Normal magenta | Highlighted messages |
 
-Log level colors follow a prominence hierarchy: **ERROR > WARN > INFO > DEBUG > TRACE**
+For `debug()` and `trace()` text, use `ANSIBuilder`'s semantic methods
+below. The `TerminalColor` factories above cover error, warning, success,
+and informational colors.
 
 These methods ensure readable colors on any background. On dark themes, bright colors stand out. On light themes, normal intensity prevents eye strain.
 
 ### Example: Status Messages
 
 ```java
-TerminalColorCapability cap = TerminalColorDetector.detectCached(connection.terminal());
+TerminalColorCapability cap = TerminalColorCapability.from(TerminalCapabilities.getInstance());
 
 public void logError(String message) {
     TerminalString str = new TerminalString(
@@ -446,34 +444,31 @@ if (rgb != null) {
 
 ### Batch OSC Queries for Performance
 
-When querying multiple colors, use batch queries to avoid the latency of sequential round-trips. Querying 10 colors individually might take 600-700ms, while batch querying takes under 100ms.
-
-Use `TerminalColorDetector` for batch color queries:
+When a connection already has a reader loop, use its `TerminalFeatures`
+delegate. Batch queries avoid separate round-trips and return only colors
+the terminal actually reported.
 
 ```java
-import org.aesh.terminal.tty.TerminalColorDetector;
 import org.aesh.terminal.utils.ANSI;
 
 // Query foreground, background, and cursor colors in one operation
-Map<Integer, int[]> colors = TerminalColorDetector.queryColors(connection.terminal(), 500);
+Map<Integer, int[]> colors = connection.terminal().queryColors(500);
 
 int[] fg = colors.get(ANSI.OSC_FOREGROUND);   // OSC 10
 int[] bg = colors.get(ANSI.OSC_BACKGROUND);   // OSC 11
 int[] cursor = colors.get(ANSI.OSC_CURSOR_COLOR);  // OSC 12
 
 if (bg != null) {
-    // Check theme using the utility method
-    boolean isDark = TerminalColorDetector.isDarkColor(bg);
-    System.out.println("Theme: " + (isDark ? "dark" : "light"));
+    System.out.println("Theme: " + TerminalTheme.fromRGB(bg[0], bg[1], bg[2]));
 }
 ```
 
-For palette colors, use `queryPaletteColors()`:
+Palette queries use the same active connection:
 
 ```java
 // Query multiple palette colors at once
-Map<Integer, int[]> palette = TerminalColorDetector.queryPaletteColors(
-    connection.terminal(), 500, 0, 1, 2, 3, 4, 5, 6, 7);
+Map<Integer, int[]> palette = connection.terminal().queryPaletteColors(
+    500, 0, 1, 2, 3, 4, 5, 6, 7);
 
 // Iterate over results
 for (Map.Entry<Integer, int[]> entry : palette.entrySet()) {
@@ -483,35 +478,29 @@ for (Map.Entry<Integer, int[]> entry : palette.entrySet()) {
 }
 
 // Query all 16 ANSI colors at once
-Map<Integer, int[]> ansi16 = TerminalColorDetector.queryAnsi16Colors(connection.terminal(), 500);
+Map<Integer, int[]> ansi16 = connection.terminal().queryAnsi16Colors(500);
 ```
 
 ### Fallback for Unsupported Terminals
 
-Not all terminals support OSC color queries. Use `queryColorsWithFallback()` for graceful degradation:
+Not all terminals answer OSC color queries. An absent color remains
+`null`; do not treat a theme heuristic as a measured RGB value:
 
 ```java
-// Always returns colors - actual or estimated based on environment
-Map<Integer, int[]> colors = TerminalColorDetector.queryColorsWithFallback(connection.terminal(), 500);
+import org.aesh.terminal.detect.TerminalCapabilities;
+import org.aesh.terminal.detect.TerminalTheme;
+import org.aesh.terminal.utils.ANSI;
 
-int[] bg = colors.get(ANSI.OSC_BACKGROUND);
-// bg is never null - will be estimated if OSC queries failed
+Map<Integer, int[]> colors = connection.terminal().supportsColorQuery()
+    ? connection.terminal().queryColors(500)
+    : java.util.Collections.emptyMap();
+int[] bg = colors.get(ANSI.OSC_BACKGROUND); // null if no response
+TerminalTheme theme = bg != null
+    ? TerminalTheme.fromRGB(bg[0], bg[1], bg[2])
+    : TerminalCapabilities.getInstance().theme();
 ```
 
-You can also check support before querying:
-
-```java
-// Check if OSC queries are supported
-if (TerminalColorDetector.isOscColorQuerySupported(connection.terminal())) {
-    Map<Integer, int[]> colors = TerminalColorDetector.queryColors(connection.terminal(), 500);
-    // Use actual queried colors
-} else {
-    // Use environment-based detection
-    TerminalTheme theme = TerminalColorDetector.detectThemeFromEnvironment();
-}
-```
-
-For low-level access, you can also use `Connection` directly:
+For custom OSC batches, use the same delegate:
 
 ```java
 // Query arbitrary OSC codes at once
@@ -523,8 +512,9 @@ Map<Integer, int[]> results = connection.terminal().queryBatchOsc(500, 10, 11, 1
 `TerminalColor` is typically used with `TerminalString` for styled output:
 
 ```java
-import org.aesh.readline.terminal.formatting.TerminalString;
-import org.aesh.readline.terminal.formatting.TerminalTextStyle;
+import org.aesh.terminal.formatting.CharacterType;
+import org.aesh.terminal.formatting.TerminalString;
+import org.aesh.terminal.formatting.TerminalTextStyle;
 
 // Color only
 TerminalString colored = new TerminalString("Colored text",
@@ -561,10 +551,10 @@ String styled = ANSIBuilder.builder()
 
 ### Theme-Aware Builder
 
-Create a builder with detected terminal capabilities for automatic theme adaptation:
+Create a builder with cached terminal capabilities for theme adaptation:
 
 ```java
-TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal());
+TerminalColorCapability cap = TerminalColorCapability.from(TerminalCapabilities.getInstance());
 ANSIBuilder builder = ANSIBuilder.builder(cap);
 
 // Semantic colors adapt to the terminal theme
@@ -620,7 +610,7 @@ Builder overrides take precedence over `TerminalColorCapability` settings:
 
 ```java
 // Capability with default colors
-TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal());
+TerminalColorCapability cap = TerminalColorCapability.from(TerminalCapabilities.getInstance());
 
 // Builder overrides specific colors
 ANSIBuilder builder = ANSIBuilder.builder(cap)
@@ -766,7 +756,7 @@ connection.write(builder
 ### Complete Example
 
 ```java
-TerminalColorCapability cap = TerminalColorDetector.detect(connection.terminal());
+TerminalColorCapability cap = TerminalColorCapability.from(TerminalCapabilities.getInstance());
 ANSIBuilder builder = ANSIBuilder.builder(cap);
 
 // Log-style output with timestamps
@@ -801,19 +791,18 @@ connection.write(builder
 ## Complete Example
 
 ```java
-import org.aesh.readline.Readline;
-import org.aesh.readline.ReadlineBuilder;
-import org.aesh.readline.terminal.TerminalColorDetector;
-import org.aesh.readline.terminal.formatting.*;
-import org.aesh.readline.tty.terminal.TerminalConnection;
+import org.aesh.terminal.detect.TerminalCapabilities;
+import org.aesh.terminal.formatting.TerminalColor;
+import org.aesh.terminal.formatting.TerminalString;
+import org.aesh.terminal.tty.TerminalConnection;
 import org.aesh.terminal.utils.TerminalColorCapability;
 
 public class ColorfulApp {
     public static void main(String[] args) throws Exception {
+        // Standalone full detection runs before the connection's reader starts.
+        TerminalColorCapability cap = TerminalColorCapability.from(
+            TerminalCapabilities.detectFull());
         TerminalConnection connection = new TerminalConnection();
-        
-        // Detect terminal capabilities
-        TerminalColorCapability cap = TerminalColorDetector.detectCached(connection.terminal());
         
         // Create theme-aware colors
         TerminalColor titleColor = TerminalColor.forHighlight(cap);

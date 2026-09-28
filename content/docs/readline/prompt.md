@@ -499,7 +499,7 @@ public CommandResult execute(CommandInvocation invocation) throws InterruptedExc
 
 ```java
 import org.aesh.readline.*;
-import org.aesh.readline.terminal.formatting.*;
+import org.aesh.terminal.formatting.*;
 import org.aesh.terminal.Connection;
 import java.util.Arrays;
 import java.util.List;
