@@ -38,11 +38,12 @@ The [Terminal Provider SPI]({{< relref "terminal-provider" >}}) discovers provid
 
 | Platform | Provider Used | Mechanism |
 |----------|--------------|-----------|
-| Linux/macOS | `ExecPtyTerminalProvider` | Spawns `stty`/`tty` processes |
-| Windows | `WinSysTerminalProvider` | JNI via `aesh-console.dll` |
+| Linux/macOS (Java 22+, native access) | `FfmTerminalProvider` | FFM syscalls, no subprocesses |
+| Linux/macOS (older Java or no native access) | `ExecPtyTerminalProvider` | Spawns `stty`/`tty` processes |
+| Windows | `WinSysTerminalProvider` | Console API via `WinConsoleNative` (FFM on Java 22+, JNI via `aesh-console.dll` otherwise) |
 | Cygwin/MSYS2 | `CygwinTerminalProvider` | POSIX PTY via Cygwin |
 
-The FFM-based providers (`FfmTerminalProvider` on POSIX, FFM `WinConsoleNative` on Windows) are not available in native-image because GraalVM does not yet support registering FFM downcall descriptors in reachability metadata. The providers fail gracefully and fall through to the next available provider.
+Providers are tried in priority order and decline gracefully when unsupported, so the first working provider wins. FFM downcall descriptors are registered in reachability metadata for GraalVM 25+, covering POSIX syscalls and the Windows kernel32 console functions. On older GraalVM versions the FFM paths are skipped and the fallbacks above apply without configuration.
 
 ## Maven Profile for Native Tests
 
@@ -160,4 +161,4 @@ Add `--enable-native-access=ALL-UNNAMED` to your JVM or native-image arguments.
 
 ### Windows: MissingForeignRegistrationError
 
-If you see this error in native-image on Windows, ensure you're using aesh-readline 3.15+. Older versions used the FFM `WinConsoleNative` which requires downcall registration. Version 3.15+ uses the JNI version automatically.
+If you see this error in native-image on Windows, the kernel32 downcall descriptors were not registered for the image. The descriptors ship in `terminal-tty` reachability metadata, so this usually means build configuration stripped `META-INF/native-image` from the classpath (for example an over-broad shading or resource-exclusion rule). Verify the metadata reaches the image build; no version-specific workaround applies.

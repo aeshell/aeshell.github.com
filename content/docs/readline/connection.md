@@ -36,7 +36,7 @@ The `Connection` interface represents a connection to a terminal (local, direct,
 | Lifecycle | `Connection` | `openBlocking()`, `openNonBlocking()`, `close()`, `reading()` |
 | Queries | `conn.terminal()` | `queryTerminal()`, `queryColors()`, `queryDeviceAttributes()` |
 | Capabilities | `conn.terminal()` | `supportsClipboard()`, `colorDepth()`, `supportsSynchronizedOutput()` |
-| Semantic output | `conn.terminal()` | `writeClipboard()`, `writeHyperlink()`, `writePromptStart()`, `enableSynchronizedOutput()` |
+| Semantic output | `conn.terminal()` | `writeClipboard()`, `writeHyperlink()`, `writePromptStart()`, `writeProgramStatus()`, `clearProgramStatus()`, `enableSynchronizedOutput()` |
 
 ## Creating Connections
 
