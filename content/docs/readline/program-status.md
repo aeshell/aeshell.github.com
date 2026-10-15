@@ -5,7 +5,7 @@ title: 'Program Status'
 weight: 18
 ---
 
-Æsh Readline supports the OSC 7501 Program Status Protocol ([specification](https://www.superlogical.com/rex/docs/build/program-status), revision 0.3). A program reports what it is doing — working, blocked, done — and the terminal decides how to present it: a tab indicator, an inbox entry, a notification, or nothing at all. Terminals that do not recognize OSC 7501 ignore the sequence, so reporting is safe everywhere with no prior negotiation.
+Æsh Readline supports the OSC 7501 Program Status Protocol ([specification](https://www.superlogical.com/rex/docs/build/program-status), revision 0.4). A program reports what it is doing — working, blocked, done — and the terminal decides how to present it: a tab indicator, an inbox entry, a notification, or nothing at all. Terminals that do not recognize OSC 7501 ignore the sequence, so reporting is safe everywhere with no prior negotiation.
 
 ## How It Works
 
@@ -15,7 +15,7 @@ One escape sequence carries a report as `key=value` pairs:
 ESC ] 7501 ; state=working:app=deploy:msg=RGVwbG95aW5nIHYyLjQuMQ== ESC \
 ```
 
-Free-text values (`msg`, `title`) are base64-encoded UTF-8. Every report completely replaces its addressed record, so a caller repeats metadata it wants retained, including `app` and `title`.
+Free-text values (`msg`, `title`) are base64-encoded UTF-8 of single-line text. Every report completely replaces its addressed record, so a caller repeats metadata it wants retained, including `app` and `title`. The `app` value is a grouping key, not a label; `title` is the label.
 
 | State | Meaning |
 |-------|---------|
@@ -74,15 +74,12 @@ Developers pass plain text and typed values only. UTF-8 encoding, base64, valida
 Detection is optional but available when a program wants to adapt:
 
 ```java
-// Terminfo hint only; a missing entry never means unsupported
-boolean hinted = terminal.hasProgramStatusHint();
-
 // Live query through the existing connection reader.
 // True/false is cached per connection; null means unknown (timeout).
 Boolean supported = terminal.queryProgramStatusSupport(500);
 ```
 
-The live query sends an `OSC 7501 ; ?` probe followed by a device-attributes query as a fence: a probe reply first means supported, the fence reply first means unsupported. Unrelated keyboard input is preserved, and conclusive answers are cached on the connection while timeouts retry on the next call.
+The live query sends an `OSC 7501 ; ?` probe followed by a device-attributes query as a fence: a probe reply first means supported, the fence reply first means unsupported. A supporting terminal may extend its reply with `states=` and `kinds=` lists advertising exactly which values it accepts; replies without lists mean the fixed baseline of five states and three kinds, which never changes. Unrelated keyboard input is preserved, and conclusive answers are cached on the connection while timeouts retry on the next call.
 
 ## Terminal Support
 
@@ -103,7 +100,6 @@ Status methods are on the `TerminalFeatures` delegate, accessed via `connection.
 | `writeProgramStatus(status)` | Send one validated report; never probes or reads |
 | `clearProgramStatus(id)` | Remove one record and everything beneath it |
 | `clearAllProgramStatus()` | Remove every record, including other programs' |
-| `hasProgramStatusHint()` | Check the terminfo `Pst` hint |
 | `queryProgramStatusSupport(timeoutMs)` | Live probe with per-connection cache |
 | `programStatusSupport()` | Read the cached answer (true/false/null) |
 
