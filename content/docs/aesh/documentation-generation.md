@@ -32,8 +32,25 @@ $ myapp --aesh-doc asciidoc --output-dir docs/
 No code changes needed — this works automatically with the standard `AeshRuntimeRunner` pattern.
 
 {{< callout type="info" >}}
-`--aesh-doc` documents the whole command tree in one invocation — there is no per-subcommand form (`myapp sub --aesh-doc …` fails with "unknown option"). Use `--output-dir` when you need the individual `myapp-sub.adoc` pages. The target directory must already exist; aesh never creates it.
+`--aesh-doc` documents the whole command tree by default. Use `--output-dir` when you need the individual `myapp-sub.adoc` pages. The target directory must already exist; aesh never creates it.
 {{< /callout >}}
+
+### Per-Subcommand Documentation
+
+Pass the format, then `--`, then the subcommand path to document a single subcommand (and its children) instead of the whole tree — mirroring `--aesh-complete -- <words>`:
+
+```bash
+# SKILL doc for the 'run' subcommand only
+$ myapp --aesh-doc skill -- run
+
+# Markdown doc for a nested subcommand
+$ myapp --aesh-doc markdown -- jdk install
+
+# Files for the 'jdk' subtree only
+$ myapp --aesh-doc markdown --output-dir docs/ -- jdk
+```
+
+Without `--`, the root command (the whole tree) is documented. An unknown name in the path fails with `Unknown command: <name>`.
 
 ### Per-Command Help Format
 

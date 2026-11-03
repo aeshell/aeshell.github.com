@@ -311,6 +311,34 @@ $ cli run --verbose --config app.yml MyApp
 
 See [Options - Inherited Options](/docs/aesh/options#inherited-options) for full details.
 
+## Arguments on Group Commands
+
+A group command can declare its own `@Arguments` alongside subcommands. A word that is not a subcommand name is taken as the group's own argument:
+
+```java
+@CommandDefinition(
+    name = "run",
+    description = "Run scripts",
+    groupCommands = {BuildCommand.class, TestCommand.class}
+)
+public class RunCommand implements Command<CommandInvocation> {
+
+    @Arguments(description = "Script file and parameters")
+    private List<String> script;
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        // runs when no subcommand matched: `run myscript.java --verbose`
+        return CommandResult.SUCCESS;
+    }
+}
+```
+
+```bash
+$ cli run build --clean   # 'build' subcommand
+$ cli run myscript.java   # group's own argument
+```
+
 ## Sub-Command Mode
 
 Group commands can enter an interactive **sub-command mode** where users work within the group's context. This is useful for workflows that involve multiple operations on the same resource.
@@ -390,7 +418,15 @@ The default error message includes the available subcommands:
 
 ### "Did You Mean?" Suggestions
 
-Register a `CommandNotFoundHandler` to implement Levenshtein-based or fuzzy suggestions. The handler's enhanced method receives the unknown subcommand and available names:
+Close typos are suggested automatically — no handler needed. `SubcommandNotFoundException` computes up to three matches (case-insensitive edit distance, prefix abbreviations rank first) and names them in the message instead of dumping the full list:
+
+```
+'camel exprot' is not a subcommand of 'camel'. Did you mean: export? See 'camel --help'.
+```
+
+With several close matches: `Did you mean: export or explain?` With nothing close, the message keeps the full `Available: ...` list. The matches are also available programmatically via `getSuggestions()`, so every entry point — the runners, the interactive console, and direct `CommandRuntime` use — reports the same help.
+
+Register a `CommandNotFoundHandler` only to customize this behavior. The handler's enhanced method receives the unknown subcommand and available names:
 
 ```java
 AeshRuntimeRunner.builder()
@@ -435,6 +471,7 @@ try {
     System.out.println("Unknown: " + e.getUnknownSubcommand());
     System.out.println("Parent: " + e.getParentCommand());
     System.out.println("Available: " + e.getAvailableSubcommands());
+    System.out.println("Suggestions: " + e.getSuggestions());
 }
 ```
 

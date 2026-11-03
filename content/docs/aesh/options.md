@@ -1658,7 +1658,7 @@ Option and command descriptions support `${VARIABLE}` placeholders that are reso
 |----------|-------------|---------|
 | `${DEFAULT-VALUE}` | The option's `defaultValue` | `"4004"` |
 | `${FALLBACK-VALUE}` | The option's `fallbackValue` | `"4004"` |
-| `${COMPLETION-CANDIDATES}` | The option's `allowedValues` (comma-separated) | `"fast, safe"` |
+| `${COMPLETION-CANDIDATES}` | The option's `allowedValues` plus its completer's candidates (comma-separated) | `"fast, safe"` |
 
 ```java
 @Option(name = "debug", defaultValue = "4004",

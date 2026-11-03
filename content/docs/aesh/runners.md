@@ -739,6 +739,10 @@ public CommandResult execute(CommandInvocation invocation) throws InterruptedExc
 }
 ```
 
+{{< callout type="info" >}}
+Reads go through the runner's shell. The default shell reads from `System.console()`, which works in a real terminal and returns `null` when there is no console (piped stdin, IDE, CI) or on Windows. If you inject a custom `ShellImpl` over your own `TerminalConnection` via `.shell(...)`, start its reader pump first (`connection.openNonBlocking()` before `execute()`, `connection.close()` after) — otherwise `readLine()` waits forever for input that is never consumed.
+{{< /callout >}}
+
 ### Generating Shell Completion Scripts
 
 `AeshRuntimeRunner` can generate shell completion scripts (bash, zsh, fish) instead of executing the command. There are two modes:

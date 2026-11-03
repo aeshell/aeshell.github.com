@@ -321,6 +321,20 @@ This is useful for commands that should behave differently when input is piped (
 
 Commands can show interactive prompts from within their `execute()` method. See [Selectors - CommandInvocation Convenience Methods](/docs/aesh/selectors#commandinvocation-convenience-methods) for details on `confirm()`, `select()`, `multiSelect()`, and `prompt()`.
 
+## Explicitly Given Options
+
+Field values can't tell whether an option was typed on the command line or filled in from a default, a `DefaultValueProvider`, or a prompt. The matched-option methods can:
+
+```java
+if (invocation.hasMatchedOption("verbose")) {
+    // --verbose (or -v, or an alias) was explicitly given
+}
+List<String> raw = invocation.matchedOptionValues("config"); // raw parsed values, in order
+Set<String> all = invocation.matchedOptionNames();            // every explicitly given option
+```
+
+Names accept the long name with or without dashes, the short name, or an alias. When a group and its child define the same name, the child (innermost) wins. A matched boolean flag or bare `optionalValue` option yields an empty value list.
+
 ## Control Methods
 
 ### stop()

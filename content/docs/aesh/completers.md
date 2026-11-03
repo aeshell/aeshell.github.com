@@ -297,6 +297,8 @@ The generators introspect the command model and produce:
 
 Commands and options gated by a [`CommandActivator`/`OptionActivator`](../activators) (where `isActivated()` returns `false`) and options marked `OptionVisibility.HIDDEN` are excluded from both static and dynamic completions (since 3.18). Before 3.18, the static generators ignored these gates — only dynamic `--aesh-complete` respected them.
 
+Fish dynamic scripts complete each valued option individually (`complete -c myapp --opt -r`), and file-typed options fall back to fish's native file completion. Use the runner's `redirectStderr(true)` so JVM startup noise on stderr doesn't paint over the prompt during tab completion (bash/zsh/fish; PowerShell already redirects).
+
 ### Completion Fallback Control
 
 By default, when no completion candidates are available for an argument, the shell falls back to file/path completion for `String`, `File`, and `Path` types, and no fallback for enum types. You can override this per-argument using `completeFallback`:

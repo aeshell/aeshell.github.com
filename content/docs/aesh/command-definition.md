@@ -28,6 +28,7 @@ The `@CommandDefinition` annotation is used to define a command class.
 | `defaultValueProvider` | `Class<? extends DefaultValueProvider>` | `NullDefaultValueProvider.class` | Dynamic default value resolver |
 | `stopAtFirstPositional` | `boolean` | `false` | Stop option parsing after the first positional argument |
 | `sortOptions` | `boolean` | `false` | Sort help options alphabetically by name (after explicit option order) |
+| `collapseSynopsis` | `boolean` | `false` | Collapse optional flags to `[OPTIONS]` in the `Usage:` synopsis |
 | `helpUrl` | `String` | `""` | URL to documentation (shown in `--help` output) |
 | `groupCommands` | `Class<? extends Command>[]` | `{}` | Subcommand classes. Non-empty makes this a [group command](group-commands). |
 | `completeFallback` | `CompletionFallback` | `DEFAULT` | Default [completion fallback](/docs/aesh/completers#command-level-default) for all options/arguments. Individual options can override. |
@@ -242,6 +243,31 @@ public class BuildCommand implements Command<CommandInvocation> {
 ```
 
 The `order` attribute is defined on `@Option`, `@OptionList`, and `@OptionGroup`.
+
+## Collapsed Synopsis
+
+For option-heavy commands, the `Usage:` line can run to many wrapped lines. With `collapseSynopsis = true`, required options still render explicitly but every optional flag collapses to a single `[OPTIONS]` token. The Options table below still lists every flag in full:
+
+```java
+@CommandDefinition(
+    name = "jbang",
+    description = "Run scripts",
+    collapseSynopsis = true,
+    generateHelp = true
+)
+public class JbangCommand implements Command<CommandInvocation> { ... }
+```
+
+```
+# Before
+Usage: jbang [-hVx] [--config=<config>] [--insecure] [--[no-]verbose |
+              --[no-]quiet] [--[no-]offline | --[no-]fresh] [COMMAND]
+
+# After
+Usage: jbang [OPTIONS] [COMMAND]
+```
+
+Positional arguments and the `[COMMAND]` placeholder are unaffected.
 
 ## Help Output Layout
 

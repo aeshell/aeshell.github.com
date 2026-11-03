@@ -171,6 +171,18 @@ private String filePath;
 
 If still not working, check that you're not using `overrideRequired = true` elsewhere.
 
+#### Invalid command definition at registration
+
+**Problem:** Registering a command throws `CommandDefinitionException` instead of the command appearing as "not found" later.
+
+**Solution:** The definition itself is invalid (e.g., a bad annotation combination). The exception names the command and wraps the cause — fix the reported problem; the command is not registered until it builds cleanly.
+
+#### Cyclic @Mixin hierarchy
+
+**Problem:** `CommandLineParserException: Cyclic @Mixin hierarchy detected: A -> B -> A`.
+
+**Solution:** Two mixin classes include each other (directly or through a third class). Break the cycle — extract the shared options into a third mixin both use.
+
 ### History Issues
 
 #### History not persisting

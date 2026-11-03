@@ -174,6 +174,19 @@ List<Command<CommandInvocation>> commands = Arrays.asList(
 registry.addAllCommands(commands);
 ```
 
+### Registering Under a Custom Name
+
+`command(Class/Object, name, aliases...)` overloads register a command under a name that replaces the `@CommandDefinition` one — useful for versioned entry points or embedding the same command twice:
+
+```java
+AeshCommandRegistryBuilder.<CommandInvocation>builder()
+        .command(CopyCommand.class, "cp", "copy")
+        .command(new DeleteCommand(), "rm")
+        .create();
+```
+
+The custom name and aliases replace the annotation values for that registration; registering the same class twice under different names builds independent commands. Container builders (`create(command, name, aliases...)`) accept the same overloads.
+
 ### Removing Commands
 
 ```java

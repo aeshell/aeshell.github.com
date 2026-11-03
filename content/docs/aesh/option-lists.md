@@ -14,8 +14,10 @@ The `@OptionList` annotation defines options that accept multiple values separat
 | `name` | `String` | `""` | Option name (variable name if empty) |
 | `shortName` | `char` | `'\u0000'` | Short name (e.g., `-p`) |
 | `description` | `String` | `""` | Help description |
-| `valueSeparator` | `char` | `','` | Character separating values |
+| `valueSeparator` | `char` | `','` | Character separating values (`OptionList.NO_SEPARATOR` disables splitting) |
 | `required` | `boolean` | `false` | Is option required? |
+| `optionalValue` | `boolean` | `false` | Allow the option bare (empty list); see below |
+| `fallbackValue` | `String` | `""` | Single value applied when the option is bare (implies `optionalValue`) |
 | `defaultValue` | `String[]` | `{}` | Default values |
 | `askIfNotSet` | `boolean` | `false` | Prompt user if not set |
 | `converter` | `Class<? extends Converter>` | `NullConverter.class` | Custom value converter |
@@ -60,6 +62,60 @@ private List<Integer> ports;
 ```
 
 Usage: `build --ports 8080:8081:8082`
+
+### No Separator
+
+When each occurrence of the option carries exactly one value that may itself contain the separator character (e.g., `key=value` pairs with commas), use `OptionList.NO_SEPARATOR` to disable splitting entirely:
+
+```java
+@OptionList(name = "prop", valueSeparator = OptionList.NO_SEPARATOR, description = "Properties")
+private List<String> props;
+```
+
+```bash
+myapp --prop a=1,2 --prop b=3   # two values: "a=1,2" and "b=3"
+```
+
+Without `NO_SEPARATOR`, `a=1,2` would split into two values. Completion appends a space (a new word) after a completed value rather than a separator.
+
+### Array Fields
+
+`@OptionList` and `@Arguments` also accept array fields, converted element-wise like collections:
+
+```java
+@OptionList(name = "dep", valueSeparator = OptionList.NO_SEPARATOR)
+private String[] deps;
+```
+
+Multi-dimensional arrays are rejected at build time.
+
+## Optional Values on Lists
+
+With `optionalValue = true`, the option may be given bare (arity 0..*). A bare occurrence sets the field to an **empty list**, which distinguishes "specified without values" (empty list) from "not specified at all" (`null`):
+
+```java
+@OptionList(name = "find", optionalValue = true, description = "Files to find")
+private List<String> find;
+```
+
+```bash
+myapp run            # find == null (not specified)
+myapp run --find     # find == [] (empty list)
+myapp run --find a,b # find == [a, b]
+```
+
+`fallbackValue` implies `optionalValue` and applies a single value when the option is bare (but never when it is omitted):
+
+```java
+@OptionList(name = "find", fallbackValue = "a", description = "Files to find")
+private List<String> find;
+```
+
+```bash
+myapp run            # find == null (not specified)
+myapp run --find     # find == [a] (fallback)
+myapp run --find a,b # find == [a, b] (explicit)
+```
 
 ## Value Attachment Syntaxes
 

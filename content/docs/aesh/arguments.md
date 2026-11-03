@@ -91,6 +91,15 @@ public class SumCommand implements Command<CommandInvocation> {
 
 Usage: `sum 1 2 3 4 5`
 
+Array fields work the same way and are converted element-wise:
+
+```java
+@Arguments(description = "Numbers to sum")
+private int[] numbers;
+```
+
+Multi-dimensional arrays are rejected at build time.
+
 ## Indexed Positional Parameters
 
 Aesh supports explicit positional indexes on both `@Argument` and `@Arguments`.

@@ -148,6 +148,8 @@ $ myapp --size 999999999999999999999
 Invalid long value: '999999999999999999999'
 ```
 
+A refused value — from a converter or a validator — is a usage error, not a crash: the runner prints the message plus help and exits with code 2 (`CommandResult.USAGE_ERROR`), and direct `CommandRuntime` use throws the `OptionValidatorException` itself.
+
 ## Converter vs Validator
 
 - **Converters** transform the input string into a typed value. They answer: *"What does this string mean?"*
