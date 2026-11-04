@@ -990,6 +990,26 @@ Responses are consumed in order by each `inputLine()` call. The queue can be ref
 
 This is primarily useful for test frameworks. See [Settings - inputLineResponses](/docs/aesh/settings#inputlineresponses) for details.
 
+### ANSI Colors in Piped Output
+
+`AeshRuntimeRunner` drops ANSI colors when stdout is redirected, so `mycli --help > help.txt` and `mycli --help | grep timeout` stay plain text:
+
+```java
+AeshRuntimeRunner.builder()
+        .command(MyCommand.class)
+        .args(args) // --help goes to System.out, usage errors to System.err
+        .execute();
+```
+
+| Situation | Colors? |
+|-----------|---------|
+| Terminal stdout | Yes |
+| Redirected/piped stdout, CI logs | No |
+| `NO_COLOR` set | Never (wins over everything) |
+| `FORCE_COLOR` / `CLICOLOR_FORCE` set | Forced on |
+
+Override explicitly with `.ansiMode(AnsiMode.ON)` / `.ansiMode(AnsiMode.OFF)` (default is `AUTO` as above). Direct `CommandRuntime` users are unaffected — call `parser.updateAnsiMode(false)` yourself, as before.
+
 ## CDI / Framework Integration
 
 Aesh supports CDI interceptor and proxy subclasses out of the box. When a CDI framework (Quarkus, WildFly) wraps a command class with an interceptor subclass (e.g., for `@Transactional`), aesh walks the class hierarchy to find `@CommandDefinition` on the original class.
