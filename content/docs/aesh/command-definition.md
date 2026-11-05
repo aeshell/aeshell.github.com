@@ -28,8 +28,10 @@ The `@CommandDefinition` annotation is used to define a command class.
 | `defaultValueProvider` | `Class<? extends DefaultValueProvider>` | `NullDefaultValueProvider.class` | Dynamic default value resolver |
 | `stopAtFirstPositional` | `boolean` | `false` | Stop option parsing after the first positional argument |
 | `sortOptions` | `boolean` | `false` | Sort help options alphabetically by name (after explicit option order) |
-| `collapseSynopsis` | `boolean` | `false` | Collapse optional flags to `[OPTIONS]` in the `Usage:` synopsis |
-| `defaultOptionsFirst` | `boolean` | `false` | Print the default `Options:` section before named help groups |
+| `collapseSynopsis` | `Toggle` | `INHERIT` | Collapse optional flags to `[OPTIONS]` in the `Usage:` synopsis |
+| `defaultOptionsFirst` | `Toggle` | `INHERIT` | Print the default `Options:` section before named help groups |
+| `showDefaultValues` | `Toggle` | `INHERIT` | Show each option's default value under its description (`Default: <value>`) |
+| `failOnDuplicateOptions` | `Toggle` | `INHERIT` | Fail parsing when a single-value option is repeated |
 | `helpUrl` | `String` | `""` | URL to documentation (shown in `--help` output) |
 | `groupCommands` | `Class<? extends Command>[]` | `{}` | Subcommand classes. Non-empty makes this a [group command](group-commands). |
 | `completeFallback` | `CompletionFallback` | `DEFAULT` | Default [completion fallback](/docs/aesh/completers#command-level-default) for all options/arguments. Individual options can override. |
@@ -253,7 +255,7 @@ For option-heavy commands, the `Usage:` line can run to many wrapped lines. With
 @CommandDefinition(
     name = "jbang",
     description = "Run scripts",
-    collapseSynopsis = true,
+    collapseSynopsis = Toggle.ON,
     generateHelp = true
 )
 public class JbangCommand implements Command<CommandInvocation> { ... }
@@ -272,13 +274,13 @@ Positional arguments and the `[COMMAND]` placeholder are unaffected.
 
 ## Default Options Section First
 
-Options with an explicit `helpGroup` are printed under their own headings, and the default (ungrouped) `Options:` section comes last. For commands whose own options matter most, `defaultOptionsFirst = true` prints `Options:` first instead; named groups keep their relative order and positional arguments stay last:
+Options with an explicit `helpGroup` are printed under their own headings, and the default (ungrouped) `Options:` section comes last. For commands whose own options matter most, `defaultOptionsFirst = Toggle.ON` prints `Options:` first instead; named groups keep their relative order and positional arguments stay last:
 
 ```java
 @CommandDefinition(
     name = "quarkus",
     description = "Quarkus CSAW",
-    defaultOptionsFirst = true,
+    defaultOptionsFirst = Toggle.ON,
     generateHelp = true
 )
 public class QuarkusCommand implements Command<CommandInvocation> { ... }
@@ -291,6 +293,21 @@ Options:                          Options:
 Source options:                   Source options:
   ...                               ...
 ```
+
+## Toggle Inheritance and Fleet Defaults
+
+The four toggles above (`collapseSynopsis`, `defaultOptionsFirst`, `showDefaultValues`, `failOnDuplicateOptions`) use a three-way `Toggle` (`import org.aesh.command.Toggle;`) instead of a boolean. Resolution order, applied once when the command is built: an explicit `ON`/`OFF` always wins, otherwise the parent group's resolved value wins, otherwise the fleet default wins, otherwise the behavior stays off.
+
+Set a fleet default once instead of repeating the annotation on every command:
+
+```java
+AeshCommandRegistryBuilder.<CommandInvocation>builder()
+    .helpDefaults(EnumSet.of(HelpFeature.SHOW_DEFAULT_VALUES))
+    .command(MyGroup.class)
+    ...
+```
+
+A group can also set the tone for its subtree — `collapseSynopsis = Toggle.ON` on the parent collapses every inheriting subcommand, while any subcommand can still opt out with `Toggle.OFF`. (`sortOptions` stays a plain `boolean`: it shipped in an earlier release and is not part of this scheme.)
 
 ## Help Output Layout
 

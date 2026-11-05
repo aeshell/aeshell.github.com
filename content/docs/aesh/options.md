@@ -367,7 +367,7 @@ $ mycommand --verbose --no-verbose       # verbose is false
 Boolean flags may be repeated freely, and `@OptionList` / `@OptionGroup` collect every occurrence as usual. To reject repeats instead, opt in per command:
 
 ```java
-@CommandDefinition(name = "deploy", description = "Deploy app", failOnDuplicateOptions = true)
+@CommandDefinition(name = "deploy", description = "Deploy app", failOnDuplicateOptions = Toggle.ON)
 ```
 
 With `failOnDuplicateOptions`, a repeated single-value option is a usage error (`The option --level is given more than once`, exit code 2). Boolean flags, lists, and groups are still exempt, and tab completion is unaffected.
