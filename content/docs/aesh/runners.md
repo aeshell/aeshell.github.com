@@ -1008,7 +1008,9 @@ AeshRuntimeRunner.builder()
 | `NO_COLOR` set | Never (wins over everything) |
 | `FORCE_COLOR` / `CLICOLOR_FORCE` set | Forced on |
 
-Override explicitly with `.ansiMode(AnsiMode.ON)` / `.ansiMode(AnsiMode.OFF)` (default is `AUTO` as above). Direct `CommandRuntime` users are unaffected — call `parser.updateAnsiMode(false)` yourself, as before.
+Override explicitly with `.ansiMode(AeshRuntimeRunner.AnsiMode.ON)` / `.ansiMode(AeshRuntimeRunner.AnsiMode.OFF)` (default is `AUTO` as above).
+
+Errors and usage help go to stderr, which may be redirected on its own (`2>file`): that decision follows stderr, not stdout. When a command redirects its *own* output (`--help > file`, `--help | other`), the help stays plain unless colors were explicitly forced — files strip ANSI codes when writing, pipes preserve them for color-aware receivers. Direct `CommandRuntime` users get the same behavior for redirected execution output; override with `AeshCommandRuntimeBuilder.ansiWhenRedirected(true)`.
 
 ## CDI / Framework Integration
 
