@@ -355,6 +355,23 @@ Building with:
 
 3. **Default values** - Use `defaultValue = "true"` if you want the option enabled by default and allow users to disable it with the negated form.
 
+## Repeated Options
+
+If a single-value option is given more than once, the **last value wins**:
+
+```bash
+$ mycommand --level debug --level info   # level is "info"
+$ mycommand --verbose --no-verbose       # verbose is false
+```
+
+Boolean flags may be repeated freely, and `@OptionList` / `@OptionGroup` collect every occurrence as usual. To reject repeats instead, opt in per command:
+
+```java
+@CommandDefinition(name = "deploy", description = "Deploy app", failOnDuplicateOptions = true)
+```
+
+With `failOnDuplicateOptions`, a repeated single-value option is a usage error (`The option --level is given more than once`, exit code 2). Boolean flags, lists, and groups are still exempt, and tab completion is unaffected.
+
 ## Inherited Options
 
 Inherited options are automatically available to all subcommands of a group command. Mark an option with `inherited = true` on the parent, and subcommands can use that option even without declaring it themselves.
