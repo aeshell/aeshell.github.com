@@ -29,6 +29,7 @@ The `@CommandDefinition` annotation is used to define a command class.
 | `stopAtFirstPositional` | `boolean` | `false` | Stop option parsing after the first positional argument |
 | `sortOptions` | `boolean` | `false` | Sort help options alphabetically by name (after explicit option order) |
 | `collapseSynopsis` | `boolean` | `false` | Collapse optional flags to `[OPTIONS]` in the `Usage:` synopsis |
+| `defaultOptionsFirst` | `boolean` | `false` | Print the default `Options:` section before named help groups |
 | `helpUrl` | `String` | `""` | URL to documentation (shown in `--help` output) |
 | `groupCommands` | `Class<? extends Command>[]` | `{}` | Subcommand classes. Non-empty makes this a [group command](group-commands). |
 | `completeFallback` | `CompletionFallback` | `DEFAULT` | Default [completion fallback](/docs/aesh/completers#command-level-default) for all options/arguments. Individual options can override. |
@@ -268,6 +269,28 @@ Usage: jbang [OPTIONS] [COMMAND]
 ```
 
 Positional arguments and the `[COMMAND]` placeholder are unaffected.
+
+## Default Options Section First
+
+Options with an explicit `helpGroup` are printed under their own headings, and the default (ungrouped) `Options:` section comes last. For commands whose own options matter most, `defaultOptionsFirst = true` prints `Options:` first instead; named groups keep their relative order and positional arguments stay last:
+
+```java
+@CommandDefinition(
+    name = "quarkus",
+    description = "Quarkus CSAW",
+    defaultOptionsFirst = true,
+    generateHelp = true
+)
+public class QuarkusCommand implements Command<CommandInvocation> { ... }
+```
+
+```
+# Before                          # After
+Options:                          Options:
+  --live    Regenerate ...          --live    Regenerate ...
+Source options:                   Source options:
+  ...                               ...
+```
 
 ## Help Output Layout
 
