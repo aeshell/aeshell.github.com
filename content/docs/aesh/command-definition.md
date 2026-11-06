@@ -508,6 +508,27 @@ public class RunCommand implements Command<CommandInvocation>, HelpSectionProvid
 }
 ```
 
+### Command Context
+
+Provider methods also come in context-aware overloads taking a `HelpContext`, so one provider class can serve many commands by keying content off the render context instead of needing a subclass per command:
+
+```java
+public class BundleHelpProvider implements HelpSectionProvider {
+
+    @Override
+    public Map<String, List<HelpEntry>> getAdditionalSections() {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public String getHeader(HelpContext context) {
+        return bundle.getString(context.fullName() + ".header");
+    }
+}
+```
+
+`HelpContext` carries the simple `name()`, the space-separated `fullName()` path from the root command (e.g. `app run`), the `command()` instance being rendered, and the `format()` output format (`null` for terminal `--help`). The default overloads delegate to the format-aware variants when a format is present, else to the parameterless methods — existing providers keep working unchanged.
+
 ### Merging with helpGroup
 
 If a provider section name matches an existing `helpGroup` from statically defined subcommands, the entries are appended to that group rather than creating a duplicate heading.
