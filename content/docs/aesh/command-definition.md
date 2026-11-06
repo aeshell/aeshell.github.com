@@ -482,6 +482,32 @@ Plugins:
     k8s       Kubernetes deployment plugin
 ```
 
+### The Command as Its Own Provider
+
+When the prose belongs to the command itself, skip the separate class: if no `helpSectionProvider` is set and the command implements `HelpSectionProvider`, the command instance is used. An explicit annotation value always wins.
+
+```java
+@CommandDefinition(name = "run", description = "Run scripts")
+public class RunCommand implements Command<CommandInvocation>, HelpSectionProvider {
+
+    @Override
+    public CommandResult execute(CommandInvocation invocation) {
+        ...
+    }
+
+    @Override
+    public Map<String, List<HelpEntry>> getAdditionalSections() {
+        return Collections.singletonMap("Examples",
+                Collections.singletonList(new HelpEntry("run app.js", "Run a script")));
+    }
+
+    @Override
+    public String getHeader() {
+        return "Runs a script or application.";
+    }
+}
+```
+
 ### Merging with helpGroup
 
 If a provider section name matches an existing `helpGroup` from statically defined subcommands, the entries are appended to that group rather than creating a duplicate heading.
